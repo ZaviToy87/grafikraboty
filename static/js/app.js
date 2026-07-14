@@ -5484,15 +5484,21 @@ function showShiftWarnings() {
 
 /** Обновление панели акционных ценников */
 function updatePromotionPanel() {
+    const checkboxes = document.querySelectorAll('.revision-checkbox:checked');
     const panel = document.getElementById('promotion-panel');
-    if (!panel) return;
-    
-    const checkboxes = panel.querySelectorAll('input[type="checkbox"][data-revision-id]');
+    const countEl = document.getElementById('promotion-count');
     const selectAll = document.getElementById('select-all-revisions');
-    
-    if (selectAll && checkboxes.length > 0) {
-        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-        selectAll.checked = allChecked;
+
+    if (countEl) countEl.textContent = checkboxes.length;
+
+    if (panel) {
+        panel.style.display = checkboxes.length > 0 ? 'block' : 'none';
+    }
+
+    // Обновляем состояние "выбрать все"
+    const allCheckboxes = document.querySelectorAll('.revision-checkbox');
+    if (selectAll && allCheckboxes.length > 0) {
+        selectAll.checked = checkboxes.length === allCheckboxes.length && allCheckboxes.length > 0;
     }
 }
 

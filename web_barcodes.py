@@ -98,12 +98,11 @@ def add_barcode():
     db = get_db_connection()
     cursor = db.cursor()
     
-    # Проверяем дубликат только среди активных записей
+    # Проверяем дубликат
     cursor.execute('''
         SELECT id FROM barcodes 
-        WHERE is_active = 1
-          AND ((factory_barcode = ? AND factory_barcode != '') 
-           OR (internal_barcode = ? AND internal_barcode != ''))
+        WHERE (factory_barcode = ? AND factory_barcode != '') 
+           OR (internal_barcode = ? AND internal_barcode != '')
     ''', (factory_barcode, internal_barcode))
     
     if cursor.fetchone():
@@ -131,7 +130,7 @@ def add_barcode():
 
 @barcodes_bp.route('/delete/<int:bid>', methods=['POST'])
 def delete_barcode(bid):
-    """Удалить штрих-код (мягкое удаление)"""
+    """Удалить штрих-код"""
     if 'user_id' not in session:
         return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
     
@@ -145,81 +144,9 @@ def delete_barcode(bid):
     
     db.commit()
     
-    logger.info(f"Barcode soft-deleted: id={bid}")
+    logger.info(f"Barcode deleted: id={bid}")
     
     return jsonify({'status': 'success', 'message': 'Штрих-код удалён'})
-
-
-@barcodes_bp.route('/hard-delete/<int:bid>', methods=['POST'])
-def hard_delete_barcode(bid):
-    """Полностью удалить штрих-код из базы (только админ)"""
-    if 'user_id' not in session:
-        return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
-    
-    if session.get('role') != 'admin':
-        return jsonify({'status': 'error', 'message': 'Только для администратора'}), 403
-    
-    db = get_db_connection()
-    cursor = db.cursor()
-    
-    cursor.execute('DELETE FROM barcodes WHERE id = ?', (bid,))
-    db.commit()
-    
-    logger.info(f"Barcode hard-deleted: id={bid}")
-    
-    return jsonify({'status': 'success', 'message': 'Штрих-код полностью удалён из базы'})
-
-
-@barcodes_bp.route('/cleanup-inactive', methods=['POST'])
-def cleanup_inactive_barcodes():
-    """Очистить все неактивные (удалённые) штрих-коды (только админ)"""
-    if 'user_id' not in session:
-        return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
-    
-    if session.get('role') != 'admin':
-        return jsonify({'status': 'error', 'message': 'Только для администратора'}), 403
-    
-    db = get_db_connection()
-    cursor = db.cursor()
-    
-    cursor.execute('SELECT COUNT(*) as cnt FROM barcodes WHERE is_active = 0')
-    count = cursor.fetchone()['cnt']
-    
-    cursor.execute('DELETE FROM barcodes WHERE is_active = 0')
-    db.commit()
-    
-    logger.info(f"Inactive barcodes cleaned up: {count} records deleted")
-    
-    return jsonify({
-        'status': 'success', 
-        'message': f'Очищено {count} неактивных штрих-кодов',
-        'deleted_count': count
-    })
-
-
-@barcodes_bp.route('/inactive', methods=['GET'])
-def get_inactive_barcodes():
-    """Получить список неактивных (удалённых) штрих-кодов (только админ)"""
-    if 'user_id' not in session:
-        return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
-    
-    if session.get('role') != 'admin':
-        return jsonify({'status': 'error', 'message': 'Только для администратора'}), 403
-    
-    db = get_db_connection()
-    cursor = db.cursor()
-    
-    cursor.execute('''
-        SELECT id, product_name, factory_barcode, internal_barcode,
-               created_by, created_at, is_active
-        FROM barcodes
-        WHERE is_active = 0
-        ORDER BY created_at DESC
-    ''')
-    
-    barcodes = [dict(row) for row in cursor.fetchall()]
-    
-    return jsonify({'status': 'success', 'barcodes': barcodes, 'count': len(barcodes)})
 
 
 @barcodes_bp.route('/export', methods=['GET'])
@@ -294,12 +221,11 @@ def import_barcodes():
                     errors.append(f"Строка {i}: нет названия товара")
                     continue
                 
-                # Проверяем дубликат только среди активных записей
+                # Проверяем дубликат
                 cursor.execute('''
                     SELECT id FROM barcodes 
-                    WHERE is_active = 1
-                      AND ((factory_barcode = ? AND factory_barcode != '') 
-                       OR (internal_barcode = ? AND internal_barcode != ''))
+                    WHERE (factory_barcode = ? AND factory_barcode != '') 
+                       OR (internal_barcode = ? AND internal_barcode != '')
                 ''', (factory_barcode, internal_barcode))
                 
                 if cursor.fetchone():

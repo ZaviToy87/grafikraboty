@@ -56,3 +56,50 @@ Output/
 # Build
 exe_build/
 exe_dist/
+exe_dist
+
+# Environment & secrets
+.env
+.env.*
+.mcp/
+.mcp
+
+# Temporary files
+*.pid
+_temp_*.txt
+$null
+
+# Tunnel & config data
+tunnel_info.json
+tunnel_output.txt
+telegram_seen_users.json
+gh_response.json
+check_sync_output.txt
+output.txt
+
+# Node/Python build artifacts
+*.pyc
+node_modules/
+
+# Server runtime
+server.pid
+
+# Sub-directories with binaries
+GrafikRaboty/
+sales/
+trash/
+scripts/
+nginx/
+mobile_app/
+Конвертатор ценников 2.0/
+
+# IDE & AI tools
+.qwen/
+.continue/
+
+# SQL files
+*.sql
+
+# Data directories
+screenshots/
+sales_data/

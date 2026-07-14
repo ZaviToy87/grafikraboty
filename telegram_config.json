@@ -1,5 +1,12 @@
 {
-    "token": "ВАШ_ТОКЕН_TELEGRAM_БОТА",
-    "chat_ids": [123456789],
-    "node_dir": ""
+  "bot_token": "8267479497:AAGnKst6RvlSMhBM8myeVqhOBV7LxvB91pA",
+  "chat_ids": [
+    "-1003810651417"
+  ],
+  "report_chat_id": "701768868",
+  "telegram_user_map": {
+    "701768868": 1,
+    "6177028416": 2,
+    "961112265": 1
+  }
 }

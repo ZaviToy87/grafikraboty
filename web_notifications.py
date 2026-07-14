@@ -83,11 +83,9 @@ def add_notification_all(type, title, message=None, link=None):
                 'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
                 (user['id'], type, title, message, link)
             )
-            notification_id = cursor.lastrowid
             # Real-time для каждого пользователя
             if _socketio:
                 _socketio.emit('new_notification', {
-                    'id': notification_id,
                     'type': type,
                     'title': title,
                     'message': message,

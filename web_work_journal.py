@@ -367,38 +367,24 @@ def close_shift():
     try:
         import vk_bot
         
-        # Считаем расходы за смену — раздельно по типам
+        # Считаем расходы за смену
         cursor.execute('''
-            SELECT kind, COALESCE(SUM(amount), 0) as total FROM work_journal_entries
+            SELECT COALESCE(SUM(amount), 0) as total FROM work_journal_entries
             WHERE shift_id = ? AND kind IN ('Внесла в кассу', 'Отдала деньги', 'Взяла зарплату', 'Сняла в банк')
-            GROUP BY kind
         ''', (shift_id,))
-        expense_rows = cursor.fetchall()
-        
-        # Разделяем на "внесла" (+) и "отдала/взяла/сняла" (-)
-        expenses_in = 0  # Внесла в кассу — ПЛЮС
-        expenses_out = 0  # Отдала деньги, Взяла зарплату, Сняла в банк — МИНУС
-        
-        for row in expense_rows:
-            amount = round(float(row['total']), 2)
-            if row['kind'] == 'Внесла в кассу':
-                expenses_in += amount
-            else:
-                expenses_out += amount
-        
-        # Баланс операций = Внесла - Отдала/Взяла/Сняла
-        expenses_balance = round(expenses_in - expenses_out, 2)
+        expenses_row = cursor.fetchone()
+        expenses = expenses_row['total'] if expenses_row else 0
         
         # Считаем расхождение
-        morning_cash = round(float(session_row['opening_sum'] or 0), 2)
+        morning_cash = session_row['opening_sum'] or 0
         
         # Наличные по ККТ = Выручка общая - Безнал - Терминал
-        cash_revenue = round(revenue_total - acquiring_amount - terminal_actual, 2)
+        cash_revenue = revenue_total - acquiring_amount - terminal_actual
         
-        # Должно быть = Утро + Наличные по ККТ + Баланс операций
-        expected_cash = round(morning_cash + cash_revenue + expenses_balance, 2)
-        actual_cash = round(float(evening_cash), 2)
-        discrepancy = round(actual_cash - expected_cash, 2)
+        # Операции: Внесла (+), Отдала/Взяла (-)
+        expected_cash = morning_cash + cash_revenue - expenses
+        actual_cash = evening_cash
+        discrepancy = actual_cash - expected_cash
         
         shift_data = {
             'year': session_row['year'],
@@ -410,9 +396,7 @@ def close_shift():
             'terminal_actual': terminal_actual,
             'evening_cash': evening_cash,
             'evening_cashless': evening_cashless,
-            'expenses_in': expenses_in,
-            'expenses_out': expenses_out,
-            'expenses_balance': expenses_balance,
+            'expenses': expenses,
             'discrepancy': discrepancy
         }
         vk_bot.send_shift_notification('close', session.get('full_name', session['username']), shift_data)
@@ -647,11 +631,10 @@ def get_sales_summary():
     year = request.args.get('year', type=int)
     month = request.args.get('month', type=int)
 
-    now = datetime.now()
-    if not year:
-        year = now.year
-    if not month:
-        month = now.month
+    if not year or not month:
+        now = datetime.now()
+        year = year or now.year
+        month = month or now.month
 
     db = get_db_connection()
     cursor = db.cursor()

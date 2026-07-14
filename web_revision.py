@@ -172,23 +172,7 @@ def get_revisions():
         else:
             rev['color_status'] = 'green'
 
-        # Определяем, изменилась ли скидка (для отображения акционного ценника)
-        # Скидка считается "акционной" если товар не просрочен и скидка > 0
-        rev['is_promotional'] = (
-            rev['days_remaining'] is not None and
-            rev['days_remaining'] >= 0 and
-            rev['discount_percent'] is not None and
-            rev['discount_percent'] > 0
-        )
-        # Товар с обычной ценой (без скидки или срок ещё не подошёл)
-        rev['is_regular'] = (
-            rev['days_remaining'] is not None and
-            rev['days_remaining'] >= 0 and
-            (rev['discount_percent'] is None or rev['discount_percent'] == 0)
-        )
-
         revisions.append(rev)
-
 
     # Фильтрация поиска в Python (как в штрих-кодах для кириллицы)
     if search:
@@ -505,9 +489,7 @@ def edit_revision(revision_id):
     if 'expiry_date' in data:
         # Пересчитываем скидку при изменении срока
         days_remaining, discount_percent, status = calculate_discount(data['expiry_date'])
-        # Берём цену из данных или из БД, если цена не менялась
-        current_retail_price = float(data.get('retail_price', rev['retail_price']))
-        final_price = current_retail_price * (1 - discount_percent / 100)
+        final_price = float(data['retail_price']) * (1 - discount_percent / 100) if 'retail_price' in data else rev['final_price']
         
         updates.append('expiry_date = ?')
         params.append(data['expiry_date'])
@@ -932,7 +914,7 @@ def check_daily_expirations():
             # Если товар только что просрочился — отправляем уведомление
             if days_remaining < 0 and rev['days_remaining'] >= 0:
                 logger.info(f"Product just expired: {rev['id']}, sending notification")
-                send_expired_notification(rev['id'], cursor)
+                # Уведомление отправим отдельно
     
     db.commit()
     
@@ -1248,7 +1230,7 @@ def send_pre_expiry_alerts():
         SELECT * FROM product_revisions
         WHERE status = 'active'
         AND days_remaining = 7
-        AND notification_sent = 0
+        AND (notification_sent = 0 OR notification_sent = 1)
     ''')
 
     products_7days = cursor.fetchall()
@@ -1389,88 +1371,3 @@ def api_send_pre_expiry_alerts():
         'message': 'Уведомления отправлены',
         'alerts': alerts
     })
-
-
-@revision_bp.route('/revisions/<int:revision_id>/buy-expired', methods=['POST'])
-def buy_expired_product(revision_id):
-    """
-    Купить просроченный товар (для продавцов).
-    Просроченный товар можно купить по цене со скидкой 50%.
-    """
-    if 'user_id' not in session:
-        return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
-
-    db = get_db_connection()
-    cursor = db.cursor()
-
-    # Проверяем товар
-    cursor.execute('SELECT * FROM product_revisions WHERE id = ?', (revision_id,))
-    rev = cursor.fetchone()
-
-    if not rev:
-        db.close()
-        return jsonify({'status': 'error', 'message': 'Товар не найден'}), 404
-
-    # Проверяем что товар просрочен
-    if rev['days_remaining'] >= 0:
-        db.close()
-        return jsonify({'status': 'error', 'message': 'Товар ещё не просрочен'}), 400
-
-    # Проверяем что товар ещё не продан/списан
-    if rev['status'] not in ('active', 'admin_decision'):
-        db.close()
-        return jsonify({'status': 'error', 'message': 'Товар уже обработан'}), 400
-
-    if rev['quantity'] <= 0:
-        db.close()
-        return jsonify({'status': 'error', 'message': 'Товара нет в наличии'}), 400
-
-    quantity_before = rev['quantity']
-    quantity_after = quantity_before - 1
-
-    # Цена со скидкой 50% для просрочки
-    sale_price = rev['final_price']
-
-    # Записываем операцию покупки просрочки
-    cursor.execute('''
-        INSERT INTO revision_transactions
-        (revision_id, user_id, full_name, action, quantity, price, quantity_before, quantity_after, reason, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        revision_id,
-        session['user_id'],
-        session['full_name'],
-        'sold_discount',
-        1,
-        sale_price,
-        quantity_before,
-        quantity_after,
-        'Покупка просроченного товара',
-        ''
-    ))
-
-    # Обновляем количество
-    if quantity_after > 0:
-        cursor.execute('''
-            UPDATE product_revisions
-            SET quantity = ?, updated_at = ?
-            WHERE id = ?
-        ''', (quantity_after, datetime.now(), revision_id))
-    else:
-        cursor.execute('''
-            UPDATE product_revisions
-            SET quantity = 0, status = 'sold', updated_at = ?
-            WHERE id = ?
-        ''', (datetime.now(), revision_id))
-
-    db.commit()
-    db.close()
-
-    logger.info(f"Expired product bought: revision {revision_id}, user={session['user_id']}, price={sale_price}")
-
-    return jsonify({
-        'status': 'success',
-        'message': '✅ Просроченный товар куплен!',
-        'price': sale_price
-    })
-

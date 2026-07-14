@@ -1,8 +1,13 @@
 {
   "service_token": "vk1.a.eOx1FOR5DZlUB875EYTr4YEgxB01zFw5ke_5A9oc5XGBZyt8-C9zDdwEoC_FKXmoxLwrclIj3mKrCH0G2D2r1AeBrRl3iBVpYp6aHgo-9gnajx-UsGkKGaJPIPLl2cSHWg5WEgE7PAzdxlW-x2iktoEnWEJuqMOnLaxlXfJi1RMciWC_-bC-bvUuqLSfL0bp32sQ7-wN-Lk3njpAEVOQYQ",
-  "group_id": "199112265",
-  "admin_vk_id": "146411666",
+  "group_id": 199112265,
+  "admin_vk_id": 146411666,
   "chat_peer_id": 2000000001,
-  "api_version": "5.131",
-  "vk_user_map": {}
+  "vk_user_map": {
+    "146411666": 1,
+    "57596922": 2,
+    "2610587": 1,
+    "1106085973": 3
+  },
+  "api_version": "5.208"
 }

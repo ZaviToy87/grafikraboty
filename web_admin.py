@@ -117,8 +117,8 @@ def api_salary_adjustments():
     # Сохраняем в salary_adjustments
     cursor.execute('''
         INSERT INTO salary_adjustments (user_id, year, month, amount, reason, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
-    ''', (user_id, year, month, float(amount), reason, session['user_id']))
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, year, month, float(amount), reason, session['user_id'], cursor.execute('SELECT CURRENT_TIMESTAMP')[0]))
 
     db.commit()
 

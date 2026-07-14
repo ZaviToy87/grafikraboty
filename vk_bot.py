@@ -1374,75 +1374,66 @@ def send_shift_notification(shift_action, user_name, shift_data):
     # Формируем сообщение
     if shift_action == 'open':
         msg = (
-            f"🔔 ОТКРЫТИЕ СМЕНЫ\n"
-            f"{'━' * 30}\n"
+            f"🔔 ОТКРЫТИЕ СМЕНЫ\n\n"
             f"👤 Сотрудник: {user_name}\n"
             f"📅 Дата: {shift_data.get('day', 0)}.{shift_data.get('month', 0)}.{shift_data.get('year', 0)}\n"
             f"⏰ Время: {datetime.now().strftime('%H:%M')}\n"
-            f"💰 Касса: {shift_data.get('morning_cash', 0)} руб.\n"
-            f"{'━' * 30}\n"
-            f"✅ Смена открыта. Удачной смены!"
+            f"💰 Открыл с суммой: {shift_data.get('morning_cash', 0)} руб.\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"✅ Смена открыта"
         )
     else:  # close
-        revenue = round(float(shift_data.get('revenue_total', 0)), 2)
-        acquiring_kkt = round(float(shift_data.get('acquiring_amount', 0)), 2)
-        terminal_actual = round(float(shift_data.get('terminal_actual', 0)), 2)
-        evening_cash = round(float(shift_data.get('evening_cash', 0)), 2)
-        evening_cashless = round(float(shift_data.get('evening_cashless', 0)), 2)
-        discrepancy = round(float(shift_data.get('discrepancy', 0)), 2)
-        morning_cash = round(float(shift_data.get('morning_cash', 0)), 2)
-        expenses_in = round(float(shift_data.get('expenses_in', 0)), 2)
-        expenses_out = round(float(shift_data.get('expenses_out', 0)), 2)
-        expenses_balance = round(float(shift_data.get('expenses_balance', 0)), 2)
+        revenue = shift_data.get('revenue_total', 0)
+        acquiring_kkt = shift_data.get('acquiring_amount', 0)
+        terminal_actual = shift_data.get('terminal_actual', 0)
+        evening_cash = shift_data.get('evening_cash', 0)
+        evening_cashless = shift_data.get('evening_cashless', 0)
+        discrepancy = shift_data.get('discrepancy', 0)
+        morning_cash = shift_data.get('morning_cash', 0)
+        expenses = shift_data.get('expenses', 0)
 
         # Наличные по ККТ = Выручка общая - Безнал - Терминал
-        cash_revenue = round(revenue - acquiring_kkt - terminal_actual, 2)
+        cash_revenue = revenue - acquiring_kkt - terminal_actual
         
-        # ДОЛЖНО БЫТЬ = Утро + Наличные по ККТ + Баланс операций
-        # Баланс = Внесла (+) - Отдала/Взяла (-)
-        expected = round(morning_cash + cash_revenue + expenses_balance, 2)
-        actual = round(float(evening_cash), 2)
-
-        # Формируем строку операций
-        expenses_str = ""
-        if expenses_in > 0:
-            expenses_str += f"  • Внесла в кассу: +{expenses_in} руб.\n"
-        if expenses_out > 0:
-            expenses_str += f"  • Отдала/Взяла: -{expenses_out} руб.\n"
-        if expenses_balance != 0:
-            expenses_str += f"  • Баланс: {expenses_balance:+.2f} руб.\n"
-        else:
-            expenses_str = f"  • Нет операций\n"
+        # ДОЛЖНО БЫТЬ = Утро + Наличные по ККТ + Операции (с учётом знака)
+        # Операции: Внесла (+), Отдала/Взяла (-)
+        expected = morning_cash + cash_revenue - expenses
+        actual = evening_cash
 
         msg = (
-            f"🔔 ЗАКРЫТИЕ СМЕНЫ\n"
-            f"{'━' * 30}\n"
+            f"🔔 ЗАКРЫТИЕ СМЕНЫ — ОТЧЁТ\n\n"
             f"👤 Сотрудник: {user_name}\n"
             f"📅 Дата: {shift_data.get('day', 0)}.{shift_data.get('month', 0)}.{shift_data.get('year', 0)}\n"
-            f"⏰ Время: {datetime.now().strftime('%H:%M')}\n"
-            f"{'━' * 30}\n"
-            f"📊 ИТОГИ СМЕНЫ:\n\n"
-            f"📦 Утро: {morning_cash:.2f} руб.\n"
-            f"💰 Выручка (ККТ): {revenue:.2f} руб.\n"
-            f"  • Наличные: {cash_revenue:.2f} руб.\n"
-            f"  • Безнал: {acquiring_kkt:.2f} руб.\n"
-            f"💳 Терминал: {terminal_actual:.2f} руб.\n"
-            f"💸 Операции:\n{expenses_str}"
-            f"{'━' * 30}\n"
-            f"📊 Должно быть: {expected:.2f} руб.\n"
-            f"💵 Фактически: {actual:.2f} руб.\n"
+            f"⏰ Время: {datetime.now().strftime('%H:%M')}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 БУХГАЛТЕРИЯ:\n\n"
+            f"📦 УТРО: {morning_cash} руб.\n\n"
+            f"💰 ПРИХОД (2 чека):\n"
+            f"📄 Чек 1 (ККТ):\n"
+            f"  • Наличные: {cash_revenue} руб.\n"
+            f"  • Безнал: {acquiring_kkt} руб.\n"
+            f"📄 Чек 2 (Терминал):\n"
+            f"  • Факт: {terminal_actual} руб.\n"
+            f"• Итого выручка: {revenue} руб.\n\n"
+            f"💸 ОПЕРАЦИИ: {expenses} руб.\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 ДОЛЖНО БЫТЬ (нал):\n"
+            f"{morning_cash} + {cash_revenue} - {expenses} = {expected} руб.\n"
+            f"(Утро + Нал ККТ - Операции)\n\n"
+            f"💵 ФАКТИЧЕСКИ (нал): {actual} руб.\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
         )
 
         if abs(discrepancy) > 0.01:
             if discrepancy > 0:
-                msg += f"✅ ИЗЛИШЕК: +{discrepancy:.2f} руб.\n"
+                msg += f"✅ ИЗЛИШЕК: +{discrepancy} руб. (в кассе больше)\n"
             else:
-                msg += f"❌ НЕДОСТАЧА: {discrepancy:.2f} руб.\n"
+                msg += f"❌ НЕДОСТАЧА: {discrepancy} руб. (в кассе меньше)\n"
         else:
-            msg += f"✅ ВСЁ СХОДИТСЯ: 0.00 руб.\n"
+            msg += f"✅ ВСЁ СХОДИТСЯ: 0 руб.\n"
 
-        msg += f"{'━' * 30}\n"
-        msg += f"✅ Смена закрыта. Хорошего отдыха!"
+        msg += f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        msg += f"✅ Смена закрыта"
 
     # Отправляем сообщение
     try:

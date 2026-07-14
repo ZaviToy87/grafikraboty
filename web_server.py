@@ -50,55 +50,6 @@ try:
     vk_thread = threading.Thread(target=lambda: vk_bot.start_polling(), daemon=True)
     vk_thread.start()
     logger.info("VK bot started")
-    
-    # Отправляем уведомление о запуске сервера в VK
-    try:
-        import socket as sock_lib
-        local_ip = "127.0.0.1"
-        try:
-            s = sock_lib.socket(sock_lib.AF_INET, sock_lib.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-            s.close()
-        except:
-            pass
-        
-        link_local = f"http://{local_ip}:8080"
-        vk_bot.send_startup_notification(
-            tunnel_url="настраивается...",
-            password="grafikraboty",
-            link_local=link_local,
-            local_ip=local_ip
-        )
-        logger.info("VK startup notification sent")
-    except Exception as e:
-        logger.warning(f"VK startup notification error: {e}")
-    
-    # Отправляем уведомление о запуске сервера в Telegram
-    try:
-        import socket as sock_lib
-        local_ip = "127.0.0.1"
-        try:
-            s = sock_lib.socket(sock_lib.AF_INET, sock_lib.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-            s.close()
-        except:
-            pass
-        
-        tg_msg = (
-            f"🚀 <b>СЕРВЕР ЗАПУЩЕН</b>\n\n"
-            f"⏰ {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
-            f"📍 Локальный доступ:\n"
-            f"http://{local_ip}:8080\n\n"
-            f"🌍 Внешний доступ:\n"
-            f"http://81.23.181.245:8080\n\n"
-            f"✅ Сервер работает!"
-        )
-        send_telegram_message(None, tg_msg)
-        logger.info("Telegram startup notification sent")
-    except Exception as e:
-        logger.warning(f"Telegram startup notification error: {e}")
 except Exception as e:
     logger.warning(f"VK bot not started: {e}")
 
