@@ -1,29 +1,58 @@
-*.db  
-*.pyc  
-__pycache__/  
-.env  
-logs/  
-uploads/  
-dist/  
-exe_build/  
-exe_dist/  
-installer_build/  
-installer_dist/  
-build/  
-Output/  
-trash/  
-backup_v4.0_2026-03-22/  
-backup_db/  
-screenshots/  
-.mcp/  
-server.log  
-server.pid  
-tunnel_info.json  
-node_modules/  
-sales_data/  
-mobile_app/  
-nginx/  
-installer/  
-.dockerignore  
-docker-compose.yml  
-Dockerfile  
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+*.spec
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Large files
+*.xml
+*.xlsx
+*.csv
+*.zip
+*.exe
+*.msi
+
+# Uploads
+uploads/*
+
+# Backup
+backup_db/
+backup_*/
+
+# Installer
+installer/
+installer_build/
+installer_dist/
+Output/
+
+# Build
+exe_build/
+exe_dist/
