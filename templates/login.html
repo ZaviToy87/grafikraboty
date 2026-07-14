@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Вход в систему - ВетГид корпоративный график</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260321">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <a href="#" class="login-page-logo" title="ВетГид Зоомагазин" aria-hidden="true">
+            <img src="/static/images/vetgid-logo.png" alt="ВетГид Зоомагазин">
+        </a>
+        <div class="login-card">
+            <h1>📅 Корпоративный график</h1>
+            <p class="subtitle">Вход по выбору пользователя (логин вводить не нужно)</p>
+            <p class="subtitle" style="font-size:0.85em;opacity:0.8;">Версия 2.0 · вход из кода</p>
+            <div id="login-error" class="alert alert-error" style="display:none;"></div>
+            <p class="login-choose-caption">Выберите пользователя:</p>
+            <div id="user-choice" class="login-user-choice">
+                <button type="button" class="login-user-btn" data-username="admin" data-label="Администратор">👤 Администратор</button>
+                <button type="button" class="login-user-btn" data-username="валерия" data-label="Валерия">👤 Валерия</button>
+                <button type="button" class="login-user-btn" data-username="ольга" data-label="Ольга">👤 Ольга</button>
+            </div>
+            <div id="password-panel" class="login-password-panel" style="display:none;">
+                <p class="subtitle" id="selected-user-label" style="margin-bottom:8px;"></p>
+                <p id="admin-hint" class="login-admin-hint" style="display:none;">Введите пароль и выберите, куда отправить код: Telegram или ВКонтакте.</p>
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="Введите пароль" autocomplete="current-password">
+                </div>
+                <div id="admin-auth-channels" style="display:none;margin-bottom:12px;">
+                    <button type="button" id="btn-admin-send-telegram" class="btn btn-primary btn-block" style="margin-bottom:8px;">📧 Отправить код в Telegram</button>
+                    <button type="button" id="btn-admin-send-vk" class="btn btn-secondary btn-block">🔵 Отправить код ВКонтакте</button>
+                </div>
+                <button type="button" id="btn-employee-login" class="btn btn-primary btn-block" style="display:none;">Войти</button>
+                <button type="button" id="btn-back-choice" class="btn btn-secondary btn-block" style="margin-top:8px;">← Другой пользователь</button>
+            </div>
+            <div id="verify-panel" class="login-verify-panel" style="display:none;">
+                <p class="login-verify-title">Код из <span id="verify-channel-name">мессенджера</span></p>
+                <p id="verify-hint-sent" class="subtitle" style="margin-bottom:8px;">Проверьте личные сообщения от бота. Код уже отправлен.</p>
+                <p id="verify-hint-failed" class="subtitle" style="margin-bottom:8px;display:none;color:var(--danger, #dc2626);"></p>
+                <p class="subtitle" style="margin-bottom:12px;">Введите 4 цифры из сообщения:</p>
+                <input type="hidden" id="temp_token" name="temp_token" value="">
+                <div class="form-group">
+                    <label for="verify-code">Код</label>
+                    <input type="text" id="verify-code" name="code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="1234" autocomplete="one-time-code">
+                </div>
+                <button type="button" id="btn-confirm-code" class="btn btn-primary btn-block">Подтвердить вход</button>
+                <button type="button" id="btn-back-to-password" class="btn btn-secondary btn-block" style="margin-top:8px;">← Назад</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        const userChoice = document.getElementById('user-choice');
+        const passwordPanel = document.getElementById('password-panel');
+        const verifyPanel = document.getElementById('verify-panel');
+        const selectedUserLabel = document.getElementById('selected-user-label');
+        const passwordInput = document.getElementById('password');
+        const btnBackChoice = document.getElementById('btn-back-choice');
+        const btnEmployeeLogin = document.getElementById('btn-employee-login');
+        const adminHint = document.getElementById('admin-hint');
+        const adminAuthChannels = document.getElementById('admin-auth-channels');
+        const btnAdminSendTelegram = document.getElementById('btn-admin-send-telegram');
+        const btnAdminSendVk = document.getElementById('btn-admin-send-vk');
+        const btnConfirmCode = document.getElementById('btn-confirm-code');
+        const btnBackToPassword = document.getElementById('btn-back-to-password');
+        const verifyCodeInput = document.getElementById('verify-code');
+        const tempTokenInput = document.getElementById('temp_token');
+        const loginError = document.getElementById('login-error');
+        const verifyChannelName = document.getElementById('verify-channel-name');
+
+        let selectedUsername = '';
+        let currentChannel = '';
+
+        userChoice.addEventListener('click', function(e) {
+            if (e.target.classList.contains('login-user-btn')) {
+                selectedUsername = e.target.dataset.username;
+                const label = e.target.dataset.label;
+                selectedUserLabel.textContent = 'Пользователь: ' + label;
+                userChoice.style.display = 'none';
+                passwordPanel.style.display = 'block';
+
+                if (selectedUsername === 'admin') {
+                    adminAuthChannels.style.display = 'block';
+                    btnEmployeeLogin.style.display = 'none';
+                    adminHint.style.display = 'block';
+                } else {
+                    adminAuthChannels.style.display = 'none';
+                    btnEmployeeLogin.style.display = 'block';
+                    adminHint.style.display = 'none';
+                }
+            }
+        });
+
+        btnBackChoice.addEventListener('click', function() {
+            passwordPanel.style.display = 'none';
+            verifyPanel.style.display = 'none';
+            userChoice.style.display = 'block';
+            passwordInput.value = '';
+            currentChannel = '';
+        });
+
+        btnEmployeeLogin.addEventListener('click', function() {
+            const password = passwordInput.value;
+            if (!password) {
+                alert('Введите пароль');
+                return;
+            }
+            fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: selectedUsername, password: password})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = data.redirect || '/dashboard';
+                } else {
+                    loginError.textContent = data.message || 'Ошибка входа';
+                    loginError.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                loginError.textContent = 'Ошибка: ' + err;
+                loginError.style.display = 'block';
+            });
+        });
+
+        btnAdminSendTelegram.addEventListener('click', function() {
+            const password = passwordInput.value;
+            if (!password) {
+                alert('Введите пароль');
+                return;
+            }
+            currentChannel = 'telegram';
+            verifyChannelName.textContent = 'Telegram';
+            fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({username: selectedUsername, password: password, channel: 'telegram'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'need_code' && data.temp_token) {
+                    tempTokenInput.value = data.temp_token;
+                    passwordPanel.style.display = 'none';
+                    verifyPanel.style.display = 'block';
+                } else if (data.status === 'success') {
+                    window.location.href = data.redirect || '/dashboard';
+                } else {
+                    loginError.textContent = data.message || 'Ошибка отправки кода';
+                    loginError.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                loginError.textContent = 'Ошибка: ' + err;
+                loginError.style.display = 'block';
+            });
+        });
+
+        btnAdminSendVk.addEventListener('click', function() {
+            const password = passwordInput.value;
+            if (!password) {
+                alert('Введите пароль');
+                return;
+            }
+            currentChannel = 'vk';
+            verifyChannelName.textContent = 'ВКонтакте';
+            fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({username: selectedUsername, password: password, channel: 'vk'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'need_code' && data.temp_token) {
+                    tempTokenInput.value = data.temp_token;
+                    passwordPanel.style.display = 'none';
+                    verifyPanel.style.display = 'block';
+                } else if (data.status === 'success') {
+                    window.location.href = data.redirect || '/dashboard';
+                } else {
+                    loginError.textContent = data.message || 'Ошибка отправки кода';
+                    loginError.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                loginError.textContent = 'Ошибка: ' + err;
+                loginError.style.display = 'block';
+            });
+        });
+
+        btnConfirmCode.addEventListener('click', function() {
+            const code = verifyCodeInput.value;
+            const token = tempTokenInput.value;
+            if (!code || code.length !== 4) {
+                alert('Введите 4-значный код');
+                return;
+            }
+            const endpoint = currentChannel === 'vk' ? '/login/verify-vk' : '/login/verify-telegram';
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({temp_token: token, code: code})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = data.redirect || '/dashboard';
+                } else {
+                    document.getElementById('verify-hint-failed').textContent = data.message || 'Неверный код';
+                    document.getElementById('verify-hint-failed').style.display = 'block';
+                }
+            })
+            .catch(err => {
+                document.getElementById('verify-hint-failed').textContent = 'Ошибка: ' + err;
+                document.getElementById('verify-hint-failed').style.display = 'block';
+            });
+        });
+
+        btnBackToPassword.addEventListener('click', function() {
+            verifyPanel.style.display = 'none';
+            passwordPanel.style.display = 'block';
+            currentChannel = '';
+        });
+
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (selectedUsername === 'admin') {
+                    if (currentChannel === 'vk') {
+                        btnAdminSendVk.click();
+                    } else {
+                        btnAdminSendTelegram.click();
+                    }
+                } else {
+                    btnEmployeeLogin.click();
+                }
+            }
+        });
+
+        verifyCodeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                btnConfirmCode.click();
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

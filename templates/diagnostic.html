@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Диагностика стилей</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f5f7fa;
+        }
+        .test-box {
+            background: #6366f1;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace;
+        }
+        .ok { background: #10b981; color: white; }
+        .error { background: #ef4444; color: white; }
+        .warn { background: #f59e0b; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Диагностика стилей GrafikRaboty</h1>
+    
+    <div id="results"></div>
+    
+    <div class="test-box">
+        <h3>Тест CSS работает!</h3>
+        <p>Если вы видите этот текст фиолетовым — стили работают!</p>
+    </div>
+    
+    <script>
+    const results = document.getElementById('results');
+    
+    function addStatus(message, type) {
+        const div = document.createElement('div');
+        div.className = 'status ' + type;
+        div.textContent = message;
+        results.appendChild(div);
+    }
+    
+    // Проверка 1: Загрузка style.css
+    fetch('/static/css/style.css')
+        .then(r => {
+            if (r.ok) {
+                addStatus('✓ style.css загрузился (статус ' + r.status + ')', 'ok');
+                return r.text();
+            } else {
+                addStatus('✗ style.css НЕ загрузился (статус ' + r.status + ')', 'error');
+            }
+        })
+        .then(css => {
+            if (css && css.length > 100) {
+                addStatus('✓ CSS файл содержит ' + css.length + ' символов', 'ok');
+                if (css.includes('.login-page') || css.includes('.navbar')) {
+                    addStatus('✓ CSS содержит правильные классы', 'ok');
+                } else {
+                    addStatus('⚠ CSS может быть повреждён', 'warn');
+                }
+            }
+        })
+        .catch(e => {
+            addStatus('✗ Ошибка загрузки CSS: ' + e, 'error');
+        });
+    
+    // Проверка 2: URL путей
+    addStatus('URL страницы: ' + window.location.href, 'ok');
+    addStatus('URL для style.css: /static/css/style.css', 'ok');
+    
+    // Проверка 3: Полный путь к статике
+    const testImg = new Image();
+    testImg.onload = () => addStatus('✓ Статика доступна', 'ok');
+    testImg.onerror = () => addStatus('⚠ Проблемы со статикой', 'warn');
+    testImg.src = '/static/images/vetgid-logo.png';
+    
+    // Проверка 4: Сервер
+    fetch('/api/health')
+        .then(r => addStatus('✓ Сервер отвечает', 'ok'))
+        .catch(() => addStatus('⚠ API не отвечает (это может быть нормально)', 'warn'));
+    
+    setTimeout(() => {
+        addStatus('\n📋 РЕКОМЕНДАЦИИ:', 'ok');
+        addStatus('1. Нажмите Ctrl+F5 для полной перезагрузки', 'warn');
+        addStatus('2. Откройте консоль (F12) и посмотрите ошибки', 'warn');
+        addStatus('3. Попробуйте режим инкогнито (Ctrl+Shift+N)', 'warn');
+    }, 2000);
+    </script>
+</body>
+</html>

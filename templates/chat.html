@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VK Чат - ВетГид</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260321">
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .chat-container {
+                height: calc(100vh - 80px);
+                margin: 8px;
+                border-radius: 8px;
+            }
+            .chat-header {
+                padding: 12px 16px;
+            }
+            .chat-header h2 {
+                font-size: 16px;
+            }
+            .chat-messages {
+                padding: 12px;
+            }
+            .chat-message-content {
+                max-width: 90%;
+                padding: 10px 14px;
+            }
+            .chat-message-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+            }
+            .chat-message-text {
+                font-size: 14px;
+            }
+            .chat-input {
+                padding: 12px 16px;
+            }
+            .chat-input-text {
+                font-size: 16px;
+                padding: 10px 14px;
+            }
+            .chat-input-button {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+        @media (max-width: 480px) {
+            .chat-container {
+                margin: 4px;
+                border-radius: 6px;
+            }
+            .chat-message-content {
+                max-width: 95%;
+                padding: 8px 12px;
+            }
+            .chat-message-avatar {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            .chat-message-text {
+                font-size: 13px;
+            }
+            .chat-input-text {
+                font-size: 16px;
+                padding: 8px 12px;
+            }
+            .chat-input-button {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+        }
+
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #1f2937;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .chat-message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+        .chat-message.incoming {
+            flex-direction: row;
+        }
+        .chat-message.outgoing {
+            flex-direction: row-reverse;
+        }
+        .chat-message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #6366f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .chat-message-content {
+            max-width: 70%;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .chat-message.outgoing .chat-message-content {
+            background: #6366f1;
+            color: white;
+        }
+        .chat-message-sender {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .chat-message.outgoing .chat-message-sender {
+            color: rgba(255,255,255,0.8);
+        }
+        .chat-message-text {
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .chat-message-attachment {
+            margin-top: 8px;
+        }
+        .chat-message-attachment img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .chat-message-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .chat-message.outgoing .chat-message-time {
+            color: rgba(255,255,255,0.6);
+        }
+        .chat-input {
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 0 0 12px 12px;
+        }
+        .chat-input-wrap {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .chat-input-text {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+        }
+        .chat-input-text:focus {
+            border-color: #6366f1;
+        }
+        .chat-input-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: #6366f1;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .chat-input-button:hover {
+            background: #4f46e5;
+        }
+        .chat-input-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .chat-status {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        .chat-attachment-preview {
+            display: none;
+            padding: 8px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .chat-attachment-preview.show {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-attachment-preview img {
+            max-height: 60px;
+            border-radius: 4px;
+        }
+        .chat-attachment-name {
+            font-size: 13px;
+            color: #374151;
+        }
+        .chat-attachment-remove {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>💬 VK Чат</h2>
+            <div id="chat-status" class="chat-status">⚪ Подключение...</div>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <!-- Сообщения будут здесь -->
+        </div>
+        
+        <div class="chat-input">
+            <div class="chat-attachment-preview" id="attachment-preview">
+                <img id="attachment-preview-img" src="" alt="">
+                <span class="chat-attachment-name" id="attachment-name"></span>
+                <button class="chat-attachment-remove" onclick="removeAttachment()">×</button>
+            </div>
+            
+            <div class="chat-input-wrap">
+                <input type="text" class="chat-input-text" id="message-input" placeholder="Введите сообщение..." onkeypress="handleKeyPress(event)">
+                <button class="chat-input-button" onclick="document.getElementById('file-input').click()" title="Прикрепить файл">📎</button>
+                <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)">
+                <button class="chat-input-button" onclick="sendMessage()" id="send-button">➤</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let currentAttachment = null;
+        
+        // Подключение
+        socket.on('connect', () => {
+            console.log('Connected to chat');
+            document.getElementById('chat-status').textContent = '🟢 Подключено';
+            loadMessages();
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('Disconnected');
+            document.getElementById('chat-status').textContent = '🔴 Отключено';
+        });
+        
+        socket.on('chat_connected', (data) => {
+            console.log('Chat connected:', data);
+        });
+        
+        // Новое сообщение
+        socket.on('chat_message', (data) => {
+            console.log('New message:', data);
+            appendMessage(data);
+            scrollToBottom();
+            playNotificationSound();
+        });
+        
+        // Загрузка сообщений
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/chat/messages?limit=50');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const container = document.getElementById('chat-messages');
+                    container.innerHTML = '';
+                    
+                    data.messages.forEach(msg => {
+                        appendMessage(msg);
+                    });
+                    
+                    scrollToBottom();
+                }
+            } catch (e) {
+                console.error('Failed to load messages:', e);
+            }
+        }
+        
+        // Добавление сообщения
+        function appendMessage(msg) {
+            const container = document.getElementById('chat-messages');
+            const isOutgoing = msg.direction === 'outgoing';
+            
+            const div = document.createElement('div');
+            div.className = `chat-message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+            
+            const avatarInitial = (msg.full_name || 'VK')[0].toUpperCase();
+            const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+            
+            let attachmentHtml = '';
+            if (msg.has_attachment) {
+                if (msg.attachment_type === 'photo') {
+                    attachmentHtml = `<div class="chat-message-attachment"><img src="/${msg.attachment_path}" alt="Photo"></div>`;
+                } else {
+                    attachmentHtml = `<div class="chat-message-attachment">📎 Файл: ${msg.message_text}</div>`;
+                }
+            }
+            
+            div.innerHTML = `
+                <div class="chat-message-avatar">${avatarInitial}</div>
+                <div>
+                    <div class="chat-message-content">
+                        ${!isOutgoing ? `<div class="chat-message-sender">${msg.full_name || 'VK-' + msg.vk_id}</div>` : ''}
+                        ${!msg.has_attachment ? `<div class="chat-message-text">${msg.message_text || ''}</div>` : attachmentHtml}
+                        ${msg.has_attachment && msg.message_text ? `<div class="chat-message-text">${msg.message_text}</div>` : ''}
+                        <div class="chat-message-time">${time}</div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        // Отправка сообщения
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            
+            if (!text && !currentAttachment) return;
+            
+            const button = document.getElementById('send-button');
+            button.disabled = true;
+            
+            try {
+                if (currentAttachment) {
+                    // Отправка файла
+                    const formData = new FormData();
+                    formData.append('file', currentAttachment.file);
+                    if (text) formData.append('text', text);
+                    
+                    const response = await fetch('/api/chat/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        input.value = '';
+                        removeAttachment();
+                    } else {
+                        alert('Ошибка отправки файла: ' + data.message);
+                    }
+                } else {
+                    // Отправка текста
+                    const response = await fetch('/api/chat/send', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({text: text, topic_id: 1})
+                    });
+                    
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        input.value = '';
+                    } else {
+                        alert('Ошибка отправки: ' + data.message);
+                    }
+                }
+            } catch (e) {
+                alert('Ошибка: ' + e);
+            } finally {
+                button.disabled = false;
+            }
+        }
+        
+        // Обработка Enter
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // Выбор файла
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            currentAttachment = {file: file};
+            
+            const preview = document.getElementById('attachment-preview');
+            const name = document.getElementById('attachment-name');
+            const img = document.getElementById('attachment-preview-img');
+            
+            name.textContent = file.name;
+            
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                    preview.classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                img.src = '';
+                preview.classList.add('show');
+            }
+        }
+        
+ // Удаление вложения
+        function removeAttachment() {
+            currentAttachment = null;
+            document.getElementById('attachment-preview').classList.remove('show');
+            document.getElementById('file-input').value = '';
+        }
+        
+        // Прокрутка вниз
+        function scrollToBottom() {
+            const container = document.getElementById('chat-messages');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // Звук уведомления
+        function playNotificationSound() {
+            // Можно добавить звук
+        }
+        
+        // Автозагрузка при старте
+        loadMessages();
+        
+        // Опрос каждые 30 сек для обновления статуса
+        setInterval(() => {
+            fetch('/api/chat/vk-status')
+                .then(r => r.json())
+                .then(data => {
+                    const status = document.getElementById('chat-status');
+                    if (data.status === 'ok') {
+                        status.textContent = '🟢 VK подключен';
+                    } else {
+                        status.textContent = '🔴 VK не настроен';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('chat-status').textContent = '⚪ Ошибка';
+                });
+        }, 30000);
+    </script>
+</body>
+</html>

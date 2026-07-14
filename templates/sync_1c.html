@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Данные из 1С - ВетГид корпоративный график</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') + '?v=20260428_modern' }}">
+    <style>
+        .sync-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .sync-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .sync-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .sync-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .sync-stat-card {
+            background: var(--card-bg, #fff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .sync-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .sync-stat-card.active {
+            border-color: var(--primary, #6366f1);
+            box-shadow: 0 0 0 2px var(--primary, #6366f1);
+        }
+        .sync-stat-count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary, #6366f1);
+        }
+        .sync-stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary, #666);
+            margin-top: 4px;
+        }
+        .sync-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .sync-toolbar input, .sync-toolbar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: var(--input-bg, #fff);
+            color: var(--text-color, #333);
+        }
+        .sync-toolbar input { flex: 1; min-width: 200px; }
+        .sync-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 10px;
+            background: var(--card-bg, #fff);
+        }
+        .sync-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .sync-table th {
+            background: var(--table-header-bg, #f5f5f5);
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color, #e0e0e0);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .sync-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color, #eee);
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sync-table tr:hover td {
+            background: var(--hover-bg, #f8f8ff);
+        }
+        .sync-table .clickable {
+            color: var(--primary, #6366f1);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .sync-table .clickable:hover {
+            color: var(--primary-dark, #4f46e5);
+        }
+        .sync-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 16px;
+            flex-wrap: wrap;
+        }
+        .sync-pagination button {
+            padding: 6px 14px;
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 6px;
+            background: var(--card-bg, #fff);
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-color, #333);
+        }
+        .sync-pagination button:hover:not(:disabled) {
+            background: var(--primary, #6366f1);
+            color: #fff;
+            border-color: var(--primary, #6366f1);
+        }
+        .sync-pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .sync-pagination .page-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary, #666);
+        }
+        .sync-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary, #999);
+        }
+        .sync-error {
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+        }
+        .sync-empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary, #999);
+        }
+        .last-sync {
+            font-size: 0.85rem;
+            color: var(--text-secondary, #666);
+        }
+        .badge-count {
+            display: inline-block;
+            background: var(--primary, #6366f1);
+            color: #fff;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            margin-left: 4px;
+        }
+        /* Модальное окно для деталей */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--card-bg, #fff);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color, #333);
+        }
+        /* Темная тема */
+        [data-theme="dark"] .sync-stat-card { background: #2d2d3d; border-color: #3d3d4d; }
+        [data-theme="dark"] .sync-table-wrap { border-color: #3d3d4d; }
+        [data-theme="dark"] .sync-table th { background: #2d2d3d; border-color: #3d3d4d; }
+        [data-theme="dark"] .sync-table td { border-color: #2d2d3d; }
+        [data-theme="dark"] .sync-table tr:hover td { background: #3d3d4d; }
+        [data-theme="dark"] .modal-content { background: #2d2d3d; }
+        [data-theme="dark"] .sync-toolbar input, [data-theme="dark"] .sync-toolbar select {
+            background: #2d2d3d; border-color: #3d3d4d; color: #e0e0e0;
+        }
+        @media (max-width: 768px) {
+            .sync-stats { grid-template-columns: repeat(2, 1fr); }
+            .sync-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Меню">☰</button>
+        <div class="nav-brand">📊 Данные из 1С</div>
+        <div class="nav-user">
+            <span class="nav-user-name">{{ user.full_name }}</span>
+            <a href="/dashboard" class="btn btn-sm btn-secondary">← На главную</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-danger">Выход</a>
+        </div>
+    </nav>
+
+    <div class="sync-container">
+        <div class="sync-header">
+            <h1>📊 Данные из 1С:Розница</h1>
+            <div class="last-sync" id="last-sync">Загрузка...</div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="sync-stats" id="sync-stats">
+            <div class="sync-loading">Загрузка статистики...</div>
+        </div>
+
+        <!-- Панель инструментов -->
+        <div class="sync-toolbar" id="sync-toolbar" style="display:none;">
+            <input type="text" id="search-input" placeholder="Поиск..." oninput="debounceSearch()">
+            <select id="group-filter" style="display:none;" onchange="loadData()">
+                <option value="">Все группы</option>
+            </select>
+            <span id="total-info" style="font-size:0.85rem;color:var(--text-secondary,#666);"></span>
+        </div>
+
+        <!-- Таблица -->
+        <div class="sync-table-wrap" id="sync-table-wrap">
+            <div class="sync-loading" id="table-loading">Загрузка данных...</div>
+        </div>
+
+        <!-- Пагинация -->
+        <div class="sync-pagination" id="sync-pagination" style="display:none;">
+            <button onclick="changePage('first')" id="btn-first">◀◀</button>
+            <button onclick="changePage('prev')" id="btn-prev">◀</button>
+            <span class="page-info" id="page-info">Страница 1 из 1</span>
+            <button onclick="changePage('next')" id="btn-next">▶</button>
+            <button onclick="changePage('last')" id="btn-last">▶▶</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно деталей -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h3 id="modal-title">Детали</h3>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // Состояние
+        let currentSection = 'nomenclature';
+        let currentPage = 1;
+        let totalPages = 1;
+        let searchTimeout = null;
+
+        // Загрузка статистики
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/sync-1c/stats');
+                const data = await res.json();
+                const container = document.getElementById('sync-stats');
+                
+                if (data.error) {
+                    container.innerHTML = `<div class="sync-error">${data.error}</div>`;
+                    return;
+                }
+
+                const sections = [
+                    { key: 'sync_nomenclature', icon: '📦', section: 'nomenclature' },
+                    { key: 'sync_barcodes', icon: '🏷️', section: 'barcodes' },
+                    { key: 'sync_sales', icon: '🧾', section: 'sales' },
+                    { key: 'sync_receipts', icon: '📥', section: 'receipts' },
+                    { key: 'sync_counterparties', icon: '🤝', section: 'counterparties' },
+                ];
+
+                let html = '';
+                for (const s of sections) {
+                    const info = data[s.key] || { count: 0 };
+                    html += `
+                        <div class="sync-stat-card ${currentSection === s.section ? 'active' : ''}" 
+                             onclick="switchSection('${s.section}')">
+                            <div>${s.icon}</div>
+                            <div class="sync-stat-count">${info.count}</div>
+                            <div class="sync-stat-label">${info.label}</div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+
+                // Дата последней синхронизации
+                const lastSync = document.getElementById('last-sync');
+                if (data.last_sync) {
+                    lastSync.textContent = `Последняя синхронизация: ${data.last_sync}`;
+                } else {
+                    lastSync.textContent = 'Синхронизация не выполнялась';
+                }
+            } catch (e) {
+                document.getElementById('sync-stats').innerHTML = 
+                    `<div class="sync-error">Ошибка загрузки: ${e.message}</div>`;
+            }
+        }
+
+        // Переключение раздела
+        function switchSection(section) {
+            currentSection = section;
+            currentPage = 1;
+            
+            // Обновляем активную карточку
+            document.querySelectorAll('.sync-stat-card').forEach(c => c.classList.remove('active'));
+            const cards = document.querySelectorAll('.sync-stat-card');
+            const sections = ['nomenclature', 'barcodes', 'sales', 'receipts', 'counterparties'];
+            const idx = sections.indexOf(section);
+            if (idx >= 0 && cards[idx]) cards[idx].classList.add('active');
+
+            // Показываем/скрываем элементы управления
+            const searchInput = document.getElementById('search-input');
+            const groupFilter = document.getElementById('group-filter');
+            
+            if (section === 'nomenclature' || section === 'barcodes') {
+                searchInput.style.display = '';
+                searchInput.placeholder = section === 'nomenclature' ? 'Поиск по названию, артикулу или коду...' : 'Поиск по штрихкоду или названию...';
+            } else {
+                searchInput.style.display = 'none';
+            }
+            
+            groupFilter.style.display = (section === 'nomenclature') ? '' : 'none';
+            
+            loadData();
+        }
+
+        // Загрузка данных
+        async function loadData() {
+            const wrap = document.getElementById('sync-table-wrap');
+            const pagination = document.getElementById('sync-pagination');
+            const toolbar = document.getElementById('sync-toolbar');
+            
+            wrap.innerHTML = '<div class="sync-loading">Загрузка данных...</div>';
+            toolbar.style.display = 'none';
+            pagination.style.display = 'none';
+
+            try {
+                let url = `/api/sync-1c/${currentSection}?page=${currentPage}&per_page=50`;
+                const search = document.getElementById('search-input').value.trim();
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                const group = document.getElementById('group-filter').value;
+                if (group) url += `&group=${encodeURIComponent(group)}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.error) {
+                    wrap.innerHTML = `<div class="sync-error">${data.error}</div>`;
+                    return;
+                }
+
+                toolbar.style.display = '';
+                totalPages = data.total_pages || 1;
+                
+                // Обновляем информацию
+                document.getElementById('total-info').textContent = `Всего: ${data.total}`;
+                document.getElementById('page-info').textContent = `Страница ${data.page} из ${data.total_pages}`;
+                document.getElementById('btn-first').disabled = data.page <= 1;
+                document.getElementById('btn-prev').disabled = data.page <= 1;
+                document.getElementById('btn-next').disabled = data.page >= data.total_pages;
+                document.getElementById('btn-last').disabled = data.page >= data.total_pages;
+
+                // Заполняем группы для фильтра (только для номенклатуры)
+                if (currentSection === 'nomenclature' && data.groups) {
+                    const select = document.getElementById('group-filter');
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">Все группы</option>';
+                    data.groups.forEach(g => {
+                        select.innerHTML += `<option value="${g}">${g}</option>`;
+                    });
+                    select.value = currentVal;
+                }
+
+                // Рендерим таблицу
+                wrap.innerHTML = renderTable(data.items);
+                pagination.style.display = '';
+
+            } catch (e) {
+                wrap.innerHTML = `<div class="sync-error">Ошибка: ${e.message}</div>`;
+            }
+        }
+
+        // Рендер таблицы
+        function renderTable(items) {
+            if (!items || items.length === 0) {
+                return '<div class="sync-empty">Нет данных</div>';
+            }
+
+            let html = '<table class="sync-table"><thead><tr>';
+
+            // Заголовки в зависимости от раздела
+            const headers = getHeaders();
+            headers.forEach(h => { html += `<th>${h}</th>`; });
+            html += '</tr></thead><tbody>';
+
+            items.forEach((item, idx) => {
+                html += '<tr>';
+                const cols = getColumns(item);
+                cols.forEach(c => {
+                    if (c.clickable) {
+                        html += `<td class="clickable" onclick="${c.action}">${c.value}</td>`;
+                    } else {
+                        html += `<td title="${escapeHtml(c.value || '')}">${c.value || '-'}</td>`;
+                    }
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function getHeaders() {
+            switch (currentSection) {
+                case 'nomenclature':
+                    return ['Код', 'Наименование', 'Артикул', 'Группа', 'Тип', 'НДС', 'Обновлено'];
+                case 'barcodes':
+                    return ['Штрихкод', 'Товар', 'Код товара'];
+                case 'sales':
+                    return ['Дата', 'Номер', 'Организация', 'Склад', 'Сумма', 'Касса', 'Действия'];
+                case 'receipts':
+                    return ['Дата', 'Номер', 'Тип операции', 'Организация', 'Склад', 'Сумма', 'Действия'];
+                case 'counterparties':
+                    return ['Код', 'Наименование', 'ИНН', 'Телефон', 'Email', 'Адрес'];
+                default:
+                    return ['Данные'];
+            }
+        }
+
+        function getColumns(item) {
+            switch (currentSection) {
+                case 'nomenclature':
+                    return [
+                        { value: item.code },
+                        { value: item.name },
+                        { value: item.article },
+                        { value: item.group_name },
+                        { value: item.type || item.nomenclature_type },
+                        { value: item.vat_rate },
+                        { value: item.updated_at ? item.updated_at.slice(0, 10) : '-' },
+                    ];
+                case 'barcodes':
+                    return [
+                        { value: item.barcode },
+                        { value: item.nomenclature_name },
+                        { value: item.nomenclature_code },
+                    ];
+                case 'sales':
+                    return [
+                        { value: item.date ? item.date.slice(0, 10) : '-' },
+                        { value: item.number },
+                        { value: item.organization_name },
+                        { value: item.warehouse_name },
+                        { value: item.total_sum ? parseFloat(item.total_sum).toLocaleString('ru-RU') + ' ₽' : '-' },
+                        { value: item.cash_register },
+                        { 
+                            value: '📋 Товары', 
+                            clickable: true, 
+                            action: `showSaleItems('${item.guid}')` 
+                        },
+                    ];
+                case 'receipts':
+                    return [
+                        { value: item.date ? item.date.slice(0, 10) : '-' },
+                        { value: item.number },
+                        { value: item.operation_type },
+                        { value: item.organization_name },
+                        { value: item.warehouse_name },
+                        { value: item.total_sum ? parseFloat(item.total_sum).toLocaleString('ru-RU') + ' ₽' : '-' },
+                        { 
+                            value: '📋 Товары', 
+                            clickable: true, 
+                            action: `showReceiptItems('${item.guid}')` 
+                        },
+                    ];
+                case 'counterparties':
+                    return [
+                        { value: item.code },
+                        { value: item.name },
+                        { value: item.inn },
+                        { value: item.phone },
+                        { value: item.email },
+                        { value: item.actual_address || item.legal_address },
+                    ];
+                default:
+                    return [{ value: JSON.stringify(item) }];
+            }
+        }
+
+        // Показать товары в продаже
+        async function showSaleItems(guid) {
+            try {
+                const res = await fetch(`/api/sync-1c/sale-items/${guid}`);
+                const data = await res.json();
+                
+                let html = '<table class="sync-table"><thead><tr>';
+                html += '<th>№</th><th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th>';
+                html += '</tr></thead><tbody>';
+                
+                (data.items || []).forEach(item => {
+                    html += `<tr>
+                        <td>${item.line_number || '-'}</td>
+                        <td>${item.nomenclature_name || '-'}</td>
+                        <td>${item.quantity || '-'}</td>
+                        <td>${item.price || '-'}</td>
+                        <td>${item.sum || '-'}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                
+                document.getElementById('modal-title').textContent = 'Товары в продаже';
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('detail-modal').classList.add('active');
+            } catch (e) {
+                alert('Ошибка загрузки: ' + e.message);
+            }
+        }
+
+        // Показать товары в приемке
+        async function showReceiptItems(guid) {
+            try {
+                const res = await fetch(`/api/sync-1c/receipt-items/${guid}`);
+                const data = await res.json();
+                
+                let html = '<table class="sync-table"><thead><tr>';
+                html += '<th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th>';
+                html += '</tr></thead><tbody>';
+                
+                (data.items || []).forEach(item => {
+                    html += `<tr>
+                        <td>${item.nomenclature_name || '-'}</td>
+                        <td>${item.quantity || '-'}</td>
+                        <td>${item.price || '-'}</td>
+                        <td>${item.sum || '-'}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                
+                document.getElementById('modal-title').textContent = 'Товары в приемке';
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('detail-modal').classList.add('active');
+            } catch (e) {
+                alert('Ошибка загрузки: ' + e.message);
+            }
+        }
+
+        // Пагинация
+        function changePage(action) {
+            switch (action) {
+                case 'first': currentPage = 1; break;
+                case 'prev': currentPage = Math.max(1, currentPage - 1); break;
+                case 'next': currentPage = Math.min(totalPages, currentPage + 1); break;
+                case 'last': currentPage = totalPages; break;
+            }
+            loadData();
+        }
+
+        // Поиск с debounce
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                loadData();
+            }, 400);
+        }
+
+        // Закрыть модалку
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+
+        // Закрытие по клику вне модалки
+        document.getElementById('detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Escape для закрытия
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Экранирование HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Инициализация
+        loadStats().then(() => {
+            switchSection('nomenclature');
+        });
+    </script>
+</body>
+</html>

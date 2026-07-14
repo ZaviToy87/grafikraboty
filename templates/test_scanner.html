@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Тест COM-сканера штрих-кодов</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .status-box {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .status-row:last-child {
+            border-bottom: none;
+        }
+        .status-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .status-value {
+            color: #333;
+        }
+        .status-value.success {
+            color: #28a745;
+        }
+        .status-value.error {
+            color: #dc3545;
+        }
+        .barcode-display {
+            background: #d1fae5;
+            border: 3px solid #10b981;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .barcode-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #10b981;
+            font-family: 'Courier New', monospace;
+        }
+        .barcode-time {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .log-box {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #00ff00;
+            padding-left: 10px;
+        }
+        .log-entry.error {
+            color: #ff6b6b;
+            border-left-color: #ff6b6b;
+        }
+        .log-entry.info {
+            color: #00ff00;
+            border-left-color: #00ff00;
+        }
+        .log-entry.success {
+            color: #ffd700;
+            border-left-color: #ffd700;
+        }
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .button.danger {
+            background: #dc3545;
+        }
+        .button.danger:hover {
+            background: #c82333;
+        }
+        .buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .instruction {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .instruction h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .instruction ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instruction li {
+            margin: 5px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 Тест COM-сканера штрих-кодов</h1>
+        <p class="subtitle">Проверка работы сканера в реальном времени</p>
+
+        <div class="instruction">
+            <h3>📋 Инструкция:</h3>
+            <ul>
+                <li>Убедитесь, что сервер запущен</li>
+                <li>Откройте эту страницу в браузере</li>
+                <li>Отсканируйте штрих-код сканером</li>
+                <li>Проверьте, что штрих-код появился в поле выше</li>
+                <li>Проверьте логи внизу страницы</li>
+            </ul>
+        </div>
+
+        <div class="status-box">
+            <div class="status-row">
+                <span class="status-label">Статус соединения:</span>
+                <span class="status-value" id="connection-status">🔄 Подключение...</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Последнее сканирование:</span>
+                <span class="status-value" id="last-scan">Нет данных</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Всего сканирований:</span>
+                <span class="status-value" id="scan-count">0</span>
+            </div>
+        </div>
+
+        <div class="barcode-display" id="barcode-display" style="display: none;">
+            <div style="font-size: 14px; color: #666;">ОТСКАНИРОВАННЫЙ ШТРИХ-КОД</div>
+            <div class="barcode-value" id="barcode-value">---</div>
+            <div class="barcode-time" id="barcode-time">--:--:--</div>
+        </div>
+
+        <div class="buttons">
+            <button class="button" onclick="checkStatus()">🔄 Проверить статус</button>
+            <button class="button danger" onclick="clearScanner()">🗑️ Очистить очередь</button>
+            <button class="button" onclick="toggleAutoRefresh()">⏯️ Старт/Стоп</button>
+        </div>
+
+        <div class="log-box" id="log-box">
+            <div class="log-entry info">📡 Система готова к работе...</div>
+        </div>
+    </div>
+
+    <script>
+        let scanCount = 0;
+        let lastBarcode = null;
+        let autoRefreshEnabled = true;
+        let refreshInterval = null;
+
+        function addLog(message, type = 'info') {
+            const logBox = document.getElementById('log-box');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString('ru-RU');
+            entry.textContent = `[${time}] ${message}`;
+            
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            
+            // Ограничиваем количество записей
+            const entries = logBox.querySelectorAll('.log-entry');
+            if (entries.length > 50) {
+                entries[0].remove();
+            }
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/com-scanner/status', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    addLog(`✅ Статус получен. Сканеров: ${data.scanners.length}`, 'success');
+                    
+                    const statusElement = document.getElementById('connection-status');
+                    statusElement.textContent = '✅ Подключено';
+                    statusElement.className = 'status-value success';
+                    
+                    // Показываем информацию о сканерах
+                    data.scanners.forEach((scanner, index) => {
+                        addLog(`  Сканер ${index + 1}: ${scanner.name} (${scanner.port})`, 'info');
+                    });
+                    
+                    // Проверяем последний штрих-код
+                    if (data.last_barcode && data.last_barcode.barcode) {
+                        updateBarcodeDisplay(data.last_barcode);
+                    }
+                }
+            } catch (error) {
+                addLog(`❌ Ошибка статуса: ${error.message}`, 'error');
+                
+                const statusElement = document.getElementById('connection-status');
+                statusElement.textContent = '❌ Ошибка';
+                statusElement.className = 'status-value error';
+            }
+        }
+
+        async function getLastBarcode() {
+            try {
+                const response = await fetch('/api/com-scanner/last', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.data.barcode) {
+                    const newBarcode = data.data.barcode;
+                    
+                    if (lastBarcode !== newBarcode) {
+                        lastBarcode = newBarcode;
+                        scanCount++;
+                        
+                        updateBarcodeDisplay(data.data);
+                        addLog(`📠 Штрих-код: ${newBarcode}`, 'success');
+                        
+                        // Очищаем очередь
+                        await fetch('/api/com-scanner/clear', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                    }
+                }
+            } catch (error) {
+                // Тихая ошибка
+            }
+        }
+
+        function updateBarcodeDisplay(barcodeData) {
+            const display = document.getElementById('barcode-display');
+            const value = document.getElementById('barcode-value');
+            const time = document.getElementById('barcode-time');
+            
+            display.style.display = 'block';
+            value.textContent = barcodeData.barcode;
+            
+            if (barcodeData.timestamp) {
+                const date = new Date(barcodeData.timestamp);
+                time.textContent = date.toLocaleTimeString('ru-RU');
+            } else {
+                time.textContent = '--:--:--';
+            }
+            
+            document.getElementById('last-scan').textContent = 'Только что';
+            document.getElementById('scan-count').textContent = scanCount;
+        }
+
+        async function clearScanner() {
+            try {
+                const response = await fetch('/api/com-scanner/clear', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    addLog('🗑️ Очередь очищена', 'info');
+                    lastBarcode = null;
+                    document.getElementById('barcode-display').style.display = 'none';
+                }
+            } catch (error) {
+                addLog(`❌ Ошибка очистки: ${error.message}`, 'error');
+            }
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                addLog('▶️ Автообновление включено', 'info');
+                startAutoRefresh();
+            } else {
+                addLog('⏸️ Автообновление выключено', 'info');
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            refreshInterval = setInterval(getLastBarcode, 300);
+            addLog('🔄 Запущен опрос сканера (300мс)', 'info');
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+                addLog('⏹️ Опрос сканера остановлен', 'info');
+            }
+        }
+
+        // Запуск при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            addLog('🚀 Запуск теста сканера...', 'info');
+            checkStatus();
+            startAutoRefresh();
+        });
+
+        // Остановка при закрытии страницы
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>

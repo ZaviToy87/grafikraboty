@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VK Чат - ГрафикРаботы</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260321">
+    <link rel="stylesheet" href="/static/css/chat-modern.css?v=20260326">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        .chat-page-wrapper {
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-page-wrapper">
+        <div class="chat-container">
+            <!-- Заголовок -->
+            <div class="chat-header">
+                <div class="topic-info">
+                    <div class="topic-icon">💬</div>
+                    <div>
+                        <h3>VK Чат</h3>
+                        <small id="chat-status" style="color: var(--text-secondary)">⚪ Подключение...</small>
+                    </div>
+                </div>
+                <button class="chat-button" onclick="location.href='/dashboard'" title="Назад">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Сообщения -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-loading">Загрузка сообщений...</div>
+            </div>
+
+            <!-- Кнопка скролла вниз -->
+            <button class="scroll-to-bottom" id="scroll-to-bottom" title="Вниз">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M19 12l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <!-- Поле ввода -->
+            <div class="chat-input-container">
+                <button class="chat-button" onclick="document.getElementById('file-input').click()" title="Прикрепить файл">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                </button>
+                <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)" multiple accept="image/*">
+                
+                <div class="chat-input-wrapper">
+                    <textarea class="chat-input" id="chat-input" placeholder="Написать сообщение..." rows="1" onkeydown="handleKeyPress(event)"></textarea>
+                </div>
+                
+                <button class="chat-button send" id="send-message-btn" onclick="sendMessage()" title="Отправить">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для фото -->
+    <div id="photo-modal" class="photo-modal">
+        <div class="photo-modal-header">
+            <h3>Просмотр фото</h3>
+            <button class="photo-modal-close" onclick="chat.closePhotoModal()">×</button>
+        </div>
+        <div class="photo-modal-content">
+            <button class="photo-modal-nav prev" onclick="chat.prevPhoto()">❮</button>
+            <img src="" alt="Фото" id="modal-photo-img">
+            <button class="photo-modal-nav next" onclick="chat.nextPhoto()">❯</button>
+        </div>
+        <div class="photo-modal-counter" id="photo-counter"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/chat-modern.js?v=20260326"></script>
+    <script>
+        // Глобальные функции для совместимости
+        let currentAttachment = null;
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.ctrlKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                currentAttachment = files[0];
+                // TODO: Показать превью
+            }
+        }
+        
+        function sendMessage() {
+            if (chat) {
+                chat.sendMessage();
+            }
+        }
+        
+        // Подключение Socket.IO
+        const socket = io();
+        
+        socket.on('connect', () => {
+            document.getElementById('chat-status').textContent = '🟢 Подключено';
+        });
+        
+        socket.on('disconnect', () => {
+            document.getElementById('chat-status').textContent = '🔴 Отключено';
+        });
+        
+        socket.on('chat_message', (data) => {
+            if (chat && chat.currentTopic === data.topic_id) {
+                chat.loadMessages();
+            }
+        });
+        
+        // Обновление статуса VK
+        setInterval(() => {
+            fetch('/api/vk-chat/vk-status')
+                .then(r => r.json())
+                .then(data => {
+                    const status = document.getElementById('chat-status');
+                    if (data.status === 'ok') {
+                        status.textContent = '🟢 VK подключен';
+                    } else {
+                        status.textContent = '⚪ VK не активен';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('chat-status').textContent = '🔴 Ошибка';
+                });
+        }, 30000);
+    </script>
+</body>
+</html>

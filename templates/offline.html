@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6366f1">
+  <title>Нет соединения | График работы</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      text-align: center;
+      color: white;
+      max-width: 500px;
+    }
+    
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    h1 {
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+    
+    p {
+      font-size: 18px;
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+    
+    .status {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .status-label {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    
+    .status-value {
+      font-weight: bold;
+    }
+    
+    .btn {
+      display: inline-block;
+      background: white;
+      color: #667eea;
+      padding: 15px 30px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+      transition: transform 0.2s;
+      cursor: pointer;
+      border: none;
+      margin: 10px;
+    }
+    
+    .btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+    
+    .cache-status {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    
+    .available-offline {
+      background: rgba(76, 175, 80, 0.3);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+    
+    .available-offline strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .offline-list {
+      list-style: none;
+      text-align: left;
+    }
+    
+    .offline-list li {
+      padding: 5px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .offline-list li:before {
+      content: '✓';
+      margin-right: 10px;
+      color: #4CAF50;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    
+    <h1>Нет соединения</h1>
+    <p>Кажется, у вас пропало подключение к интернету. Не волнуйтесь, некоторые функции доступны офлайн!</p>
+    
+    <div class="status">
+      <div class="status-item">
+        <span class="status-label">Статус соединения</span>
+        <span class="status-value" id="connection-status">❌ Офлайн</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Последняя попытка</span>
+        <span class="status-value" id="last-check">--:--:--</span>
+      </div>
+    </div>
+    
+    <div class="available-offline">
+      <strong>✅ Доступно офлайн:</strong>
+      <ul class="offline-list">
+        <li>Просмотр сохранённого графика</li>
+        <li>Просмотр задач</li>
+        <li>Сохранённые сообщения чата</li>
+        <li>Штрихкоды и товары</li>
+      </ul>
+    </div>
+    
+    <div style="margin-top: 30px;">
+      <button class="btn" onclick="location.reload()">🔄 Попробовать снова</button>
+      <button class="btn btn-secondary" onclick="goHome()">🏠 На главную</button>
+    </div>
+    
+    <div class="cache-status" id="cache-info">
+      Загрузка информации о кэше...
+    </div>
+  </div>
+  
+  <script>
+    // Проверка соединения
+    function updateConnectionStatus() {
+      const statusEl = document.getElementById('connection-status');
+      const lastCheckEl = document.getElementById('last-check');
+      const now = new Date();
+      
+      lastCheckEl.textContent = now.toLocaleTimeString('ru-RU');
+      
+      if (navigator.onLine) {
+        statusEl.textContent = '✅ Онлайн';
+        statusEl.style.color = '#4CAF50';
+        
+        // Автоматическая перезагрузка через 2 секунды
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      } else {
+        statusEl.textContent = '❌ Офлайн';
+        statusEl.style.color = '#f44336';
+      }
+    }
+    
+    // Слушатели событий соединения
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    
+    // Переход на главную
+    function goHome() {
+      window.location.href = '/';
+    }
+    
+    // Информация о кэше
+    async function getCacheInfo() {
+      try {
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          let totalItems = 0;
+          
+          for (const name of cacheNames) {
+            const cache = await caches.open(name);
+            const requests = await cache.keys();
+            totalItems += requests.length;
+          }
+          
+          document.getElementById('cache-info').innerHTML = `
+            <strong>💾 Кэш:</strong> ${cacheNames.length} хранилищ, ${totalItems} ресурсов<br>
+            <small>Последняя версия: ${localStorage.getItem('sw_version') || 'v2'}</small>
+          `;
+        }
+      } catch (err) {
+        console.error('Cache info error:', err);
+      }
+    }
+    
+    // Инициализация
+    updateConnectionStatus();
+    getCacheInfo();
+    
+    // Периодическая проверка
+    setInterval(updateConnectionStatus, 5000);
+  </script>
+</body>
+</html>

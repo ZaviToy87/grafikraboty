@@ -1,0 +1,5382 @@
+/* =============================================
+   GrafikRaboty — Modern Design System (2026)
+   Glassmorphism • Container Queries • Animations
+   ============================================= */
+
+@layer reset, base, components, utilities, theme;
+
+@layer reset {
+    *, *::before, *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+}
+
+@layer base {
+    :root {
+        /* Brand colors */
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --primary-light: rgba(99, 102, 241, 0.12);
+        --primary-glow: rgba(99, 102, 241, 0.25);
+        --secondary: #64748b;
+        --success: #10b981;
+        --success-light: rgba(16, 185, 129, 0.12);
+        --danger: #ef4444;
+        --danger-light: rgba(239, 68, 68, 0.12);
+        --warning: #f59e0b;
+        --warning-light: rgba(245, 158, 11, 0.12);
+
+        /* Surfaces */
+        --bg: #f0f2f5;
+        --bg-secondary: #ffffff;
+        --bg-tertiary: #f8f9fb;
+        --bg-glass: rgba(255, 255, 255, 0.7);
+        --bg-glass-border: rgba(255, 255, 255, 0.2);
+
+        /* Text */
+        --text-primary: #1a1d29;
+        --text-secondary: #6b7280;
+        --text-tertiary: #9ca3af;
+
+        /* Borders */
+        --border: #e5e7eb;
+        --border-light: rgba(0, 0, 0, 0.06);
+
+        /* Shadows */
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --shadow-glow: 0 0 20px var(--primary-glow);
+
+        /* Glass */
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+        /* Radius */
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        --radius-full: 9999px;
+
+        /* Transitions */
+        --transition-fast: 0.15s ease;
+        --transition-base: 0.25s ease;
+        --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* Font */
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+    }
+
+    /* Тёмная тема — HSL-based */
+    html.theme-dark {
+        --primary: #818cf8;
+        --primary-hover: #6366f1;
+        --primary-light: rgba(129, 140, 248, 0.15);
+        --primary-glow: rgba(129, 140, 248, 0.2);
+        --success: #34d399;
+        --danger: #f87171;
+        --warning: #fbbf24;
+
+        --bg: #0f1117;
+        --bg-secondary: #1a1d29;
+        --bg-tertiary: #222639;
+        --bg-glass: rgba(26, 29, 41, 0.8);
+        --bg-glass-border: rgba(255, 255, 255, 0.08);
+
+        --text-primary: #e8eaed;
+        --text-secondary: #9aa0a6;
+        --text-tertiary: #6b7280;
+
+        --border: #2d3140;
+        --border-light: rgba(255, 255, 255, 0.06);
+
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+        --glass-bg: rgba(26, 29, 41, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Авто-тема по системным настройкам */
+    @media (prefers-color-scheme: dark) {
+        html:not(.theme-light):not(.theme-dark) {
+            --primary: #818cf8;
+            --primary-hover: #6366f1;
+            --primary-light: rgba(129, 140, 248, 0.15);
+            --bg: #0f1117;
+            --bg-secondary: #1a1d29;
+            --bg-tertiary: #222639;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --border: #2d3140;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --glass-bg: rgba(26, 29, 41, 0.7);
+        }
+    }
+
+    html {
+        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        background: var(--bg);
+        color: var(--text-primary);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+    /* Selection */
+    ::selection { background: var(--primary-light); color: var(--primary); }
+
+    /* Focus visible */
+    :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+}
+
+/* =============================================
+   COMPONENTS LAYER
+   ============================================= */
+@layer components {
+    /* Glass card */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--glass-shadow);
+    }
+
+    /* Skeleton loading */
+    .skeleton {
+        background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border) 50%, var(--bg-tertiary) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s ease-in-out infinite;
+        border-radius: var(--radius-sm);
+    }
+    @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Notification badge */
+    .notification-badge {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .notification-badge::after {
+        content: attr(data-count);
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        background: var(--danger);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Scroll animations */
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .fade-in-up.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Container query for responsive cards */
+    @container (max-width: 400px) {
+        .responsive-card {
+            flex-direction: column;
+        }
+    }
+}
+
+.controls-calendar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.go-to-date-wrap { display: inline-flex; gap: 4px; align-items: center; }
+.go-to-day { width: 50px; }
+.calendar-week-progress { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+
+/* Страница входа */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+}
+
+/* Логотип в углу стартовой страницы */
+.login-page-logo {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: block;
+    width: 100px;
+    height: auto;
+    opacity: 0.95;
+    transition: opacity 0.2s;
+}
+.login-page-logo:hover {
+    opacity: 1;
+}
+.login-page-logo img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.login-card h1 {
+    text-align: center;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+/* Подпись и блок выбора пользователя (3 встроенных — логин не вводится) */
+.login-choose-caption {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+.login-user-choice {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.login-user-btn {
+    width: 100%;
+    padding: 14px 20px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+.login-user-btn:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.login-admin-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+/* Панель пароля после выбора */
+.login-password-panel .form-group,
+.login-verify-panel .form-group {
+    margin-bottom: 20px;
+}
+.login-password-panel label,
+.login-verify-panel label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+}
+.login-password-panel input,
+.login-verify-panel input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+.login-password-panel input:focus,
+.login-verify-panel input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Окошко верификации для админа (код из Telegram) */
+.login-verify-title {
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+.login-verify-panel {
+    margin-top: 20px;
+    padding: 20px;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.login-form .form-group {
+    margin-bottom: 20px;
+}
+
+.login-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Навигация */
+.navbar {
+    background: #1a1d29;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px var(--shadow);
+}
+
+.nav-brand {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.nav-toggle {
+    display: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.nav-datetime-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.nav-date {
+    font-size: 13px;
+    color: rgba(255,255,255,0.95);
+    text-transform: capitalize;
+}
+.nav-clock {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+}
+.nav-clock-svg {
+    display: block;
+}
+.nav-clock-face {
+    fill: rgba(255,255,255,0.12);
+    stroke: rgba(255,255,255,0.5);
+    stroke-width: 1.5;
+}
+.nav-clock-tick {
+    stroke: rgba(255,255,255,0.6);
+    stroke-width: 1.2;
+}
+.nav-clock-hand {
+    stroke-linecap: round;
+    transition: stroke 0.2s;
+}
+.nav-clock-hour {
+    stroke: rgba(255,255,255,0.95);
+    stroke-width: 2.5;
+}
+.nav-clock-minute {
+    stroke: rgba(255,255,255,0.9);
+    stroke-width: 1.8;
+}
+.nav-clock-second {
+    stroke: #f59e0b;
+    stroke-width: 1;
+}
+.nav-time {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+.nav-datetime {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.badge {
+    background: var(--primary);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+/* Контейнер */
+.container {
+    display: flex;
+    min-height: calc(100vh - 60px);
+}
+
+/* Боковая панель */
+.sidebar {
+    width: 260px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.sidebar-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sidebar-close {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.sidebar-close:hover {
+    background: var(--bg);
+    color: var(--text-primary);
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 12px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.nav-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.nav-label {
+    font-size: 15px;
+}
+
+.nav-item:hover {
+    background: var(--bg);
+    border-left-color: var(--primary);
+}
+
+.nav-item.active {
+    background: var(--bg);
+    border-left-color: var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.nav-item-logout {
+    display: flex;
+    justify-content: center;
+    background: var(--danger);
+    color: white !important;
+    border-radius: 10px;
+    border-left-color: transparent !important;
+}
+
+.nav-item-logout:hover {
+    background: #dc2626;
+    filter: brightness(1.05);
+}
+
+/* Основной контент */
+.main-content {
+    flex: 1;
+    min-width: 0;
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    color: var(--text-primary);
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Календарь: слева сетка, справа панель дня — оба столбца всегда в зоне видимости или по горизонтальному скроллу */
+.calendar-layout {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    min-height: 400px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.calendar-left {
+    flex: 1;
+    min-width: 280px;
+}
+.day-dashboard {
+    width: 320px;
+    min-width: 280px;
+    max-width: 380px;
+    flex-shrink: 0;
+    min-height: 320px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+    border: 2px solid var(--primary);
+    overflow-y: auto;
+    padding: 16px;
+}
+.day-dashboard-placeholder {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 16px 0;
+    display: block;
+}
+.day-dashboard-placeholder::before {
+    content: "📅 ";
+    font-size: 1.2em;
+}
+.day-dashboard-content .day-dashboard-title {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    color: var(--text-primary);
+}
+.day-dashboard-actions-btn {
+    width: 100%;
+    margin-bottom: 16px;
+}
+.day-dashboard-section {
+    margin-bottom: 16px;
+}
+.day-dashboard-section h4 {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+.day-dashboard-section > div {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+.day-dashboard-task-row,
+.day-dashboard-colleague-row,
+.day-dashboard-file-row {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+.day-dashboard-task-row:last-child,
+.day-dashboard-colleague-row:last-child,
+.day-dashboard-file-row:last-child {
+    border-bottom: none;
+}
+.day-dashboard-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+    pointer-events: auto;
+}
+
+.calendar-day {
+    cursor: pointer;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 100px;
+    transition: all 0.3s;
+    position: relative;
+    pointer-events: auto;
+}
+
+.calendar-day:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.calendar-day.today {
+    border-color: var(--primary);
+    background: #eef2ff;
+}
+
+.calendar-day.weekend {
+    background: #fef3c7;
+}
+
+.day-number {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.day-tasks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.task-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Кнопки */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary {
+    background: var(--secondary) !important;
+    color: white !important;
+}
+
+.btn-success {
+    background: var(--success) !important;
+    color: white !important;
+}
+
+.btn-success:hover {
+    background: #059669 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-danger {
+    background: var(--danger) !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Формы */
+.form-control {
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Блок напоминаний — всегда сверху основного контента */
+.reminders-banner {
+    flex-shrink: 0;
+    order: -1;
+    background: #E3F2FD;
+    border: 1px solid #2196F3;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1565C0;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+}
+.reminders-banner strong {
+    color: #0D47A1;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.work-journal-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+.work-journal-list { min-height: 120px; }
+.work-journal-detail { margin-top: 12px; }
+.wj-entries-block { max-height: none; overflow: visible; }
+.wj-discrepancy.has-error { color: #c0392b; font-weight: bold; }
+.wj-totals-block.has-error .wj-discrepancy.has-error { color: #c0392b; }
+.controls-work-journal { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.text-muted { color: var(--text-secondary); font-size: 12px; }
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1000;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+/* Меню дня (как в десктопе) */
+.day-menu-content {
+    max-width: 420px;
+}
+
+.day-menu-header {
+    background: var(--primary);
+    color: white;
+    margin: -30px -30px 20px -30px;
+    padding: 20px 30px 24px;
+    border-radius: 16px 16px 0 0;
+}
+
+.day-menu-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 22px;
+    color: white;
+}
+
+.day-menu-subtitle {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.day-menu-summary {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.day-menu-summary p {
+    margin: 0 0 8px 0;
+}
+
+.day-menu-summary p:last-child {
+    margin-bottom: 0;
+}
+
+.day-menu-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.day-menu-section {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 16px 0 8px 0;
+    font-size: 14px;
+}
+
+.day-menu-quick {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.day-menu-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s, transform 0.05s;
+}
+
+.day-menu-btn:hover {
+    transform: translateY(-1px);
+}
+
+.day-menu-btn-info {
+    background: var(--primary);
+    color: white;
+}
+
+.day-menu-btn-info:hover {
+    background: var(--primary-dark, #4f46e5);
+}
+
+.day-menu-btn-accent {
+    background: var(--primary);
+    color: white;
+}
+
+.day-menu-btn-green {
+    background: #4CAF50;
+    color: white;
+}
+
+.day-menu-btn-blue {
+    background: #2196F3;
+    color: white;
+}
+
+.day-menu-btn-orange {
+    background: #FF9800;
+    color: white;
+}
+
+.day-menu-btn-purple {
+    background: #9C27B0;
+    color: white;
+}
+
+.day-menu-close {
+    margin-top: 12px;
+}
+
+/* Чат — корпоративный мессенджер с темами */
+.chat-layout {
+    display: flex;
+    gap: 0;
+    height: calc(100vh - 180px);
+    min-height: 320px;
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow);
+}
+
+.chat-topics-sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+}
+
+.chat-topics-list {
+    padding: 12px 8px;
+}
+
+.chat-topic-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    margin-bottom: 4px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-topic-item:hover {
+    background: var(--border);
+}
+
+.chat-topic-item.active {
+    background: var(--primary);
+    color: white;
+}
+
+.chat-topic-item-title {
+    font-weight: 500;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-topic-item-actions .btn-icon {
+    margin-left: 6px;
+    opacity: 0.8;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.chat-topic-title {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 16px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+}
+
+.chat-bubble-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.btn-icon:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.08);
+}
+
+.chat-bubble-wrap.own .btn-icon:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    background: var(--bg);
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-bubble-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    max-width: 85%;
+}
+
+.chat-bubble-wrap.own {
+    flex-direction: row-reverse;
+    align-self: flex-end;
+}
+
+.chat-avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.chat-bubble-wrap.own .chat-avatar {
+    background: var(--secondary);
+}
+
+.chat-bubble {
+    padding: 10px 14px;
+    border-radius: 16px 16px 16px 4px;
+    background: white;
+    box-shadow: 0 1px 2px var(--shadow);
+    max-width: 100%;
+}
+
+.chat-bubble-wrap.own .chat-bubble {
+    border-radius: 16px 16px 4px 16px;
+    background: var(--primary);
+    color: white;
+}
+
+.chat-bubble-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.chat-bubble-author {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.chat-bubble-wrap.own .chat-bubble-author {
+    color: rgba(255,255,255,0.95);
+}
+
+.chat-bubble-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.chat-bubble-wrap.own .chat-bubble-time {
+    color: rgba(255,255,255,0.8);
+}
+
+.chat-bubble-text {
+    font-size: 14px;
+    line-height: 1.45;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.chat-bubble-text br { display: block; content: ''; margin-top: 0.25em; }
+
+.chat-bubble-wrap.own .chat-bubble-text {
+    color: white;
+}
+
+.chat-attachment {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.chat-attachment-preview {
+    display: block;
+    max-width: 220px;
+    max-height: 220px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-secondary, #f3f4f6);
+}
+.chat-attachment-preview img {
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+    object-fit: cover;
+    display: block;
+}
+.chat-attachment .btn { align-self: flex-start; }
+
+/* Документы */
+.chat-attachment.chat-document {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    max-width: 320px;
+}
+.chat-file-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+.chat-file-info {
+    flex: 1;
+    min-width: 0;
+}
+.chat-file-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+}
+.chat-file-size {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+.chat-bubble:not(.own) .chat-file-size {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+/* Видео */
+.chat-attachment.chat-video {
+    max-width: 400px;
+}
+.chat-video-player {
+    width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    background: #000;
+}
+
+/* Аудио */
+.chat-attachment.chat-audio {
+    max-width: 300px;
+}
+.chat-audio-player {
+    width: 100%;
+}
+
+.chat-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+    background: white;
+    border-top: 1px solid var(--border);
+}
+
+.chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    min-height: 44px;
+    max-height: 120px;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: var(--primary);
+}
+
+.chat-send-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 24px;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-send-btn:hover {
+    background: var(--primary-hover);
+}
+
+.chat-attach-btn {
+    padding: 10px 14px;
+    min-width: 44px;
+    min-height: 44px;
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    background: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+.chat-attach-btn:hover {
+    border-color: var(--primary);
+    background: var(--bg-muted);
+}
+.chat-attach-name {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 0 4px;
+}
+
+/* Алерты */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* Списки */
+.tasks-list, .files-list {
+    display: grid;
+    gap: 12px;
+}
+
+.task-item, .file-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow);
+}
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.file-item-preview {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-secondary, #f3f4f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.file-item-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.file-item-preview.no-preview .file-item-preview-icon {
+    font-size: 28px;
+    opacity: 0.6;
+}
+.file-item-info { flex: 1; min-width: 0; }
+.file-item-name { font-weight: 600; margin-bottom: 4px; font-size: 15px; }
+.file-item-meta { font-size: 12px; color: var(--text-secondary); }
+.file-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+.file-item-actions .btn-edit-file { background: var(--primary); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; min-width: 36px; }
+.file-item-actions .btn-edit-file:hover { filter: brightness(1.1); }
+.file-item-actions .btn-delete-file { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; min-width: 36px; }
+.file-item-actions .btn-delete-file:hover { filter: brightness(1.1); }
+.files-empty { text-align: center; color: var(--text-secondary); padding: 40px 20px; }
+.file-form-date-row { display: flex; gap: 10px; align-items: center; }
+
+.tasks-hint {
+    margin: 0 0 16px 0;
+    padding: 12px 16px;
+    background: var(--bg-secondary, #f3f4f6);
+    border-radius: 8px;
+    color: var(--text-secondary, #4b5563);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.task-color {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+}
+
+.task-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary, #111);
+}
+
+.task-item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.task-item-row:last-child {
+    border-bottom: none;
+}
+
+.task-item-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary, #111);
+}
+
+.btn-edit-task, .btn-delete-task {
+    padding: 6px 10px;
+    font-size: 14px;
+    min-width: 36px;
+}
+.btn-edit-task { background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; }
+.btn-edit-task:hover { filter: brightness(1.1); }
+.btn-delete-task { background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; }
+.btn-delete-task:hover { filter: brightness(1.1); }
+
+.tasks-empty {
+    text-align: center;
+    color: var(--text-secondary, #6b7280);
+    padding: 32px 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.task-form-modal-content { max-width: 420px; }
+.colleague-task-modal-content { max-width: 480px; }
+.task-form-body { display: flex; flex-direction: column; gap: 16px; margin: 20px 0; }
+.task-form-label { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.task-form-label .required { color: var(--danger); }
+.colleague-task-file-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.colleague-task-file-name { font-size: 13px; color: var(--text-secondary); }
+.modal-section-title { font-weight: 600; margin-bottom: 10px; font-size: 14px; color: var(--text-primary); }
+.colleague-task-item { transition: background 0.2s; }
+.colleague-task-item:hover { background: #eef1f5 !important; }
+.colleague-task-file-link { font-size: 12px; color: var(--primary); text-decoration: none; }
+.colleague-task-file-link:hover { text-decoration: underline; }
+.task-form-color-row { display: flex; align-items: center; gap: 12px; }
+.task-form-color-input { width: 48px; height: 40px; padding: 2px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; }
+.task-form-color-hex { flex: 1; max-width: 120px; }
+
+/* Статистика */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--primary);
+    margin: 10px 0;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Контекстное меню */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow);
+    padding: 8px;
+    z-index: 10000;
+    min-width: 200px;
+}
+
+.context-menu button {
+    width: 100%;
+    margin: 4px 0;
+    text-align: left;
+    padding: 8px 12px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.context-menu button:hover {
+    background: var(--primary-hover);
+    transform: translateX(2px);
+}
+
+.tasks-page-desc {
+    margin: -8px 0 16px 0;
+    padding: 12px 16px;
+    background: var(--bg-secondary, #f3f4f6);
+    border-radius: 8px;
+    color: var(--text-secondary, #4b5563);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+/* Админ-панель: базовая структура */
+.admin-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.admin-section {
+    background: var(--bg-secondary, #f9fafb);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px;
+}
+.admin-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+}
+
+/* ---------- Мобильная адаптация ---------- */
+@media (max-width: 768px) {
+    .admin-panel {
+        gap: 16px;
+    }
+    .admin-section {
+        padding: 14px 12px;
+        border-radius: 10px;
+    }
+    .admin-section h3 {
+        font-size: 1rem;
+    }
+    .admin-section .form-control,
+    .admin-section .btn {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .admin-section .btn-sm {
+        min-height: 40px;
+        padding: 10px 14px;
+    }
+    #salary-month, #salary-year {
+        min-width: 100px;
+    }
+    .salary-table {
+        font-size: 12px;
+    }
+    .salary-table th, .salary-table td {
+        padding: 6px 8px;
+    }
+    .salary-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -12px;
+        padding: 0 12px;
+    }
+    .audit-log-container {
+        max-height: 240px;
+        font-size: 12px;
+    }
+    .audit-log-container th, .audit-log-container td {
+        padding: 6px 8px;
+    }
+    .telegram-seen-list {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .telegram-seen-list table {
+        font-size: 12px;
+    }
+    .telegram-seen-list th, .telegram-seen-list td {
+        padding: 6px 8px;
+    }
+    .adjustment-item {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .adjustment-item .adj-reason {
+        width: 100%;
+    }
+    .wj-detail-actions {
+        flex-direction: column;
+    }
+    .wj-detail-actions .btn {
+        width: 100%;
+    }
+    .nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        margin: 0 8px 0 -4px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+        border-radius: 8px;
+    }
+    .nav-toggle:hover {
+        background: rgba(255,255,255,0.15);
+    }
+    .nav-brand {
+        font-size: 16px;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .nav-user-name {
+        display: none;
+    }
+    .nav-user .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    .navbar {
+        padding: 10px 12px;
+    }
+    .container {
+        flex-direction: column;
+    }
+    .sidebar-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        max-width: 88vw;
+        height: 100vh;
+        z-index: 900;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        box-shadow: none;
+        padding-top: 0;
+    }
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+    }
+    .sidebar::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+        z-index: -1;
+    }
+    .sidebar.open::before {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .nav-item {
+        padding: 14px 20px;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        font-size: 15px;
+    }
+    .main-content {
+        padding: 12px;
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+    }
+    .page {
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    #page-admin .page-header {
+        flex-wrap: wrap;
+    }
+    #page-admin .page-header .btn,
+    #page-admin .page-header a.btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 16px;
+        gap: 12px;
+    }
+    .page-header h2 {
+        font-size: 20px;
+    }
+    .controls {
+        flex-direction: column;
+    }
+    .controls .form-control,
+    .controls .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    .calendar-layout {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+    .calendar-left {
+        min-width: 0;
+        width: 100%;
+    }
+    .calendar-grid {
+        padding: 8px;
+        gap: 4px;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+    .calendar-day {
+        min-height: 72px;
+        padding: 6px;
+    }
+    .calendar-day-header {
+        padding: 4px 2px !important;
+        font-size: 10px !important;
+    }
+    .day-number {
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+    .day-schedule-name {
+        font-size: 8px !important;
+        line-height: 1.2;
+    }
+    .day-schedule-badges .task-badge {
+        width: 5px;
+        height: 5px;
+    }
+    .day-dashboard {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin-top: 12px;
+    }
+    .day-dashboard-content .day-dashboard-title {
+        font-size: 16px;
+    }
+    .day-dashboard-section h4 {
+        font-size: 12px;
+    }
+    .day-dashboard-task-row,
+    .day-dashboard-colleague-row,
+    .day-dashboard-file-row {
+        font-size: 12px;
+        padding: 5px 0;
+    }
+    .day-dashboard-edit-btn {
+        width: 100%;
+    }
+    .day-dashboard-copy-btn {
+        width: 100%;
+    }
+    .day-dashboard-actions-btn {
+        width: 100%;
+    }
+    .go-to-date-wrap {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+    }
+    .go-to-date-wrap .go-to-day {
+        flex: 1;
+        min-width: 0;
+    }
+    .go-to-date-wrap .btn {
+        flex-shrink: 0;
+    }
+    .hotkeys-hint {
+        font-size: 10px !important;
+    }
+    .calendar-stats,
+    .calendar-legend,
+    .calendar-week-progress {
+        font-size: 12px;
+    }
+    .file-stats {
+        flex-direction: column;
+        gap: 8px !important;
+        font-size: 13px;
+    }
+    .file-pagination {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch !important;
+    }
+    .file-pagination .btn {
+        width: 100%;
+    }
+    .barcode-pagination {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch !important;
+    }
+    .barcode-pagination .btn {
+        width: 100%;
+    }
+    .barcode-stats {
+        font-size: 13px;
+        padding: 10px !important;
+    }
+    .revision-stats {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+    .promotion-panel > div {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .promotion-panel > div > div:last-child {
+        flex-direction: column;
+    }
+    .promotion-panel .btn {
+        width: 100%;
+    }
+    .work-journal-detail {
+        font-size: 13px;
+    }
+    .wj-detail-actions {
+        flex-direction: column;
+    }
+    .wj-detail-actions .btn {
+        width: 100%;
+    }
+    .work-journal-list {
+        font-size: 13px;
+    }
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -12px;
+        padding: 0 12px;
+    }
+    .table-responsive table {
+        font-size: 12px;
+        min-width: 600px;
+    }
+    .table-responsive th,
+    .table-responsive td {
+        padding: 6px 8px;
+        white-space: nowrap;
+    }
+    .table-responsive th:first-child,
+    .table-responsive td:first-child {
+        position: sticky;
+        left: 0;
+        background: var(--bg-secondary);
+        z-index: 1;
+    }
+    .table-responsive thead th:first-child {
+        z-index: 2;
+    }
+    .controls-revision {
+        flex-direction: column;
+    }
+    .controls-revision .form-control,
+    .controls-revision .btn {
+        width: 100%;
+    }
+    #revision-search {
+        max-width: none !important;
+    }
+    #revision-sort {
+        max-width: none !important;
+    }
+    .controls-files {
+        flex-direction: column;
+    }
+    .controls-files .form-control,
+    .controls-files .btn {
+        width: 100%;
+    }
+    #file-search {
+        width: 100% !important;
+    }
+    .controls-work-journal {
+        flex-direction: column;
+    }
+    .controls-work-journal .form-control,
+    .controls-work-journal .btn {
+        width: 100%;
+    }
+    .controls-calendar {
+        flex-direction: column;
+    }
+    .controls-calendar .form-control,
+    .controls-calendar .btn {
+        width: 100%;
+    }
+    .controls-calendar select {
+        width: 100%;
+    }
+    .admin-section .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px;
+    }
+    .admin-section .stats-card {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .admin-section .stats-card .stat-value {
+        font-size: 18px;
+    }
+    .admin-section .stats-card .stat-label {
+        font-size: 11px;
+    }
+    .admin-panel .admin-section-tunnel {
+        padding: 12px;
+    }
+    .admin-panel .admin-section-tunnel .btn {
+        width: 100%;
+    }
+    #users-list .user-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    #users-list .user-item .user-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    #users-list .user-item .user-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .vk-seen-list {
+        font-size: 12px;
+        overflow-x: auto;
+    }
+    .vk-seen-list table {
+        min-width: 400px;
+    }
+    .vk-seen-list th,
+    .vk-seen-list td {
+        padding: 6px 8px;
+    }
+    .instruction-body {
+        font-size: 13px;
+    }
+    .instruction-body section h3 {
+        font-size: 1rem;
+    }
+    .instruction-body ol,
+    .instruction-body ul {
+        padding-left: 16px;
+    }
+    .instruction-body li {
+        margin-bottom: 4px;
+    }
+    .reminders-banner {
+        font-size: 13px;
+        padding: 10px 12px !important;
+    }
+    .reminders-banner .reminder-item {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .reminders-banner .reminder-item .btn {
+        width: 100%;
+    }
+    .tour-tooltip {
+        max-width: calc(100vw - 32px) !important;
+        padding: 14px !important;
+    }
+    .tour-tooltip-title {
+        font-size: 15px;
+    }
+    .tour-tooltip-text {
+        font-size: 13px;
+    }
+    .tour-tooltip-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .tour-tooltip-actions .btn {
+        width: 100%;
+    }
+    .day-menu-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    .day-menu-body {
+        padding: 12px;
+    }
+    .day-menu-quick {
+        flex-direction: column;
+    }
+    .day-menu-quick .day-menu-btn {
+        width: 100%;
+    }
+    .day-menu-summary {
+        font-size: 13px;
+    }
+    .day-menu-header h3 {
+        font-size: 18px;
+    }
+    .day-menu-subtitle {
+        font-size: 13px;
+    }
+    .chat-bubble-wrap {
+        max-width: 95%;
+    }
+    .chat-message-text {
+        font-size: 14px;
+    }
+    .chat-message-time {
+        font-size: 10px;
+    }
+    .chat-input-row {
+        gap: 6px;
+    }
+    .chat-input {
+        font-size: 15px;
+        padding: 10px 12px;
+    }
+    .chat-attach-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }
+    .chat-send-btn {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+    .chat-topic-title {
+        font-size: 16px;
+        padding: 10px 12px;
+    }
+    .chat-topics-list {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .chat-topic-item {
+        padding: 8px 12px;
+        font-size: 13px;
+        min-width: 80px;
+    }
+    .page-header-chat {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+    }
+    .page-header-chat h2 {
+        font-size: 18px;
+    }
+    .page-header-chat .btn {
+        width: auto;
+        min-height: 40px;
+        font-size: 13px;
+        padding: 8px 14px;
+    }
+    .tasks-list {
+        font-size: 13px;
+    }
+    .task-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .task-item .task-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .task-item .task-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .file-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .file-item .file-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .file-item .file-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .file-item .file-info {
+        font-size: 12px;
+    }
+    .file-item .file-name {
+        font-size: 14px;
+    }
+    .work-journal-list .wj-day-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .work-journal-list .wj-day-item .wj-day-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .work-journal-list .wj-day-item .wj-day-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .work-journal-list .wj-day-item .wj-day-info {
+        font-size: 13px;
+    }
+    .work-journal-list .wj-day-item .wj-day-date {
+        font-size: 15px;
+    }
+    .salary-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -12px;
+        padding: 0 12px;
+    }
+    .salary-table {
+        font-size: 11px;
+        min-width: 500px;
+    }
+    .salary-table th,
+    .salary-table td {
+        padding: 4px 6px;
+    }
+    #employee-stats-table {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 12px;
+    }
+    #employee-stats-table table {
+        min-width: 500px;
+    }
+    #employee-stats-table th,
+    #employee-stats-table td {
+        padding: 4px 6px;
+    }
+    .adjustment-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .adjustment-item .adj-reason {
+        width: 100%;
+        font-size: 13px;
+    }
+    .adjustment-item .adj-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .adjustment-item .adj-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .audit-log-container {
+        font-size: 11px;
+        max-height: 200px;
+        overflow-x: auto;
+    }
+    .audit-log-container table {
+        min-width: 400px;
+    }
+    .audit-log-container th,
+    .audit-log-container td {
+        padding: 4px 6px;
+    }
+    .smart-control-banner {
+        font-size: 13px;
+        padding: 12px !important;
+    }
+    .smart-control-banner .smart-control-content {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .smart-control-banner .smart-control-content .btn {
+        width: 100%;
+    }
+    .revision-stats .stat-card {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .revision-stats .stat-card .stat-value {
+        font-size: 18px;
+    }
+    .revision-stats .stat-card .stat-label {
+        font-size: 11px;
+    }
+    #revision-add-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #revision-add-modal .modal-body > div[style*="background"] {
+        padding: 10px 12px !important;
+        font-size: 13px;
+    }
+    #revision-add-modal .modal-body > div[style*="background"] div[style*="display: flex"] {
+        flex-direction: column;
+    }
+    #revision-add-modal .modal-body > div[style*="background"] div[style*="display: flex"] input {
+        width: 100%;
+    }
+    #revision-add-modal .modal-body > div[style*="background"] div[style*="display: flex"] .btn {
+        width: 100%;
+    }
+    #rev-1c-results {
+        max-height: 150px;
+        font-size: 13px;
+    }
+    #barcode-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #barcode-import-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #edit-revision-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #operation-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+        max-height: 85vh;
+    }
+    #operation-modal .modal-body {
+        max-height: 60vh !important;
+    }
+    #operation-modal .modal-body select {
+        font-size: 14px;
+    }
+    #operation-modal .modal-body optgroup {
+        font-size: 13px;
+    }
+    #operation-modal .modal-body option {
+        font-size: 13px;
+    }
+    #create-reminder-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #1c-import-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #1c-import-modal .modal-body ol {
+        font-size: 13px;
+        padding-left: 16px;
+    }
+    #1c-import-modal .modal-body li {
+        margin-bottom: 4px;
+    }
+    #update-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #update-modal .modal-content > div {
+        padding: 12px !important;
+    }
+    #add-user-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #copy-day-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #instruction-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+        max-height: 90vh;
+    }
+    #day-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #day-menu-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #smart-stats-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #schedule-template-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #colleague-task-modal .modal-content {
+        max-width: 100%;
+        margin: 8px;
+    }
+    #admin-backup-btn {
+        width: 100%;
+        text-align: center;
+    }
+    .admin-panel .admin-section .form-control,
+    .admin-panel .admin-section select {
+        width: 100%;
+    }
+    .admin-panel .admin-section div[style*="display: flex"] {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section div[style*="display: flex"] .form-control,
+    .admin-panel .admin-section div[style*="display: flex"] select,
+    .admin-panel .admin-section div[style*="display: flex"] .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .btn-sm {
+        width: auto;
+        min-height: 40px;
+    }
+    .admin-panel .admin-section .btn + .btn {
+        margin-left: 0;
+    }
+    .admin-panel .admin-section .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .admin-panel .admin-section .stats-card {
+        padding: 10px;
+    }
+    .admin-panel .admin-section .stats-card .stat-value {
+        font-size: 18px;
+    }
+    .admin-panel .admin-section .stats-card .stat-label {
+        font-size: 11px;
+    }
+    .admin-panel .admin-section #salary-month,
+    .admin-panel .admin-section #salary-year {
+        width: 100%;
+    }
+    .admin-panel .admin-section #salary-summary-table {
+        overflow-x: auto;
+        font-size: 12px;
+    }
+    .admin-panel .admin-section #salary-summary-table table {
+        min-width: 500px;
+    }
+    .admin-panel .admin-section #salary-summary-table th,
+    .admin-panel .admin-section #salary-summary-table td {
+        padding: 4px 6px;
+    }
+    .admin-panel .admin-section #adjustments-list {
+        font-size: 13px;
+    }
+    .admin-panel .admin-section #vk-seen-list {
+        font-size: 12px;
+        overflow-x: auto;
+    }
+    .admin-panel .admin-section #vk-seen-list table {
+        min-width: 400px;
+    }
+    .admin-panel .admin-section #vk-seen-list th,
+    .admin-panel .admin-section #vk-seen-list td {
+        padding: 4px 6px;
+    }
+    .admin-panel .admin-section #users-list {
+        font-size: 13px;
+    }
+    .admin-panel .admin-section #users-list .user-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .admin-panel .admin-section #users-list .user-item .user-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .admin-panel .admin-section #users-list .user-item .user-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .admin-panel .admin-section #audit-log-container {
+        font-size: 11px;
+        overflow-x: auto;
+    }
+    .admin-panel .admin-section #audit-log-container table {
+        min-width: 400px;
+    }
+    .admin-panel .admin-section #audit-log-container th,
+    .admin-panel .admin-section #audit-log-container td {
+        padding: 4px 6px;
+    }
+    .admin-panel .admin-section #employee-stats-table {
+        overflow-x: auto;
+        font-size: 12px;
+    }
+    .admin-panel .admin-section #employee-stats-table table {
+        min-width: 500px;
+    }
+    .admin-panel .admin-section #employee-stats-table th,
+    .admin-panel .admin-section #employee-stats-table td {
+        padding: 4px 6px;
+    }
+    .admin-panel .admin-section .salary-table-wrapper {
+        overflow-x: auto;
+        margin: 0 -12px;
+        padding: 0 12px;
+    }
+    .admin-panel .admin-section .salary-table {
+        font-size: 11px;
+        min-width: 500px;
+    }
+    .admin-panel .admin-section .salary-table th,
+    .admin-panel .admin-section .salary-table td {
+        padding: 4px 6px;
+    }
+    .admin-panel .admin-section .telegram-seen-list {
+        overflow-x: auto;
+    }
+    .admin-panel .admin-section .telegram-seen-list table {
+        min-width: 400px;
+        font-size: 11px;
+    }
+    .admin-panel .admin-section .telegram-seen-list th,
+    .admin-panel .admin-section .telegram-seen-list td {
+        padding: 4px 6px;
+    }
+    .admin-panel .admin-section .adjustment-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .admin-panel .admin-section .adjustment-item .adj-reason {
+        width: 100%;
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .adjustment-item .adj-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .admin-panel .admin-section .adjustment-item .adj-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .wj-detail-actions {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .wj-detail-actions .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .work-journal-detail {
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .work-journal-list {
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .work-journal-list .wj-day-item {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .admin-panel .admin-section .work-journal-list .wj-day-item .wj-day-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .admin-panel .admin-section .work-journal-list .wj-day-item .wj-day-actions .btn {
+        flex: 1;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .work-journal-list .wj-day-item .wj-day-info {
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .work-journal-list .wj-day-item .wj-day-date {
+        font-size: 15px;
+    }
+    .admin-panel .admin-section .file-stats {
+        flex-direction: column;
+        gap: 8px;
+        font-size: 13px;
+    }
+    .admin-panel .admin-section .file-pagination {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .admin-panel .admin-section .file-pagination .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .barcode-pagination {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .admin-panel .admin-section .barcode-pagination .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .barcode-stats {
+        font-size: 13px;
+        padding: 10px;
+    }
+    .admin-panel .admin-section .revision-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .admin-panel .admin-section .promotion-panel > div {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .admin-panel .admin-section .promotion-panel > div > div:last-child {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .promotion-panel .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .smart-control-banner {
+        font-size: 13px;
+        padding: 12px;
+    }
+    .admin-panel .admin-section .smart-control-banner .smart-control-content {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .admin-panel .admin-section .smart-control-banner .smart-control-content .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .revision-stats .stat-card {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .admin-panel .admin-section .revision-stats .stat-card .stat-value {
+        font-size: 18px;
+    }
+    .admin-panel .admin-section .revision-stats .stat-card .stat-label {
+        font-size: 11px;
+    }
+    .admin-panel .admin-section .table-responsive {
+        overflow-x: auto;
+        margin: 0 -12px;
+        padding: 0 12px;
+    }
+    .admin-panel .admin-section .table-responsive table {
+        font-size: 12px;
+        min-width: 600px;
+    }
+    .admin-panel .admin-section .table-responsive th,
+    .admin-panel .admin-section .table-responsive td {
+        padding: 4px 6px;
+        white-space: nowrap;
+    }
+    .admin-panel .admin-section .table-responsive th:first-child,
+    .admin-panel .admin-section .table-responsive td:first-child {
+        position: sticky;
+        left: 0;
+        background: var(--bg-secondary);
+        z-index: 1;
+    }
+    .admin-panel .admin-section .table-responsive thead th:first-child {
+        z-index: 2;
+    }
+    .admin-panel .admin-section .controls-revision {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .controls-revision .form-control,
+    .admin-panel .admin-section .controls-revision .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section #revision-search {
+        max-width: none;
+    }
+    .admin-panel .admin-section #revision-sort {
+        max-width: none;
+    }
+    .admin-panel .admin-section .controls-files {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .controls-files .form-control,
+    .admin-panel .admin-section .controls-files .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section #file-search {
+        width: 100%;
+    }
+    .admin-panel .admin-section .controls-work-journal {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .controls-work-journal .form-control,
+    .admin-panel .admin-section .controls-work-journal .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .controls-calendar {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .controls-calendar .form-control,
+    .admin-panel .admin-section .controls-calendar .btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .controls-calendar select {
+        width: 100%;
+    }
+    .admin-panel .admin-section .go-to-date-wrap {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+    }
+    .admin-panel .admin-section .go-to-date-wrap .go-to-day {
+        flex: 1;
+        min-width: 0;
+    }
+    .admin-panel .admin-section .go-to-date-wrap .btn {
+        flex-shrink: 0;
+    }
+    .admin-panel .admin-section .hotkeys-hint {
+        font-size: 10px;
+    }
+    .admin-panel .admin-section .calendar-stats,
+    .admin-panel .admin-section .calendar-legend,
+    .admin-panel .admin-section .calendar-week-progress {
+        font-size: 12px;
+    }
+    .admin-panel .admin-section .day-dashboard {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin-top: 12px;
+    }
+    .admin-panel .admin-section .day-dashboard-content .day-dashboard-title {
+        font-size: 16px;
+    }
+    .admin-panel .admin-section .day-dashboard-section h4 {
+        font-size: 12px;
+    }
+    .admin-panel .admin-section .day-dashboard-task-row,
+    .admin-panel .admin-section .day-dashboard-colleague-row,
+    .admin-panel .admin-section .day-dashboard-file-row {
+        font-size: 12px;
+        padding: 5px 0;
+    }
+    .admin-panel .admin-section .day-dashboard-edit-btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .day-dashboard-copy-btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .day-dashboard-actions-btn {
+        width: 100%;
+    }
+    .admin-panel .admin-section .calendar-layout {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+    .admin-panel .admin-section .calendar-left {
+        min-width: 0;
+        width: 100%;
+    }
+    .admin-panel .admin-section .calendar-grid {
+        padding: 8px;
+        gap: 4px;
+        min-width: 0;
+        overflow-x: auto;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+    .admin-panel .admin-section .calendar-day {
+        min-height: 72px;
+        padding: 6px;
+    }
+    .admin-panel .admin-section .calendar-day-header {
+        padding: 4px 2px;
+        font-size: 10px;
+    }
+    .admin-panel .admin-section .day-number {
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+    .admin-panel .admin-section .day-schedule-name {
+        font-size: 8px;
+        line-height: 1.2;
+    }
+    .admin-panel .admin-section .day-schedule-badges .task-badge {
+        width: 5px;
+        height: 5px;
+    }
+    .admin-panel .admin-section .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 16px;
+        gap: 12px;
+    }
+    .admin-panel .admin-section .page-header h2 {
+        font-size: 20px;
+    }
+    .admin-panel .admin-section .controls {
+        flex-direction: column;
+    }
+    .admin-panel .admin-section .controls .form-control,
+    .admin-panel .admin-section .controls .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    .admin-panel .admin-section .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+    .admin-panel .admin-section .modal-content {
+        width: 96%;
+        max-width: none;
+        max-height: 88vh;
+        padding: 16px;
+        margin: 8px;
+        overflow-y: auto;
+    }
+    .admin-panel .admin-section .modal-content .form-group input,
+    .admin-panel .admin-section .modal-content .form-control,
+    .admin-panel .admin-section .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .admin-panel .admin-section .modal-actions {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .admin-panel .admin-section .modal-actions .btn {
+        min-height: 44px;
+        flex: 1 1 140px;
+    }
+    .admin-panel .admin-section .day-menu-content {
+        max-width: 100%;
+    }
+    .admin-panel .admin-section .day-menu-btn {
+        min-height: 48px;
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+    .admin-panel .admin-section .task-item,
+    .admin-panel .admin-section .file-item {
+        padding: 14px;
+        min-height: 52px;
+    }
+    .admin-panel .admin-section .task-name {
+        font-size: 15px;
+    }
+    .admin-panel .admin-section .tasks-page-desc {
+        font-size: 13px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+    }
+    .admin-panel .admin-section .chat-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 160px);
+    }
+    .admin-panel .admin-section .chat-topics-sidebar {
+        width: 100%;
+        min-width: 0;
+        max-height: 120px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .admin-panel .admin-section .chat-topics-list {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 12px;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    .admin-panel .admin-section .chat-topic-item {
+        flex-shrink: 0;
+        margin-bottom: 0;
+        min-width: 100px;
+    }
+    .admin-panel .admin-section .chat-topic-item-actions {
+        display: none;
+    }
+    .admin-panel .admin-section .chat-container {
+        height: calc(100vh - 280px);
+        min-height: 200px;
+        border-radius: 0;
+    }
+    .admin-panel .admin-section .chat-bubble-wrap {
+        max-width: 92%;
+    }
+    .admin-panel .admin-section .chat-input-container {
+        padding: 10px 12px;
+    }
+    .admin-panel .admin-section .chat-send-btn {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    .admin-panel .admin-section .nav-item {
+        min-height: 48px;
+    }
+    .admin-panel .admin-section .nav-datetime-wrap .nav-date { font-size: 11px; }
+    .admin-panel .admin-section .nav-datetime-wrap .nav-time { font-size: 13px; }
+    .admin-panel .admin-section .nav-clock { width: 36px; height: 36px; }
+    .admin-panel .admin-section .nav-clock-svg { width: 36px; height: 36px; }
+    .admin-panel .admin-section .page-header-chat {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+    .modal-content {
+        width: 96%;
+        max-width: none;
+        max-height: 88vh;
+        padding: 16px;
+        margin: 8px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .modal-content .form-group input,
+    .modal-content .form-control,
+    .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .modal-actions {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .modal-actions .btn {
+        min-height: 44px;
+        flex: 1 1 140px;
+    }
+    .day-menu-content {
+        max-width: 100%;
+    }
+    .day-menu-btn {
+        min-height: 48px;
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+    .task-item, .file-item {
+        padding: 14px;
+        min-height: 52px;
+    }
+    .task-name {
+        font-size: 15px;
+    }
+    .tasks-page-desc {
+        font-size: 13px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+    }
+    .chat-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 160px);
+    }
+    .chat-topics-sidebar {
+        width: 100%;
+        min-width: 0;
+        max-height: 120px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .chat-topics-list {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 12px;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    .chat-topic-item {
+        flex-shrink: 0;
+        margin-bottom: 0;
+        min-width: 100px;
+    }
+    .chat-topic-item-actions {
+        display: none;
+    }
+    .chat-container {
+        height: calc(100vh - 280px);
+        min-height: 200px;
+        border-radius: 0;
+    }
+    .chat-bubble-wrap {
+        max-width: 92%;
+    }
+    .chat-input-container {
+        padding: 10px 12px;
+    }
+    .chat-send-btn {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    .nav-item {
+        min-height: 48px;
+    }
+    .nav-datetime-wrap .nav-date { font-size: 11px; }
+    .nav-datetime-wrap .nav-time { font-size: 13px; }
+    .nav-clock { width: 36px; height: 36px; }
+    .nav-clock-svg { width: 36px; height: 36px; }
+    .page-header-chat {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-brand {
+        max-width: 100px;
+    }
+    .nav-datetime-wrap { gap: 6px; }
+    .nav-datetime-wrap .nav-date { font-size: 10px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+    .nav-datetime-wrap .nav-time { font-size: 11px; }
+    .nav-clock { width: 28px; height: 28px; }
+    .nav-clock-svg { width: 28px; height: 28px; }
+    .calendar-day {
+        min-height: 64px;
+        padding: 6px;
+    }
+    .chat-topic-item {
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Участники Telegram в админке */
+.telegram-seen-list table {
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.telegram-seen-list th,
+.telegram-seen-list td {
+    padding: 8px 12px;
+    border: 1px solid var(--border, #e5e7eb);
+    text-align: left;
+}
+.telegram-seen-list th {
+    background: var(--bg-secondary, #f9fafb);
+    font-weight: 600;
+}
+
+/* Модальное окно инструкции */
+.instruction-modal-content {
+    max-width: 640px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.instruction-body {
+    overflow-y: auto;
+    padding-right: 8px;
+    flex: 1;
+    min-height: 0;
+}
+.instruction-body section {
+    margin-bottom: 1.25rem;
+}
+.instruction-body section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary, #111);
+}
+.instruction-body ol {
+    margin: 0 0 0 1.25rem;
+    padding: 0;
+}
+.instruction-body li {
+    margin-bottom: 0.35rem;
+}
+.instruction-body kbd {
+    font-family: inherit;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-secondary, #f3f4f6);
+    border: 1px solid var(--border, #e5e7eb);
+    font-size: 0.9em;
+}
+
+/* Подсказки по экрану (тур) */
+.tour-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9998;
+    cursor: pointer;
+}
+.tour-tooltip {
+    position: fixed;
+    z-index: 10000;
+    max-width: 320px;
+    padding: 14px 16px;
+    background: var(--bg-primary, #fff);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border, #e5e7eb);
+}
+.tour-tooltip-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    color: var(--text-primary, #111);
+}
+.tour-tooltip-text {
+    font-size: 14px;
+    color: var(--text-secondary, #4b5563);
+    line-height: 1.45;
+    margin-bottom: 12px;
+}
+.tour-tooltip-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.tour-highlight {
+    position: relative;
+    z-index: 9999;
+    outline: 3px solid #6366f1;
+    outline-offset: 2px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.25);
+}
+
+/* Тосты */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+.toast {
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: var(--bg-secondary, #1f2937);
+    color: var(--text-primary, #fff);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    font-size: 14px;
+    max-width: 320px;
+    animation: toast-in 0.25s ease;
+}
+.toast.toast-success { background: #059669; }
+.toast.toast-error { background: #dc2626; }
+.toast.toast-warning { background: #d97706; }
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Журнал действий (audit) */
+.audit-log-container {
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    font-size: 13px;
+}
+.audit-log-container table { width: 100%; border-collapse: collapse; }
+.audit-log-container th, .audit-log-container td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border, #eee); }
+.audit-log-container th { background: var(--bg-secondary, #f3f4f6); font-weight: 600; }
+
+.wj-detail-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+/* Таблица сводки зарплат и статистики */
+.salary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.salary-table th, .salary-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border, #eee); white-space: nowrap; }
+.salary-table th { background: var(--bg-secondary, #f3f4f6); font-weight: 600; text-align: right; }
+.salary-table th:first-child, .salary-table td:first-child { text-align: left; }
+.salary-table tr:hover { background: var(--bg-secondary, #f8f9fa); }
+
+/* Штрафы/бонусы */
+.adjustments-items { display: flex; flex-direction: column; gap: 6px; }
+.adjustment-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-radius: 8px; font-size: 13px;
+    border: 1px solid var(--border, #e5e7eb);
+}
+.adjustment-item.adj-bonus { background: #f0fdf4; border-color: #bbf7d0; }
+.adjustment-item.adj-fine { background: #fef2f2; border-color: #fecaca; }
+.adj-amount { font-weight: 700; min-width: 80px; }
+.adj-bonus .adj-amount { color: #16a34a; }
+.adj-fine .adj-amount { color: #dc2626; }
+.adj-name { font-weight: 600; min-width: 100px; }
+.adj-reason { flex: 1; color: var(--text-muted, #6b7280); }
+.adjustment-item .btn { padding: 2px 8px; font-size: 12px; opacity: 0.5; }
+.adjustment-item:hover .btn { opacity: 1; }
+
+/* Чекбоксы дней недели в шаблоне */
+.tpl-wd-label {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border, #ddd); font-size: 13px;
+    transition: background 0.15s;
+}
+.tpl-wd-label:has(input:checked) { background: var(--primary, #6366f1); color: white; border-color: var(--primary, #6366f1); }
+.tpl-wd-label input { display: none; }
+
+/* ---------- ДОПОЛНИТЕЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ ---------- */
+
+/* Горизонтальный скролл для таблиц */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -12px;
+    padding: 0 12px;
+}
+.table-responsive table {
+    min-width: 600px;
+}
+
+/* Специально для таблицы ревизии — адаптивная */
+#revisions-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    padding: 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+#revisions-table-wrap table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+#revisions-table-wrap table th {
+    background: var(--bg-tertiary);
+    padding: 12px 10px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border);
+}
+#revisions-table-wrap table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+}
+#revisions-table-wrap table tr:hover {
+    background: var(--bg-tertiary);
+}
+#revisions-table-wrap table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Специально для таблицы штрих-кодов */
+#barcodes-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -12px;
+    padding: 0 12px;
+}
+#barcodes-table-wrap table {
+    min-width: 500px;
+}
+
+
+
+/* Мобильная адаптация для модалок с большим контентом */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 100%;
+        max-width: none;
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+        padding: 16px;
+        margin: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .day-menu-header {
+        margin: -16px -16px 16px -16px;
+        padding: 16px;
+        border-radius: 0;
+    }
+    .day-menu-header h3 {
+        font-size: 18px;
+    }
+    .close {
+        top: 12px;
+        right: 12px;
+        font-size: 24px;
+    }
+    .modal-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .modal-actions .btn {
+        width: 100%;
+        min-height: 44px;
+        flex: none;
+    }
+    .modal-content .form-group input,
+    .modal-content .form-control,
+    .modal-content select,
+    .modal-content textarea {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .modal-content textarea {
+        min-height: 80px;
+    }
+    .modal-content select {
+        padding: 10px 14px;
+    }
+    .modal-content label {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+    .modal-content h3 {
+        font-size: 18px;
+    }
+    .modal-content .modal-header {
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+    .modal-content .modal-body {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    .modal-content .modal-body[style*="max-height"] {
+        max-height: none !important;
+    }
+    .modal-overlay {
+        display: none;
+    }
+}
+
+/* Мобильная адаптация для рабочего журнала (блоки закрытия смены) */
+@media (max-width: 768px) {
+    #wj-close-modal .modal-content > div[style*="margin:16px 0"] {
+        margin: 12px 0 !important;
+        padding: 10px !important;
+    }
+    #wj-close-modal .modal-content > div[style*="margin:16px 0"] h4 {
+        font-size: 14px !important;
+    }
+    #wj-close-modal .modal-content > div[style*="margin:16px 0"] p {
+        font-size: 14px !important;
+    }
+    #wj-close-modal .modal-content > div[style*="margin:16px 0"] input {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .wj-entries-block {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    .controls-work-journal {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .controls-work-journal .btn,
+    .controls-work-journal select {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+/* Мобильная адаптация для страницы входа */
+@media (max-width: 480px) {
+    .login-page {
+        background: white;
+    }
+    .login-container {
+        padding: 16px;
+    }
+    .login-card {
+        padding: 24px 20px;
+        box-shadow: none;
+        border-radius: 12px;
+    }
+    .login-card h1 {
+        font-size: 22px;
+    }
+    .login-user-btn {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+    .login-page-logo {
+        width: 70px;
+        top: 12px;
+        right: 12px;
+    }
+    .login-form input {
+        font-size: 16px;
+        padding: 14px 16px;
+    }
+    .login-form .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+    .login-verify-panel {
+        padding: 16px;
+    }
+}
+
+/* Мобильная адаптация для просмотра файлов */
+@media (max-width: 768px) {
+    .file-view-modal-content {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .file-view-modal-content .close {
+        top: 12px;
+        right: 12px;
+        font-size: 28px;
+        z-index: 10;
+        color: white;
+        background: rgba(0,0,0,0.5);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    #file-view-container {
+        height: 70vh !important;
+    }
+    #file-view-container img {
+        max-height: 70vh !important;
+        object-fit: contain;
+    }
+    .file-view-info {
+        padding: 12px 16px !important;
+    }
+}
+
+/* Мобильная адаптация для страницы задач */
+@media (max-width: 768px) {
+    .task-item-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .task-item-row .task-color {
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+    }
+    .task-item-row .task-name {
+        font-size: 14px;
+        min-width: 0;
+        flex: 1 1 100%;
+        order: 10;
+    }
+    .task-item-row .btn-edit-task,
+    .task-item-row .btn-delete-task {
+        min-height: 40px;
+        min-width: 40px;
+        font-size: 14px;
+    }
+    .tasks-list {
+        gap: 8px;
+    }
+    .task-item {
+        padding: 12px;
+    }
+    .colleague-task-item {
+        padding: 12px;
+    }
+    .colleague-task-item .task-item-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .colleague-task-item .task-item-row .task-name {
+        flex: none;
+        width: 100%;
+    }
+}
+
+/* Мобильная адаптация для страницы файлов */
+@media (max-width: 768px) {
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .file-item-preview {
+        width: 100%;
+        height: 160px;
+    }
+    .file-item-info {
+        width: 100%;
+    }
+    .file-item-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    .file-item-actions .btn {
+        min-height: 40px;
+        padding: 8px 16px;
+    }
+    .files-list {
+        gap: 8px;
+    }
+    .file-form-date-row {
+        flex-wrap: wrap;
+    }
+    .file-form-date-row input {
+        flex: 1;
+        min-width: 60px;
+    }
+}
+
+/* Мобильная адаптация для страницы конвертера */
+@media (max-width: 768px) {
+    #page-converter .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #page-converter .page-header .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    #page-converter .form-group {
+        margin-bottom: 12px;
+    }
+    #page-converter .form-control {
+        min-height: 44px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для статистики ревизии */
+@media (max-width: 768px) {
+    #revision-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    #revision-stats > div {
+        padding: 12px !important;
+    }
+    #revision-stats > div div:first-child {
+        font-size: 20px !important;
+    }
+    #revision-stats > div div:last-child {
+        font-size: 11px !important;
+    }
+    .revision-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .revision-controls select,
+    .revision-controls input,
+    .revision-controls .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    #revisions-body td {
+        padding: 10px 8px !important;
+        font-size: 13px;
+    }
+    #revisions-body td code {
+        font-size: 11px;
+        padding: 2px 6px !important;
+    }
+    #revisions-body td .btn-sm {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        min-height: 36px;
+    }
+    #revisions-body td strong {
+        font-size: 13px;
+    }
+    #revisions-body td span[style*="padding: 4px 10px"] {
+        padding: 3px 8px !important;
+        font-size: 11px !important;
+    }
+    #revisions-body td span[style*="padding: 6px 10px"] {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+    }
+}
+
+/* Мобильная адаптация для страницы штрих-кодов */
+@media (max-width: 768px) {
+    #page-barcodes .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #page-barcodes .page-header .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+    #barcodes-body td {
+        padding: 10px 8px !important;
+        font-size: 13px;
+    }
+    #barcodes-body td .btn-sm {
+        min-height: 36px;
+        padding: 6px 10px !important;
+    }
+    .barcode-cell {
+        font-size: 12px !important;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    #barcode-page-info {
+        font-size: 13px;
+    }
+    #barcode-total {
+        font-size: 13px;
+    }
+    .barcode-pagination {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .barcode-pagination .btn {
+        min-height: 44px;
+        flex: 1;
+    }
+}
+
+/* Мобильная адаптация для админ-панели */
+@media (max-width: 768px) {
+    .admin-section {
+        padding: 12px;
+    }
+    .admin-section .form-group {
+        margin-bottom: 12px;
+    }
+    .admin-section .form-control {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .admin-section .btn {
+        min-height: 44px;
+        width: 100%;
+    }
+    .admin-section .btn-sm {
+        min-height: 40px;
+        width: auto;
+    }
+    .admin-section select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .admin-section .salary-table-wrapper {
+        margin: 0 -12px;
+        padding: 0 12px;
+    }
+    .admin-section .salary-table {
+        font-size: 11px;
+    }
+    .admin-section .salary-table th,
+    .admin-section .salary-table td {
+        padding: 4px 6px;
+    }
+    .admin-section .adjustments-items {
+        gap: 4px;
+    }
+    .admin-section .adjustment-item {
+        padding: 6px 10px;
+        font-size: 12px;
+        flex-wrap: wrap;
+    }
+    .admin-section .adjustment-item .adj-amount {
+        min-width: 60px;
+    }
+    .admin-section .adjustment-item .adj-name {
+        min-width: 80px;
+    }
+    .admin-section .adjustment-item .btn {
+        width: auto;
+        min-height: 32px;
+        padding: 4px 10px;
+    }
+    .admin-section .telegram-seen-list table {
+        font-size: 11px;
+    }
+    .admin-section .telegram-seen-list th,
+    .admin-section .telegram-seen-list td {
+        padding: 4px 6px;
+    }
+    .admin-section .audit-log-container {
+        max-height: 200px;
+        font-size: 11px;
+    }
+    .admin-section .audit-log-container th,
+    .admin-section .audit-log-container td {
+        padding: 4px 6px;
+    }
+}
+
+/* Мобильная адаптация для модалки напоминаний */
+@media (max-width: 768px) {
+    #reminder-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    #reminder-modal .modal-content h2 {
+        font-size: 20px !important;
+    }
+    #reminder-modal .modal-content div[style*="font-size: 16px"] {
+        font-size: 15px !important;
+    }
+    #reminder-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки операций */
+@media (max-width: 768px) {
+    #operation-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #operation-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #operation-modal .modal-content input {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #operation-modal .modal-content textarea {
+        min-height: 80px;
+        font-size: 16px;
+    }
+    #operation-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки добавления товара ревизии */
+@media (max-width: 768px) {
+    #revision-add-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #revision-add-modal .modal-content input,
+    #revision-add-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #revision-add-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки журнала транзакций */
+@media (max-width: 768px) {
+    #transaction-log-modal .modal-content,
+    #all-transactions-log-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #transaction-log-modal .modal-content .modal-body,
+    #all-transactions-log-modal .modal-content .modal-body {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    #all-transactions-log-modal .modal-content table {
+        font-size: 12px;
+    }
+    #all-transactions-log-modal .modal-content th,
+    #all-transactions-log-modal .modal-content td {
+        padding: 6px 8px;
+    }
+}
+
+/* Мобильная адаптация для модалки коллеги-задачи */
+@media (max-width: 768px) {
+    #colleague-task-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #colleague-task-modal .modal-content input,
+    #colleague-task-modal .modal-content select,
+    #colleague-task-modal .modal-content textarea {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #colleague-task-modal .modal-content textarea {
+        min-height: 80px;
+    }
+    #colleague-task-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+    .colleague-task-file-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .colleague-task-file-row .btn {
+        width: 100%;
+    }
+}
+
+/* Мобильная адаптация для модалки шаблона графика */
+@media (max-width: 768px) {
+    #schedule-template-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #schedule-template-modal .modal-content input,
+    #schedule-template-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #schedule-template-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+    #schedule-template-modal .modal-content div[style*="display:flex; gap:6px; flex-wrap:wrap"] {
+        gap: 4px !important;
+    }
+    #schedule-template-modal .modal-content .tpl-wd-label {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+}
+
+/* Мобильная адаптация для модалки штрафа/бонуса */
+@media (max-width: 768px) {
+    #adjustment-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 16px;
+    }
+    #adjustment-modal .modal-content input,
+    #adjustment-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #adjustment-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки туннеля */
+@media (max-width: 768px) {
+    #tunnel-link-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 16px;
+    }
+    #tunnel-link-modal .modal-content input {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #tunnel-link-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки смены пароля */
+@media (max-width: 768px) {
+    #password-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 16px;
+    }
+    #password-modal .modal-content input {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #password-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки подтверждения */
+@media (max-width: 768px) {
+    #confirm-modal .modal-content {
+        max-width: none;
+        width: 90%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 20px 16px;
+    }
+    #confirm-modal .modal-content h3 {
+        font-size: 18px;
+    }
+    #confirm-modal .modal-content p {
+        font-size: 15px;
+    }
+    #confirm-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+        flex: 1;
+    }
+}
+
+/* Мобильная адаптация для модалки инструкции */
+@media (max-width: 768px) {
+    .instruction-modal-content {
+        max-width: none !important;
+        width: 100% !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 16px !important;
+    }
+    .instruction-body {
+        padding-right: 0 !important;
+    }
+    .instruction-body section h3 {
+        font-size: 1rem !important;
+    }
+    .instruction-body li {
+        font-size: 14px;
+    }
+}
+
+/* Мобильная адаптация для модалки чата */
+@media (max-width: 768px) {
+    #chat-topic-modal .modal-content,
+    #chat-edit-msg-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 16px;
+    }
+    #chat-topic-modal .modal-content input,
+    #chat-edit-msg-modal .modal-content textarea {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #chat-topic-modal .modal-content .btn,
+    #chat-edit-msg-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки файлов */
+@media (max-width: 768px) {
+    #file-form-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 16px;
+    }
+    #file-form-modal .modal-content input {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #file-form-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки рабочего журнала */
+@media (max-width: 768px) {
+    #wj-open-modal .modal-content,
+    #wj-entry-modal .modal-content,
+    #wj-close-modal .modal-content,
+    #wj-edit-shift-modal .modal-content,
+    #wj-edit-entry-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #wj-open-modal .modal-content input,
+    #wj-entry-modal .modal-content input,
+    #wj-close-modal .modal-content input,
+    #wj-edit-shift-modal .modal-content input,
+    #wj-edit-entry-modal .modal-content input,
+    #wj-open-modal .modal-content select,
+    #wj-entry-modal .modal-content select,
+    #wj-close-modal .modal-content select,
+    #wj-edit-shift-modal .modal-content select,
+    #wj-edit-entry-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #wj-open-modal .modal-content .btn,
+    #wj-entry-modal .modal-content .btn,
+    #wj-close-modal .modal-content .btn,
+    #wj-edit-shift-modal .modal-content .btn,
+    #wj-edit-entry-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+        width: 100%;
+    }
+    #wj-close-modal .modal-content input[type="file"] {
+        min-height: 44px;
+        font-size: 14px;
+    }
+}
+
+/* Мобильная адаптация для модалки ревизии (редактирование) */
+@media (max-width: 768px) {
+    #revision-edit-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #revision-edit-modal .modal-content input,
+    #revision-edit-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #revision-edit-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки импорта 1С */
+@media (max-width: 768px) {
+    #1c-import-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        margin: 16px;
+        padding: 16px;
+    }
+    #1c-import-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+        width: 100%;
+    }
+}
+
+/* Мобильная адаптация для модалки создания напоминания */
+@media (max-width: 768px) {
+    #create-reminder-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #create-reminder-modal .modal-content input,
+    #create-reminder-modal .modal-content select,
+    #create-reminder-modal .modal-content textarea {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #create-reminder-modal .modal-content textarea {
+        min-height: 80px;
+    }
+    #create-reminder-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки статистики сотрудников */
+@media (max-width: 768px) {
+    #employee-stats-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #employee-stats-modal .modal-content .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    #employee-stats-modal .modal-content .stat-card {
+        padding: 12px;
+    }
+    #employee-stats-modal .modal-content .stat-value {
+        font-size: 24px;
+    }
+}
+
+/* Мобильная адаптация для модалки акций */
+@media (max-width: 768px) {
+    #promotion-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #promotion-modal .modal-content input,
+    #promotion-modal .modal-content select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    #promotion-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Мобильная адаптация для модалки умного контроля */
+@media (max-width: 768px) {
+    #smart-control-modal .modal-content {
+        max-width: none;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 16px;
+    }
+    #smart-control-modal .modal-content .btn {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Печать: скрыть лишнее в @media print */
+@media print {
+    .navbar, .sidebar, .btn, .nav-item, .reminders-banner, .toast-container, .modal { display: none !important; }
+    .main-content { padding: 0; }
+    .page { display: block !important; }
+}
+
+/* ========================================
+   NOTIFICATION CENTER
+   ======================================== */
+
+.notification-bell-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.notification-bell {
+    position: relative;
+    font-size: 18px;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.notification-bell:hover {
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.notification-panel {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 80px);
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.notification-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-secondary, #f9fafb);
+    flex-shrink: 0;
+}
+
+.notification-panel-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.notification-panel-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.notification-panel-close {
+    font-size: 20px;
+    line-height: 1;
+    padding: 2px 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary, #6b7280);
+}
+
+.notification-panel-close:hover {
+    color: var(--text-primary, #111827);
+}
+
+.notification-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.notification-loading,
+.notification-empty,
+.notification-error {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-secondary, #6b7280);
+    font-size: 14px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background: var(--bg-secondary, #f3f4f6);
+}
+
+.notification-unread {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.notification-unread:hover {
+    background: #dbeafe;
+}
+
+.notification-item-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary, #f3f4f6);
+    border-radius: 50%;
+}
+
+.notification-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    margin-bottom: 2px;
+    line-height: 1.3;
+}
+
+.notification-item-message {
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notification-item-time {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.notification-item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.notification-item:hover .notification-item-actions {
+    opacity: 1;
+}
+
+/* Mobile responsive for notification panel */
+@media (max-width: 480px) {
+    .notification-panel {
+        top: 56px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-width: none;
+        max-height: calc(100vh - 64px);
+    }
+    
+    .notification-item-actions {
+        opacity: 1;
+    }
+}
+
+/* =============================================
+   ПОЛНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ
+   ============================================= */
+
+/* Планшеты и маленькие экраны */
+@media (max-width: 1024px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    }
+    
+    .sidebar.open {
+        left: 0;
+    }
+    
+    .sidebar-header {
+        display: flex;
+    }
+    
+    .nav-toggle {
+        display: flex;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .calendar-layout {
+        flex-direction: column;
+    }
+    
+    .calendar-left {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .day-dashboard {
+        width: 100%;
+        margin-top: 16px;
+        position: static;
+    }
+    
+    .navbar {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .nav-brand {
+        font-size: 14px;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .nav-datetime-wrap {
+        display: none;
+    }
+    
+    .nav-user {
+        gap: 4px;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .nav-user .btn {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    .nav-user-name {
+        font-size: 12px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .page-header h2 {
+        font-size: 18px;
+    }
+    
+    .controls {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+    }
+    
+    .controls .form-control,
+    .controls select,
+    .controls input[type="text"],
+    .controls input[type="date"],
+    .controls input[type="number"] {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        font-size: 14px;
+    }
+    
+    .controls button {
+        flex: 1;
+        min-width: 80px;
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+    
+    .go-to-date-wrap {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+    }
+    
+    .go-to-date-wrap input {
+        flex: 1;
+    }
+    
+    /* Календарная сетка */
+    .calendar-grid {
+        font-size: 12px;
+    }
+    
+    .calendar-grid .day-cell {
+        min-height: 60px;
+        padding: 4px;
+    }
+    
+    .calendar-grid .day-number {
+        font-size: 13px;
+    }
+    
+    .calendar-grid .day-tasks {
+        font-size: 10px;
+    }
+    
+    /* Таблицы */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 8px 6px;
+        white-space: nowrap;
+    }
+    
+    /* Модальные окна */
+    .modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 10px auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    /* Чат */
+    .chat-layout {
+        flex-direction: column;
+    }
+    
+    .chat-topics-sidebar {
+        width: 100%;
+        max-height: 150px;
+        overflow-y: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .chat-main {
+        width: 100%;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 300px);
+    }
+    
+    .chat-input-row {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .chat-input-row textarea {
+        width: 100%;
+    }
+    
+    /* Файлы */
+    .file-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .files-list .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .file-item-actions {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .file-pagination {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    /* Рабочий журнал */
+    .work-journal-list .wj-item {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .wj-item-actions {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    /* Админ-панель */
+    .admin-panel {
+        padding: 8px;
+    }
+    
+    .admin-section {
+        padding: 12px;
+    }
+    
+    .admin-section h3 {
+        font-size: 16px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    /* Ревизия */
+    .revision-stats {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    .controls-revision {
+        flex-direction: column;
+    }
+    
+    .controls-revision .form-control {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    /* Баннер умного контроля */
+    .smart-alert-summary {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .smart-summary-card {
+        width: 100%;
+    }
+    
+    /* Инструкция */
+    .instruction-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .instruction-body {
+        font-size: 14px;
+    }
+    
+    /* Тосты */
+    .toast-container {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    /* День-меню */
+    .day-menu-content {
+        width: 95%;
+        max-width: none;
+    }
+    
+    .day-menu-quick {
+        flex-direction: column;
+    }
+    
+    .day-menu-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    /* Формы */
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    .form-control {
+        font-size: 16px; /* Предотвращает зум на iOS */
+        padding: 10px 12px;
+    }
+    
+    /* Кнопки */
+    .btn {
+        font-size: 13px;
+        padding: 8px 14px;
+    }
+    
+    .btn-sm {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+    
+    /* Бейджи */
+    .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+    
+    /* Напоминания */
+    .reminders-banner {
+        font-size: 13px;
+        padding: 10px;
+    }
+    
+    /* Легенда календаря */
+    .calendar-legend {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .calendar-legend-item {
+        font-size: 11px;
+    }
+    
+    /* Статистика календаря */
+    .calendar-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    /* Прогресс недели */
+    .calendar-week-progress {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    /* Промо-панель */
+    .promotion-panel > div {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .promotion-panel button {
+        width: 100%;
+    }
+    
+    /* iframe страницы */
+    iframe {
+        height: calc(100vh - 250px) !important;
+    }
+    
+    /* Скрываем подсказки клавиш на мобильных */
+    .hotkeys-hint {
+        display: none;
+    }
+    
+    /* Улучшаем touch-цели */
+    .nav-item {
+        padding: 12px 16px;
+        min-height: 44px;
+    }
+    
+    button, 
+    .btn,
+    .nav-item,
+    a.btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Исправляем переполнение */
+    .container {
+        overflow-x: hidden;
+    }
+    
+    .main-content {
+        overflow-x: hidden;
+    }
+    
+    /* Улучшаем скролл */
+    .sidebar-nav {
+        -webkit-overflow-scrolling: touch;
+        overflow-y: auto;
+    }
+    
+    /* Стили для VK чата */
+    .chat-message-content {
+        max-width: 85%;
+    }
+    
+    .chat-message-text {
+        font-size: 14px;
+    }
+    
+    .chat-input-text {
+        font-size: 16px;
+    }
+}
+
+/* Телефоны (до 768px) */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 6px 8px;
+    }
+    
+    .nav-brand {
+        font-size: 13px;
+    }
+    
+    .nav-user .btn {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+    
+    .nav-user .badge {
+        display: none;
+    }
+    
+    .page-header h2 {
+        font-size: 16px;
+    }
+    
+    .controls .form-control,
+    .controls select,
+    .controls input[type="text"],
+    .controls input[type="date"],
+    .controls input[type="number"] {
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+    
+    .calendar-grid .day-cell {
+        min-height: 50px;
+        padding: 3px;
+    }
+    
+    .calendar-grid .day-number {
+        font-size: 12px;
+    }
+    
+    .calendar-grid .day-tasks {
+        font-size: 9px;
+    }
+    
+    .calendar-grid .day-tasks div {
+        padding: 1px 3px;
+        margin: 1px 0;
+    }
+    
+    .table {
+        font-size: 11px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 6px 4px;
+    }
+    
+    .modal-content {
+        width: 98%;
+        padding: 12px;
+    }
+    
+    .modal-header h3 {
+        font-size: 16px;
+    }
+    
+    .revision-stats {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 280px);
+    }
+    
+    .chat-message-content {
+        max-width: 90%;
+    }
+    
+    .chat-message-text {
+        font-size: 13px;
+    }
+    
+    .day-dashboard-title {
+        font-size: 16px;
+    }
+    
+    .day-dashboard-section h4 {
+        font-size: 14px;
+    }
+    
+    /* Скрываем лишние элементы */
+    .nav-datetime-wrap {
+        display: none;
+    }
+    
+    .hotkeys-hint {
+        display: none;
+    }
+    
+    /* Улучшаем отображение таблиц */
+    .table th:nth-child(n+5),
+    .table td:nth-child(n+5) {
+        display: none;
+    }
+    
+    /* Показываем важные колонки */
+    .table th:nth-child(1),
+    .table td:nth-child(1),
+    .table th:nth-child(2),
+    .table td:nth-child(2),
+    .table th:nth-child(3),
+    .table td:nth-child(3),
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+        display: table-cell;
+    }
+    
+    /* Для ревизии показываем больше колонок */
+    #revisions-table th:nth-child(1),
+    #revisions-table td:nth-child(1),
+    #revisions-table th:nth-child(2),
+    #revisions-table td:nth-child(2),
+    #revisions-table th:nth-child(3),
+    #revisions-table td:nth-child(3),
+    #revisions-table th:nth-child(5),
+    #revisions-table td:nth-child(5),
+    #revisions-table th:nth-child(6),
+    #revisions-table td:nth-child(6),
+    #revisions-table th:nth-child(8),
+    #revisions-table td:nth-child(8),
+    #revisions-table th:nth-child(9),
+    #revisions-table td:nth-child(9),
+    #revisions-table th:nth-child(10),
+    #revisions-table td:nth-child(10) {
+        display: table-cell;
+    }
+    
+    /* Для штрих-кодов */
+    #barcodes-table th:nth-child(1),
+    #barcodes-table td:nth-child(1),
+    #barcodes-table th:nth-child(3),
+    #barcodes-table td:nth-child(3),
+    #barcodes-table th:nth-child(4),
+    #barcodes-table td:nth-child(4) {
+        display: table-cell;
+    }
+}
+
+/* Очень маленькие телефоны (до 480px) */
+@media (max-width: 480px) {
+    .navbar {
+        padding: 4px 6px;
+    }
+    
+    .nav-brand {
+        font-size: 12px;
+    }
+    
+    .nav-user .btn {
+        font-size: 9px;
+        padding: 3px 5px;
+    }
+    
+    .nav-user-name {
+        display: none;
+    }
+    
+    .page-header h2 {
+        font-size: 15px;
+    }
+    
+    .calendar-grid .day-cell {
+        min-height: 40px;
+        padding: 2px;
+    }
+    
+    .calendar-grid .day-number {
+        font-size: 11px;
+    }
+    
+    .calendar-grid .day-tasks {
+        display: none;
+    }
+    
+    .calendar-grid .day-cell.has-tasks .day-number::after {
+        content: '•';
+        color: var(--primary);
+        font-size: 16px;
+        margin-left: 2px;
+    }
+    
+    .table {
+        font-size: 10px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 4px 3px;
+    }
+    
+    .modal-content {
+        width: 100%;
+        border-radius: 8px;
+        margin: 5px;
+    }
+    
+    .revision-stats {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px;
+    }
+    
+    .revision-stats > div {
+        padding: 10px !important;
+    }
+    
+    .revision-stats > div div:first-child {
+        font-size: 18px !important;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 260px);
+        margin: 8px;
+    }
+    
+    .chat-message-content {
+        max-width: 95%;
+        padding: 8px 12px;
+    }
+    
+    .chat-message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .chat-input {
+        padding: 8px 12px;
+    }
+    
+    .chat-input-text {
+        padding: 10px 14px;
+        font-size: 16px;
+    }
+    
+    .chat-input-button {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .sidebar {
+        width: 260px;
+        left: -260px;
+    }
+    
+    .sidebar-title {
+        font-size: 16px;
+    }
+    
+    .nav-item {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    
+    .nav-icon {
+        font-size: 16px;
+    }
+    
+    .day-dashboard {
+        padding: 12px;
+    }
+    
+    .day-dashboard-title {
+        font-size: 15px;
+    }
+    
+    .day-dashboard-section {
+        margin-bottom: 12px;
+    }
+    
+    .day-dashboard-section h4 {
+        font-size: 13px;
+    }
+    
+    .file-stats {
+        padding: 10px !important;
+        font-size: 12px;
+    }
+    
+    .file-pagination {
+        font-size: 12px;
+    }
+    
+    .barcode-pagination {
+        font-size: 12px;
+    }
+    
+    .promotion-panel {
+        padding: 12px !important;
+    }
+    
+    .promotion-panel h3 {
+        font-size: 15px;
+    }
+    
+    .smart-control-banner {
+        padding: 12px;
+    }
+    
+    .smart-control-banner h3 {
+        font-size: 15px;
+    }
+    
+    .smart-alert-item {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    .instruction-body {
+        font-size: 13px;
+    }
+    
+    .instruction-body section {
+        margin-bottom: 16px;
+    }
+    
+    .instruction-body h3 {
+        font-size: 15px;
+    }
+    
+    .instruction-body ol,
+    .instruction-body ul {
+        padding-left: 16px;
+    }
+    
+    .instruction-body li {
+        margin-bottom: 4px;
+    }
+    
+    /* Скрываем неважные колонки в таблицах */
+    .table th:nth-child(n+4),
+    .table td:nth-child(n+4) {
+        display: none;
+    }
+    
+    .table th:nth-child(1),
+    .table td:nth-child(1),
+    .table th:nth-child(2),
+    .table td:nth-child(2),
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        display: table-cell;
+    }
+    
+    /* Для ревизии */
+    #revisions-table th:nth-child(1),
+    #revisions-table td:nth-child(1),
+    #revisions-table th:nth-child(2),
+    #revisions-table td:nth-child(2),
+    #revisions-table th:nth-child(5),
+    #revisions-table td:nth-child(5),
+    #revisions-table th:nth-child(8),
+    #revisions-table td:nth-child(8),
+    #revisions-table th:nth-child(9),
+    #revisions-table td:nth-child(9) {
+        display: table-cell;
+    }
+    
+    /* Для штрих-кодов */
+    #barcodes-table th:nth-child(1),
+    #barcodes-table td:nth-child(1),
+    #barcodes-table th:nth-child(3),
+    #barcodes-table td:nth-child(3) {
+        display: table-cell;
+    }
+    
+    /* Улучшаем touch-цели */
+    button, 
+    .btn,
+    .nav-item,
+    a.btn {
+        min-height: 40px;
+    }
+    
+    /* Исправляем отступы */
+    .container {
+        padding: 8px;
+    }
+    
+    .main-content {
+        padding: 8px;
+    }
+    
+    .page {
+        padding: 8px 0;
+    }
+    
+    /* Улучшаем читаемость */
+    p, li, .text-muted {
+        font-size: 13px;
+    }
+    
+    h2 {
+        font-size: 18px;
+    }
+    
+    h3 {
+        font-size: 16px;
+    }
+    
+    h4 {
+        font-size: 14px;
+    }
+}
+
+/* Альбомная ориентация на телефонах */
+@media (max-width: 900px) and (orientation: landscape) {
+    .sidebar {
+        width: 240px;
+        left: -240px;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 200px);
+    }
+    
+    .calendar-grid .day-cell {
+        min-height: 45px;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+    }
+    
+    .modal-body {
+        max-height: 55vh;
+    }
+    
+    .nav-datetime-wrap {
+        display: flex;
+    }
+    
+    .nav-user-name {
+        display: inline;
+    }
+}
+
+/* Планшеты (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .calendar-grid .day-cell {
+        min-height: 70px;
+    }
+    
+    .controls .form-control,
+    .controls select {
+        width: auto !important;
+        max-width: 200px !important;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 250px);
+    }
+    
+    .sidebar {
+        width: 240px;
+        left: -240px;
+    }
+    
+    .nav-datetime-wrap {
+        display: flex;
+    }
+    
+    .nav-user-name {
+        display: inline;
+    }
+    
+    .table th,
+    .table td {
+        padding: 8px;
+    }
+}
+
+/* Высокие DPI экраны (Retina) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .navbar {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Поддержка safe-area-inset для iPhone X и новее */
+@supports (padding: env(safe-area-inset-top)) {
+    .navbar {
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    .sidebar {
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    .chat-container {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .modal-content {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* Тёмная тема для мобильных */
+@media (prefers-color-scheme: dark) {
+    html:not(.theme-light):not(.theme-dark) {
+        --primary: #818cf8;
+        --primary-hover: #6366f1;
+        --bg: #0f1117;
+        --bg-secondary: #1a1d29;
+        --text-primary: #e8eaed;
+        --text-secondary: #9aa0a6;
+        --border: #2d3140;
+    }
+}
+
+

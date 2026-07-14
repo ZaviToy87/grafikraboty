@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body style="font-family:Arial;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0">
+<div style="background:white;padding:40px;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.2);max-width:400px;width:100%">
+<h1 style="text-align:center;color:#1f2937;margin:0 0 20px 0">ВетГид</h1>
+<div id="s1">
+<p style="font-weight:600;margin-bottom:12px">Выберите:</p>
+<button onclick="sel('admin')" style="width:100%;padding:14px;margin-bottom:10px;border:2px solid #e5e7eb;border-radius:10px;background:white;cursor:pointer;font-size:15px;text-align:left">Администратор</button>
+<button onclick="sel('валерия')" style="width:100%;padding:14px;margin-bottom:10px;border:2px solid #e5e7eb;border-radius:10px;background:white;cursor:pointer;font-size:15px;text-align:left">Валерия</button>
+<button onclick="sel('ольга')" style="width:100%;padding:14px;margin-bottom:10px;border:2px solid #e5e7eb;border-radius:10px;background:white;cursor:pointer;font-size:15px;text-align:left">Ольга</button>
+</div>
+<div id="s2" style="display:none">
+<p>Пользователь: <span id="u"></span></p>
+<input type="password" id="p" placeholder="Пароль" style="width:100%;padding:12px;margin:10px 0;border:2px solid #e5e7eb;border-radius:8px;font-size:15px">
+<button onclick="send('vk')" style="width:100%;padding:12px;background:#0077FF;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px">ВКонтакте</button>
+<button onclick="s1()" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:15px;cursor:pointer;margin-top:10px">Назад</button>
+</div>
+<div id="s3" style="display:none">
+<p>Код:</p>
+<input type="text" id="c" maxlength="4" placeholder="1234" style="width:100%;padding:12px;margin:10px 0;border:2px solid #e5e7eb;border-radius:8px;font-size:15px">
+<button onclick="ver()" style="width:100%;padding:12px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Войти</button>
+<button onclick="s2()" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:15px;cursor:pointer;margin-top:10px">Назад</button>
+</div>
+</div>
+<script>
+let u='',m='';
+function sel(x){u=x;document.getElementById('u').textContent=x;document.getElementById('s1').style.display='none';document.getElementById('s2').style.display='block';}
+function s1(){document.getElementById('s2').style.display='none';document.getElementById('s1').style.display='block';}
+function s2(){document.getElementById('s3').style.display='none';document.getElementById('s2').style.display='block';}
+function send(x){m=x;let p=document.getElementById('p').value;if(!p){alert('Введите пароль');return;}fetch('/api/vk/send-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})}).then(r=>r.json()).then(d=>{if(d.status==='ok'){document.getElementById('s2').style.display='none';document.getElementById('s3').style.display='block';}else{alert('Ошибка: '+(d.error||d.message));}}).catch(e=>alert('Ошибка: '+e));}
+function ver(){let c=document.getElementById('c').value;if(!c){alert('Введите код');return;}fetch('/api/vk/verify-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,code:c})}).then(r=>r.json()).then(d=>{if(d.status==='ok'||d.success){window.location.href='/dashboard';}else{alert('Неверный код');}}).catch(e=>alert('Ошибка: '+e));}
+</script>
+</body>
+</html>

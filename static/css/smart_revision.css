@@ -1,0 +1,367 @@
+/**
+ * smart_revision.css — Стили для системы ревизии (упрощённая версия)
+ */
+
+/* ============================================
+   ТАБЛИЦА РЕВИЗИИ - ПО ВСЕЙ ШИРИНЕ
+   ============================================ */
+#revisions-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#revisions-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+#revisions-table th {
+    background: var(--bg-secondary, #f8fafc);
+    font-weight: 600;
+    padding: 10px 8px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border-color, #e2e8f0);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+#revisions-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    vertical-align: middle;
+}
+
+#revisions-table tbody tr:hover {
+    background: var(--bg-hover, #f1f5f9);
+}
+
+/* ============================================
+   БАННЕР УМНОГО КОНТРОЛЯ (УПРОЩЁННЫЙ)
+   ============================================ */
+.smart-control-banner {
+    background: linear-gradient(135deg, #fef2f2, #fff7ed);
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.smart-control-banner h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.smart-alert-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.smart-summary-card {
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 120px;
+    flex: 1;
+}
+
+.smart-summary-card.critical {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+}
+
+.smart-summary-card.warning {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+}
+
+.smart-summary-card.stagnant {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+}
+
+.smart-summary-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.smart-summary-card.critical .smart-summary-value { color: #dc2626; }
+.smart-summary-card.warning .smart-summary-value { color: #ea580c; }
+.smart-summary-card.stagnant .smart-summary-value { color: #2563eb; }
+
+.smart-summary-label {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.smart-alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.smart-alert-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.smart-alert-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.smart-alert-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+.smart-alert-desc {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* ============================================
+   ПАНЕЛЬ АКЦИОННЫХ ЦЕННИКОВ
+   ============================================ */
+.promotion-panel {
+    padding: 16px;
+    background: linear-gradient(135deg, #fef2f2, #fff7ed);
+    border-radius: 12px;
+    border: 2px solid #ef4444;
+    margin-bottom: 20px;
+}
+
+.promotion-panel h3 {
+    margin: 0;
+    color: #dc2626;
+    font-size: 16px;
+}
+
+.btn-promotion {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-promotion:hover {
+    background: #b91c1c;
+}
+
+/* ============================================
+   СТАТИСТИКА РЕВИЗИИ
+   ============================================ */
+.revision-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.revision-stats > div {
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.revision-stats .stat-value {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.revision-stats .stat-label {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* ============================================
+   СТАТУСЫ ТОВАРОВ
+   ============================================ */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.admin_decision {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.reserved_admin {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.sold,
+.status-badge.utilized {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* ============================================
+   СКИДКА - ЦВЕТОВЫЕ ИНДИКАТОРЫ
+   ============================================ */
+.discount-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 12px;
+    color: white;
+}
+
+.discount-badge.high {
+    background: #f97316;
+}
+
+.discount-badge.medium {
+    background: #eab308;
+}
+
+.discount-badge.low {
+    background: #22c55e;
+}
+
+/* ============================================
+   КНОПКИ ДЕЙСТВИЙ В ТАБЛИЦЕ
+   ============================================ */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 28px;
+}
+
+/* ============================================
+   АДАПТИВНОСТЬ
+   ============================================ */
+@media (max-width: 768px) {
+    #revisions-table {
+        font-size: 12px;
+        min-width: 700px;
+    }
+    
+    #revisions-table th,
+    #revisions-table td {
+        padding: 6px 4px;
+    }
+    
+    .revision-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .smart-control-banner {
+        padding: 12px;
+    }
+    
+    .smart-alert-summary {
+        flex-direction: column;
+    }
+    
+    .promotion-panel > div {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .action-buttons .btn {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+}
+
+/* ============================================
+   ТЁМНАЯ ТЕМА
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    .smart-control-banner {
+        background: linear-gradient(135deg, #2d1b1b, #2d2416);
+        border-color: #92400e;
+    }
+    
+    .smart-control-banner h3 {
+        color: #fdba74;
+    }
+    
+    .smart-summary-card.critical {
+        background: #2d1b1b;
+        border-color: #7f1d1d;
+    }
+    
+    .smart-summary-card.warning {
+        background: #2d2416;
+        border-color: #78350f;
+    }
+    
+    .smart-summary-card.stagnant {
+        background: #1e293b;
+        border-color: #1e3a8a;
+    }
+    
+    .smart-alert-item {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
+    .smart-alert-title {
+        color: #e5e7eb;
+    }
+    
+    .promotion-panel {
+        background: linear-gradient(135deg, #2d1b1b, #2d2416);
+        border-color: #dc2626;
+    }
+    
+    .promotion-panel h3 {
+        color: #fca5a5;
+    }
+    
+    #revisions-table th {
+        background: #1f2937;
+        border-bottom-color: #374151;
+    }
+    
+    #revisions-table td {
+        border-bottom-color: #374151;
+    }
+    
+    #revisions-table tbody tr:hover {
+        background: #1e293b;
+    }
+}

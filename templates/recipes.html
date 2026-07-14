@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Рецепты - ВетГид</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container-fluid {
+            max-width: 1400px;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #4a6fa5 0%, #2c5282 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .page-header h1 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary);
+            border: none;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+            background: transparent;
+            font-weight: 600;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+        
+        .table th {
+            font-weight: 600;
+            border-top: none;
+            background-color: #f8f9fa;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a5a8c;
+            border-color: #3a5a8c;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            border-color: var(--success);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            border-color: var(--danger);
+        }
+        
+        .form-control, .form-select {
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(74, 111, 165, 0.25);
+        }
+        
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .search-box input {
+            padding-left: 40px;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .status-prescribed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-dispensed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-expired {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .autocomplete-dropdown {
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .autocomplete-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .autocomplete-item.active {
+            background-color: #e9ecef;
+        }
+        
+        .print-form {
+            background: white;
+            padding: 2rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .print-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .print-field {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed #dee2e6;
+        }
+        
+        .print-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 0.25rem;
+        }
+        
+        .print-value {
+            font-size: 1.1rem;
+        }
+        
+        .signature-box {
+            border: 1px solid #333;
+            height: 80px;
+            margin-top: 2rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-form, .print-form * {
+                visibility: visible;
+            }
+            .print-form {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none;
+                box-shadow: none;
+                background: white;
+                padding: 20px;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .btn, button {
+                display: none !important;
+            }
+        }
+        
+        .modal-content {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #eee;
+            padding: 1rem 1.5rem;
+        }
+        
+        .select2-container--default .select2-selection--single {
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            height: calc(2.25rem + 2px);
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 1.5;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(2.25rem + 2px);
+        }
+        
+        .dataTables_wrapper {
+            margin-top: 1rem;
+        }
+        
+        .dataTables_filter input {
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .dataTables_length select {
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .pagination .page-link {
+            border-radius: 6px;
+            margin: 0 2px;
+            color: var(--primary);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+            .page-header h1 {
+                font-size: 1.3rem;
+            }
+            .page-header .d-flex {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .page-header .d-flex .btn {
+                width: 100%;
+            }
+            .nav-tabs .nav-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 13px;
+            }
+            .card {
+                margin-bottom: 1rem;
+            }
+            .card-body {
+                padding: 1rem;
+            }
+            .table {
+                font-size: 12px;
+            }
+            .table th,
+            .table td {
+                padding: 0.4rem 0.5rem;
+            }
+            .dataTables_wrapper .dataTables_filter {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .dataTables_wrapper .dataTables_filter input {
+                width: 100% !important;
+                max-width: none !important;
+            }
+            .dataTables_wrapper .dataTables_length {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .dataTables_wrapper .dataTables_info {
+                font-size: 12px;
+            }
+            .dataTables_wrapper .dataTables_paginate {
+                font-size: 12px;
+            }
+            .pagination .page-link {
+                padding: 0.3rem 0.6rem;
+                font-size: 12px;
+            }
+            .modal-dialog {
+                margin: 8px;
+            }
+            .modal-content {
+                border-radius: 10px;
+            }
+            .modal-body {
+                padding: 1rem;
+            }
+            .modal-header {
+                padding: 0.75rem 1rem;
+            }
+            .modal-header h5 {
+                font-size: 1rem;
+            }
+            .form-control, .form-select {
+                font-size: 16px;
+                min-height: 44px;
+            }
+            .btn {
+                min-height: 44px;
+                font-size: 14px;
+            }
+            .btn-sm {
+                min-height: 36px;
+                font-size: 12px;
+            }
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .row > [class*="col-"] {
+                padding-left: 6px;
+                padding-right: 6px;
+            }
+            .row {
+                margin-left: -6px;
+                margin-right: -6px;
+            }
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .select2-container {
+                width: 100% !important;
+            }
+            .d-flex.align-items-center.gap-2 {
+                flex-wrap: wrap;
+            }
+            .d-flex.align-items-center.gap-2 .btn {
+                flex: 1;
+                min-width: 80px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .page-header h1 {
+                font-size: 1.1rem;
+            }
+            .page-header .d-flex {
+                flex-direction: column;
+            }
+            .nav-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .nav-tabs .nav-link {
+                white-space: nowrap;
+                font-size: 12px;
+                padding: 0.4rem 0.6rem;
+            }
+            .table {
+                font-size: 11px;
+            }
+            .table th,
+            .table td {
+                padding: 0.3rem 0.4rem;
+            }
+            .modal-dialog {
+                margin: 4px;
+            }
+            .modal-content {
+                border-radius: 8px;
+            }
+            .card-body {
+                padding: 0.75rem;
+            }
+            .container-fluid {
+                padding-left: 6px;
+                padding-right: 6px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-prescription-bottle-alt me-2"></i> Рецептурный журнал</h1>
+                <div>
+                    <button class="btn btn-light me-2" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Печать
+                    </button>
+                    <button class="btn btn-light" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-1"></i> Экспорт
+                    </button>
+                </div>
+            </div>
+            <p class="mb-0 mt-2 opacity-75">Учёт рецептов, препаратов и бланков для ветеринарной аптеки</p>
+        </div>
+        
+        <ul class="nav nav-tabs" id="recipesTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="journal-tab" data-bs-toggle="tab" data-bs-target="#journal" type="button" role="tab">
+                    <i class="fas fa-book-medical me-1"></i> Журнал рецептов
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#new" type="button" role="tab">
+                    <i class="fas fa-plus-circle me-1"></i> Новый рецепт
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="drugs-tab" data-bs-toggle="tab" data-bs-target="#drugs" type="button" role="tab">
+                    <i class="fas fa-pills me-1"></i> Справочник препаратов
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="registry-tab" data-bs-toggle="tab" data-bs-target="#registry" type="button" role="tab">
+                    <i class="fas fa-database me-1"></i> Реестр препаратов
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="blanks-tab" data-bs-toggle="tab" data-bs-target="#blanks" type="button" role="tab">
+                    <i class="fas fa-file-contract me-1"></i> Журнал бланков
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="consent-tab" data-bs-toggle="tab" data-bs-target="#consent" type="button" role="tab">
+                    <i class="fas fa-file-signature me-1"></i> Памятка/согласие
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="recipesTabsContent">
+            <!-- Вкладка 1: Журнал рецептов -->
+            <div class="tab-pane fade show active" id="journal" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i> Список рецептов</h5>
+                        <div class="d-flex gap-2">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="form-control" id="searchRecipes" placeholder="Поиск по всем полям..." style="width: 250px;">
+                            </div>
+                            <input type="date" class="form-control" id="filterDate" style="width: 180px;">
+                            <select class="form-select" id="filterStatus" style="width: 180px;">
+                                <option value="">Все статусы</option>
+                                <option value="prescribed">Выписан</option>
+                                <option value="dispensed">Отпущен</option>
+                                <option value="expired">Просрочен</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="loadRecipes()">
+                                <i class="fas fa-sync-alt me-1"></i> Обновить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="recipesTable">
+                                <thead>
+                                    <tr>
+                                        <th>№ рецепта</th>
+                                        <th>Дата выписки</th>
+                                        <th>ФИО владельца</th>
+                                        <th>Животное</th>
+                                        <th>Препарат</th>
+                                        <th>Действующее вещество</th>
+                                        <th>Врач</th>
+                                        <th>Группа</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recipesTableBody">
+                                    <!-- Данные будут загружены через JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted" id="recipesCount">Загрузка...</div>
+                            <nav>
+                                <ul class="pagination mb-0" id="recipesPagination">
+                                    <!-- Пагинация будет сгенерирована через JavaScript -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка 2: Новый рецепт -->
+            <div class="tab-pane fade" id="new" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-edit me-2"></i> Форма рецепта</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="recipeForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Номер рецепта *</label>
+                                            <input type="text" class="form-control" id="recipeNumber" readonly>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Дата выписки *</label>
+                                            <input type="date" class="form-control" id="issueDate" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">ОГРН организации</label>
+                                            <input type="text" class="form-control" id="orgOGRN" value="1156382000774">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Организация</label>
+                                            <input type="text" class="form-control" id="orgName" value="ООО «ВетГид»">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Адрес организации</label>
+                                        <input type="text" class="form-control" id="orgAddress" value="445031, Самарская обл, Тольятти г, 70 лет Октября ул, дом № 60">
+                                    </div>
+                                    
+                                    <h6 class="border-bottom pb-2 mb-3">Данные владельца животного</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">ФИО владельца *</label>
+                                            <input type="text" class="form-control" id="ownerName" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Адрес владельца</label>
+                                            <input type="text" class="form-control" id="ownerAddress">
+                                        </div>
+                                    </div>
+                                    
+                                    <h6 class="border-bottom pb-2 mb-3">Данные животного</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Вид животного *</label>
+                                            <select class="form-select" id="animalType" required>
+                                                <option value="">Выберите...</option>
+                                                <option value="cat">Кошка</option>
+                                                <option value="dog">Собака</option>
+                                                <option value="horse">Лошадь</option>
+                                                <option value="cattle">КРС</option>
+                                                <option value="rodent">Грызуны</option>
+                                                <option value="rabbit">Кролики</option>
+                                                <option value="bird">Птицы</option>
+                                                <option value="other">Другое</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Пол</label>
+                                            <select class="form-select" id="animalGender">
+                                                <option value="">Не указан</option>
+                                                <option value="male">Самец</option>
+                                                <option value="female">Самка</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Возраст</label>
+                                            <input type="text" class="form-control" id="animalAge" placeholder="Например: 2 года">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Количество животных</label>
+                                            <input type="number" class="form-control" id="animalCount" min="1" value="1">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Кличка / ID</label>
+                                            <input type="text" class="form-control" id="animalName">
+                                        </div>
+                                    </div>
+                                    
+                                    <h6 class="border-bottom pb-2 mb-3">Назначение препарата</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Препарат *</label>
+                                            <div class="position-relative">
+                                                <input type="text" class="form-control" id="drugName" required 
+                                                       placeholder="Начните вводить название..." autocomplete="off">
+                                                <div class="autocomplete-dropdown" id="drugAutocomplete"></div>
+                                            </div>
+                                            <small class="text-muted">Автодополнение из справочника препаратов</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Действующее вещество</label>
+                                            <input type="text" class="form-control" id="activeSubstance" readonly>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Регистрационный № (РУ)</label>
+                                            <input type="text" class="form-control" id="drugRegistrationNumber" readonly>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Дозировка</label>
+                                            <input type="text" class="form-control" id="dosage" placeholder="Например: 50 мг">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Доза</label>
+                                            <input type="text" class="form-control" id="dose" placeholder="Например: 1 таблетка">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Частота применения</label>
+                                            <input type="text" class="form-control" id="frequency" placeholder="Например: 2 раза в день">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Время применения</label>
+                                            <input type="text" class="form-control" id="applicationTime" placeholder="Например: утром и вечером">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Длительность применения</label>
+                                            <input type="text" class="form-control" id="duration" placeholder="Например: 7 дней">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Способ применения</label>
+                                            <select class="form-select" id="applicationMethod">
+                                                <option value="">Выберите...</option>
+                                                <option value="oral">Внутрь</option>
+                                                <option value="intramuscular">Внутримышечно</option>
+                                                <option value="intravenous">Внутривенно</option>
+                                                <option value="subcutaneous">Подкожно</option>
+                                                <option value="external">Наружно</option>
+                                                <option value="other">Другое</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Время относительно кормления</label>
+                                        <select class="form-select" id="feedingTime">
+                                            <option value="">Не указано</option>
+                                            <option value="before">До кормления</option>
+                                            <option value="during">Во время кормления</option>
+                                            <option value="after">После кормления</option>
+                                            <option value="other">Другое</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <h6 class="border-bottom pb-2 mb-3">Дополнительные параметры</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Срок действия рецепта (дней)</label>
+                                            <input type="number" class="form-control" id="validityDays" min="1" max="365" value="30">
+                                            <small class="text-muted">По умолчанию 30 дней, можно продлить до 1 года</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Экземпляр №</label>
+                                            <select class="form-select" id="copyNumber">
+                                                <option value="1">1 (из 3)</option>
+                                                <option value="2">2 (из 3)</option>
+                                                <option value="3">3 (из 3)</option>
+                                            </select>
+                                            <small class="text-muted">Всего 3 экземпляра рецепта</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="urgentManufacturing">
+                                                <label class="form-check-label" for="urgentManufacturing">
+                                                    Срочное изготовление и отпуск
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Аналог (при отсутствии)</label>
+                                            <input type="text" class="form-control" id="analogDrug" placeholder="Название аналога">
+                                        </div>
+                                    </div>
+                                    
+                                    <h6 class="border-bottom pb-2 mb-3">Врач</h6>
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">ФИО ветеринарного врача *</label>
+                                            <input type="text" class="form-control" id="doctorName" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Подпись врача</label>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" id="doctorSigned">
+                                                <label class="form-check-label" for="doctorSigned">
+                                                    Подписано
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-primary" onclick="saveRecipe()">
+                                            <i class="fas fa-save me-1"></i> Сохранить рецепт
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="addAnotherRecipe()">
+                                            <i class="fas fa-plus-circle me-1"></i> Добавить еще один рецепт
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="generatePDF()">
+                                            <i class="fas fa-file-pdf me-1"></i> Скачать PDF бланк
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                            <i class="fas fa-redo me-1"></i> Очистить форму
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i> Предпросмотр рецепта</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="print-form" id="printPreview">
+                                    <div class="print-header">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <h4>РЕЦЕПТ № <span id="previewNumber">000001</span></h4>
+                                                <p>Ветеринарный рецептурный бланк</p>
+                                            </div>
+                                            <div id="qrcode-container" style="width: 100px; height: 100px;"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="print-field">
+                                                <div class="print-label">Дата выписки:</div>
+                                                <div class="print-value" id="previewDate">01.01.2026</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Организация:</div>
+                                                <div class="print-value" id="previewOrg">ООО «ВетГид»</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Владелец животного:</div>
+                                                <div class="print-value" id="previewOwner">Иванов Иван Иванович</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Животное:</div>
+                                                <div class="print-value" id="previewAnimal">Собака, кличка "Барсик"</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Препарат:</div>
+                                                <div class="print-value" id="previewDrug">Название препарата</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Назначение:</div>
+                                                <div class="print-value" id="previewPrescription">Дозировка, способ применения</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Врач:</div>
+                                                <div class="print-value" id="previewDoctor">Петрова Мария Сергеевна</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="print-field">
+                                                <div class="print-label">Экземпляр:</div>
+                                                <div class="print-value" id="previewCopy">1 (из 3)</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Срок действия:</div>
+                                                <div class="print-value" id="previewValidity">30 дней</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Срочное изготовление:</div>
+                                                <div class="print-value" id="previewUrgent">Нет</div>
+                                            </div>
+                                            
+                                            <div class="print-field">
+                                                <div class="print-label">Аналог:</div>
+                                                <div class="print-value" id="previewAnalog">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="signature-box">
+                                        Подпись врача: ____________________
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-history me-2"></i> Последние рецепты</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush" id="recentRecipes">
+                                    <!-- Последние рецепты будут загружены через JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка 3: Справочник препаратов -->
+            <div class="tab-pane fade" id="drugs" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i> Справочник препаратов</h5>
+                        <div class="d-flex gap-2">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="form-control" id="searchDrugs" placeholder="Поиск препаратов..." style="width: 250px;">
+                            </div>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importDrugsModal">
+                                <i class="fas fa-file-import me-1"></i> Импорт из реестра
+                            </button>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDrugModal">
+                                <i class="fas fa-plus me-1"></i> Добавить препарат
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="overflow-x: auto; max-width: 100%;">
+                            <table class="table table-hover" id="drugsTable" style="min-width: 1200px;">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 200px;">Название препарата</th>
+                                        <th style="min-width: 180px;">Действующее вещество</th>
+                                        <th style="min-width: 100px;">Концентрация</th>
+                                        <th style="min-width: 150px;">Регистрационное удостоверение (РУ)</th>
+                                        <th style="min-width: 120px;">Форма выпуска</th>
+                                        <th style="min-width: 200px;">Производитель</th>
+                                        <th style="min-width: 100px;">Рецептурный</th>
+                                        <th style="min-width: 120px;">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="drugsTableBody">
+                                    <!-- Данные будут загружены через JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted" id="drugsCount">Загрузка...</div>
+                            <nav>
+                                <ul class="pagination mb-0" id="drugsPagination">
+                                    <!-- Пагинация будет сгенерирована через JavaScript -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка 4: Реестр препаратов -->
+            <div class="tab-pane fade" id="registry" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i> Полный реестр препаратов</h5>
+                        <div class="d-flex gap-2">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="form-control" id="searchRegistry" placeholder="Поиск по всем полям..." style="width: 250px;">
+                            </div>
+                            <button class="btn btn-primary" onclick="loadRegistry()">
+                                <i class="fas fa-sync-alt me-1"></i> Обновить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="registryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Название препарата</th>
+                                        <th>Действующее вещество</th>
+                                        <th>Регистрационный №</th>
+                                        <th>Производитель</th>
+                                        <th>Форма выпуска</th>
+                                        <th>Показания</th>
+                                        <th>Рецептурный</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="registryTableBody">
+                                    <!-- Данные будут загружены через JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted" id="registryCount">Загрузка...</div>
+                            <nav>
+                                <ul class="pagination mb-0" id="registryPagination">
+                                    <!-- Пагинация будет сгенерирована через JavaScript -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка 5: Журнал бланков -->
+            <div class="tab-pane fade" id="blanks" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> Учёт бланков рецептов</h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBlankModal">
+                            <i class="fas fa-plus me-1"></i> Добавить бланк
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="blanksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Номер бланка</th>
+                                        <th>Дата выдачи</th>
+                                        <th>Кому выдан (ФИО врача)</th>
+                                        <th>Рецепт №</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blanksTableBody">
+                                    <!-- Данные будут загружены через JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка 5: Памятка/согласие -->
+            <div class="tab-pane fade" id="consent" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-file-signature me-2"></i> Согласие на лечение и ответственность</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="print-form">
+                                    <div class="print-header">
+                                        <h4>СОГЛАСИЕ НА ЛЕЧЕНИЕ И ОТВЕТСТВЕННОСТЬ</h4>
+                                    </div>
+                                    
+                                    <p>Я, нижеподписавшийся(аяся), владелец животного (или законный представитель), подтверждаю, что:</p>
+                                    
+                                    <ol>
+                                        <li>Мною получена полная консультация ветеринарного врача/фельдшера о состоянии здоровья моего животного.</li>
+                                        <li>Мне разъяснены риски, возможные побочные эффекты и правила применения назначенного лекарственного препарата.</li>
+                                        <li>Я обязуюсь строго соблюдать дозировку, кратность и длительность применения препарата в соответствии с рецептом.</li>
+                                        <li>Я несу ответственность за хранение препарата в недоступном для детей и животных месте.</li>
+                                        <li>Я уведомлен(а), что самовольное изменение дозировки или преждевременное прекращение лечения может нанести вред здоровью животного.</li>
+                                        <li>Я согласен(а) на обработку моих персональных данных.</li>
+                                    </ol>
+                                    
+                                    <div class="row mt-4">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">ФИО владельца</label>
+                                                <input type="text" class="form-control" id="consentOwnerName">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label class="form-label">Дата</label>
+                                                <input type="date" class="form-control" id="consentDate">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label class="form-label">Подпись</label>
+                                                <div class="signature-box" style="height: 60px;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="consentAgreed">
+                                        <label class="form-check-label" for="consentAgreed">
+                                            <strong>Ознакомлен(а) и согласен(а) со всеми пунктами</strong>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2 no-print">
+                                        <button type="button" class="btn btn-primary" onclick="printConsent()">
+                                            <i class="fas fa-print me-1"></i> Распечатать памятку
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="saveConsent()">
+                                            <i class="fas fa-save me-1"></i> Сохранить согласие
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="downloadConsentPDF()">
+                                            <i class="fas fa-file-pdf me-1"></i> Выгрузить в PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i> Статус согласий</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush" id="consentStatus">
+                                    <!-- Статус согласий будет загружен через JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно добавления препарата -->
+    <div class="modal fade" id="addDrugModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить препарат в справочник</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDrugForm">
+                        <div class="mb-3">
+                            <label class="form-label">Название препарата *</label>
+                            <input type="text" class="form-control" id="newDrugName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Действующее вещество (МНН) *</label>
+                            <input type="text" class="form-control" id="newActiveSubstance" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Концентрация</label>
+                                <input type="text" class="form-control" id="newConcentration" placeholder="Например: 250">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Единица измерения</label>
+                                <select class="form-select" id="newUnit">
+                                    <option value="">Выберите...</option>
+                                    <option value="mg">мг</option>
+                                    <option value="ml">мл</option>
+                                    <option value="mcg">мкг</option>
+                                    <option value="g">г</option>
+                                    <option value="IU">МЕ</option>
+                                    <option value="tablet">таблетка</option>
+                                    <option value="capsule">капсула</option>
+                                    <option value="other">другое</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Регистрационное удостоверение (РУ)</label>
+                            <input type="text" class="form-control" id="newRegistrationNumber" placeholder="Например: ЛП-001234">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Форма выпуска</label>
+                            <select class="form-select" id="newForm">
+                                <option value="">Выберите...</option>
+                                <option value="tablets">Таблетки</option>
+                                <option value="injections">Инъекции</option>
+                                <option value="drops">Капли</option>
+                                <option value="ointment">Мазь</option>
+                                <option value="suspension">Суспензия</option>
+                                <option value="capsules">Капсулы</option>
+                                <option value="powder">Порошок</option>
+                                <option value="solution">Раствор</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Производитель</label>
+                            <input type="text" class="form-control" id="newManufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Срок годности (месяцев)</label>
+                            <input type="number" class="form-control" id="newShelfLife" min="1" max="60" placeholder="24">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Рецептурный</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="newPrescriptionRequired">
+                                <label class="form-check-label" for="newPrescriptionRequired">
+                                    Требуется рецепт (согласно Приказу № 776)
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="addDrug()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно добавления бланка -->
+    <div class="modal fade" id="addBlankModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить бланк рецепта</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addBlankForm">
+                        <div class="mb-3">
+                            <label class="form-label">Номер бланка (серия + номер) *</label>
+                            <input type="text" class="form-control" id="newBlankNumber" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Дата выдачи *</label>
+                            <input type="date" class="form-control" id="newBlankIssueDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Кому выдан (ФИО врача) *</label>
+                            <input type="text" class="form-control" id="newBlankDoctor" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Рецепт № (привязка)</label>
+                            <input type="text" class="form-control" id="newBlankRecipeNumber">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Статус</label>
+                            <select class="form-select" id="newBlankStatus">
+                                <option value="issued">Выдан</option>
+                                <option value="used">Использован</option>
+                                <option value="cancelled">Аннулирован</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="addBlank()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно импорта препаратов -->
+    <div class="modal fade" id="importDrugsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Импорт препаратов из реестра Россельхознадзора</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Инструкция:</strong>
+                        <ol class="mb-0 mt-2">
+                            <li>Скачайте актуальный реестр с сайта Россельхознадзора</li>
+                            <li>Загрузите файл в формате XLS, XLSX или CSV</li>
+                            <li>Система автоматически извлечет данные о препаратах</li>
+                        </ol>
+                    </div>
+                    
+                    <form id="importDrugsForm">
+                        <div class="mb-3">
+                            <label class="form-label">Выберите файл реестра *</label>
+                            <input type="file" class="form-control" id="drugsFile" accept=".xls,.xlsx,.csv" required>
+                            <small class="text-muted">Поддерживаемые форматы: Excel (.xls, .xlsx) или CSV</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Параметры импорта</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updateExisting" checked>
+                                <label class="form-check-label" for="updateExisting">
+                                    Обновлять существующие препараты
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="skipDuplicates" checked>
+                                <label class="form-check-label" for="skipDuplicates">
+                                    Пропускать дубликаты
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="progress mb-3" style="height: 20px; display: none;" id="importProgress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div id="importResult" style="display: none;"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="importDrugs()">Импортировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Подключение библиотек -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <!-- Основной JavaScript -->
+    <script src="/static/js/recipes.js"></script>
+    
+    <script>
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализация Select2 для выпадающих списков
+            $('.form-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+            
+            // Установка текущей даты по умолчанию
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('issueDate').value = today;
+            document.getElementById('consentDate').value = today;
+            
+            // Генерация номера рецепта
+            generateRecipeNumber();
+            
+            // Загрузка данных
+            loadRecipes();
+            loadDrugs();
+            loadBlanks();
+            loadRecentRecipes();
+            loadConsentStatus();
+            
+            // Инициализация автодополнения для препаратов
+            initDrugAutocomplete();
+            
+            // Обновление предпросмотра при изменении формы
+            document.getElementById('recipeForm').addEventListener('input', updatePreview);
+        });
+        
+        // Обновление предпросмотра рецепта
+        function updatePreview() {
+            document.getElementById('previewNumber').textContent = document.getElementById('recipeNumber').value;
+            document.getElementById('previewDate').textContent = formatDate(document.getElementById('issueDate').value);
+            document.getElementById('previewOrg').textContent = document.getElementById('orgName').value;
+            document.getElementById('previewOwner').textContent = document.getElementById('ownerName').value || 'Не указано';
+            
+            const animalType = document.getElementById('animalType').value;
+            const animalName = document.getElementById('animalName').value;
+            let animalText = '';
+            if (animalType) {
+                const typeNames = {
+                    'cat': 'Кошка', 'dog': 'Собака', 'horse': 'Лошадь', 'cattle': 'КРС',
+                    'rodent': 'Грызуны', 'rabbit': 'Кролики', 'bird': 'Птицы', 'other': 'Другое'
+                };
+                animalText = typeNames[animalType] || animalType;
+                if (animalName) animalText += `, кличка "${animalName}"`;
+            }
+            document.getElementById('previewAnimal').textContent = animalText || 'Не указано';
+            
+            document.getElementById('previewDrug').textContent = document.getElementById('drugName').value || 'Не указано';
+            
+            const dosage = document.getElementById('dosage').value;
+            const method = document.getElementById('applicationMethod').value;
+            let prescriptionText = '';
+            if (dosage) prescriptionText += `Дозировка: ${dosage}. `;
+            if (method) {
+                const methodNames = {
+                    'oral': 'Внутрь', 'intramuscular': 'Внутримышечно', 'intravenous': 'Внутривенно',
+                    'subcutaneous': 'Подкожно', 'external': 'Наружно', 'other': 'Другое'
+                };
+                prescriptionText += `Способ применения: ${methodNames[method] || method}.`;
+            }
+            document.getElementById('previewPrescription').textContent = prescriptionText || 'Не указано';
+            
+            document.getElementById('previewDoctor').textContent = document.getElementById('doctorName').value || 'Не указано';
+            
+            // Новые поля
+            const copyNumber = document.getElementById('copyNumber').value;
+            document.getElementById('previewCopy').textContent = `${copyNumber} (из 3)`;
+            
+            const validityDays = document.getElementById('validityDays').value;
+            document.getElementById('previewValidity').textContent = `${validityDays} дней`;
+            
+            const urgent = document.getElementById('urgentManufacturing').checked;
+            document.getElementById('previewUrgent').textContent = urgent ? 'Да' : 'Нет';
+            
+            const analog = document.getElementById('analogDrug').value;
+            document.getElementById('previewAnalog').textContent = analog || '—';
+            
+            // Генерация QR-кода
+            generateQRCode();
+        }
+        
+        // Генерация QR-кода
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrcode-container');
+            qrContainer.innerHTML = '';
+            
+            const recipeNumber = document.getElementById('recipeNumber').value;
+            const ownerName = document.getElementById('ownerName').value;
+            const issueDate = document.getElementById('issueDate').value;
+            
+            if (recipeNumber && ownerName) {
+                const qrData = `Рецепт №${recipeNumber}\nВладелец: ${ownerName}\nДата: ${issueDate}\nОрганизация: ООО «ВетГид»`;
+                
+                QRCode.toCanvas(qrContainer, qrData, {
+                    width: 100,
+                    height: 100,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function(error) {
+                    if (error) {
+                        console.error('Ошибка генерации QR-кода:', error);
+                        qrContainer.innerHTML = '<div class="text-muted">QR-код не сгенерирован</div>';
+                    }
+                });
+            }
+        }
+        
+    </script>
+</body>
+</html>

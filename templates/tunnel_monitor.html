@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Мониторинг туннеля - ВетГид корпоративный график</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') + '?v=20260321' }}">
+    <style>
+        .tunnel-monitor {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .tunnel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .tunnel-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .status-running { background: #22c55e; color: white; }
+        .status-stopped { background: #ef4444; color: white; }
+        .status-checking { background: #f59e0b; color: white; }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .status-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .status-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+        .status-card .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .status-card .value.success { color: #22c55e; }
+        .status-card .value.error { color: #ef4444; }
+        .status-card .value.warning { color: #f59e0b; }
+        
+        .tunnel-info {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .tunnel-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .tunnel-url {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+        .tunnel-password {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .logs-panel {
+            background: #1f2937;
+            color: #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .logs-panel h3 {
+            margin: 0 0 10px 0;
+            color: #9ca3af;
+        }
+        .logs-container {
+            background: #111827;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .log-line {
+            margin: 3px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-info { color: #60a5fa; }
+        .log-error { color: #f87171; }
+        .log-warning { color: #fbbf24; }
+        .log-success { color: #34d399; }
+        
+        .btn-refresh {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-refresh:hover {
+            background: #5568d3;
+        }
+        .btn-copy {
+            background: #22c55e;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .port-check {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .port-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .port-item:last-child {
+            border-bottom: none;
+        }
+        .port-status {
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .port-ok { background: #22c55e; color: white; }
+        .port-error { background: #ef4444; color: white; }
+        
+        .auto-refresh {
+            text-align: right;
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📅 ВетГид корпоративный график</div>
+        <div class="nav-user">
+            <span class="nav-user-name">{{ user.full_name }}</span>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">← Назад</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Выход</a>
+        </div>
+    </nav>
+    
+    <div class="tunnel-monitor">
+        <div class="tunnel-header">
+            <h1>📡 Мониторинг туннеля</h1>
+            <div>
+                Статус: <span id="status-badge" class="status-badge status-checking">Проверка...</span>
+            </div>
+        </div>
+        
+        <div class="auto-refresh">
+            Автообновление: <span id="auto-refresh-timer">30</span> сек
+            <button class="btn-refresh" onclick="loadStatus()">🔄 Обновить сейчас</button>
+        </div>
+        
+        <div class="status-grid">
+            <div class="status-card">
+                <h3>🟢 Туннель активен</h3>
+                <div class="value" id="tunnel-running">-</div>
+            </div>
+            <div class="status-card">
+                <h3>🌐 Доступен извне</h3>
+                <div class="value" id="tunnel-available">-</div>
+            </div>
+            <div class="status-card">
+                <h3>⏱️ Время работы</h3>
+                <div class="value" id="tunnel-uptime">-</div>
+            </div>
+            <div class="status-card">
+                <h3>✅ Проверок успешно</h3>
+                <div class="value" id="tunnel-success-count">-</div>
+            </div>
+            <div class="status-card">
+                <h3>🔄 Всего проверок</h3>
+                <div class="value" id="tunnel-check-count">-</div>
+            </div>
+            <div class="status-card">
+                <h3>❌ Последняя ошибка</h3>
+                <div class="value" id="tunnel-last-error">-</div>
+            </div>
+        </div>
+        
+        <div class="tunnel-info" id="tunnel-info-panel" style="display:none;">
+            <h3>🔗 Информация о туннеле</h3>
+            <div class="tunnel-url">
+                <strong>Ссылка:</strong> <span id="tunnel-url">-</span>
+                <button class="btn-copy" onclick="copyToClipboard(document.getElementById('tunnel-url').textContent)">📋 Копировать</button>
+            </div>
+            <div>
+                <strong>Пароль для телефона:</strong> 
+                <span id="tunnel-password" class="tunnel-password">-</span>
+                <button class="btn-copy" onclick="copyToClipboard(document.getElementById('tunnel-password').textContent)">📋 Копировать</button>
+            </div>
+            <p style="margin-top:10px;font-size:13px;color:#6b7280;">
+                💡 Откройте ссылку на телефоне → введите пароль → «Click to Submit». 
+                Страницу с паролем показывают раз в 7 дней с одного устройства.
+            </p>
+        </div>
+        
+        <div class="port-check">
+            <h3>🔌 Проверка порта 8080</h3>
+            <div id="port-check-results">
+                <div class="port-item">
+                    <span>Локальный порт (127.0.0.1:8080)</span>
+                    <span id="port-local" class="port-status">Проверка...</span>
+                </div>
+                <div class="port-item">
+                    <span>Сетевой порт (LAN)</span>
+                    <span id="port-lan" class="port-status">Проверка...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="logs-panel">
+            <h3>📜 Логи туннеля (последние 100 строк)</h3>
+            <button class="btn-refresh" onclick="loadLogs()" style="margin-bottom:10px;">🔄 Обновить логи</button>
+            <div class="logs-container" id="logs-container">
+                <div class="log-line">Загрузка логов...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let autoRefreshInterval = 30;
+        let countdownInterval = null;
+        
+        function startCountdown() {
+            let remaining = autoRefreshInterval;
+            document.getElementById('auto-refresh-timer').textContent = remaining;
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(function() {
+                remaining--;
+                document.getElementById('auto-refresh-timer').textContent = remaining;
+                if (remaining <= 0) {
+                    remaining = autoRefreshInterval;
+                    loadStatus();
+                }
+            }, 1000);
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Скопировано: ' + text);
+            }).catch(function(err) {
+                alert('Ошибка копирования: ' + err);
+            });
+        }
+        
+        function formatUptime(isoString) {
+            if (!isoString) return '-';
+            const started = new Date(isoString);
+            const now = new Date();
+            const diff = now - started;
+            
+            if (diff < 0) return '-';
+            
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) {
+                return days + ' дн ' + (hours % 24) + ' ч';
+            } else if (hours > 0) {
+                return hours + ' ч ' + (minutes % 60) + ' мин';
+            } else if (minutes > 0) {
+                return minutes + ' мин ' + (seconds % 60) + ' сек';
+            } else {
+                return seconds + ' сек';
+            }
+        }
+        
+        function loadStatus() {
+            fetch('/api/tunnel-status')
+                .then(r => r.json())
+                .then(data => {
+                    // Статус
+                    const statusBadge = document.getElementById('status-badge');
+                    if (data.running) {
+                        statusBadge.className = 'status-badge status-running';
+                        statusBadge.textContent = 'Работает';
+                    } else {
+                        statusBadge.className = 'status-badge status-stopped';
+                        statusBadge.textContent = 'Остановлен';
+                    }
+                    
+                    // Основная информация
+                    document.getElementById('tunnel-running').textContent = data.running ? '✅ Да' : '❌ Нет';
+                    document.getElementById('tunnel-running').className = 'value ' + (data.running ? 'success' : 'error');
+                    
+                    if (data.available !== null) {
+                        document.getElementById('tunnel-available').textContent = data.available ? '✅ Да' : '❌ Нет';
+                        document.getElementById('tunnel-available').className = 'value ' + (data.available ? 'success' : 'error');
+                    } else {
+                        document.getElementById('tunnel-available').textContent = '⏳ Проверка...';
+                        document.getElementById('tunnel-available').className = 'value warning';
+                    }
+                    
+                    document.getElementById('tunnel-uptime').textContent = formatUptime(data.started_at);
+                    document.getElementById('tunnel-success-count').textContent = data.success_count || 0;
+                    document.getElementById('tunnel-check-count').textContent = data.check_count || 0;
+                    document.getElementById('tunnel-last-error').textContent = data.last_error || '-';
+                    
+                    // Информация о туннеле
+                    const infoPanel = document.getElementById('tunnel-info-panel');
+                    if (data.url) {
+                        infoPanel.style.display = 'block';
+                        document.getElementById('tunnel-url').textContent = data.url;
+                        document.getElementById('tunnel-password').textContent = data.password || '-';
+                    } else {
+                        infoPanel.style.display = 'none';
+                    }
+                    
+                    // Сообщение о проверке
+                    if (data.check_message) {
+                        document.getElementById('tunnel-available').textContent += ' (' + data.check_message + ')';
+                    }
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки статуса:', err);
+                    document.getElementById('status-badge').textContent = 'Ошибка';
+                    document.getElementById('status-badge').className = 'status-badge status-stopped';
+                });
+            
+            // Проверка порта
+            fetch('/api/port-check')
+                .then(r => r.json())
+                .then(data => {
+                    const localEl = document.getElementById('port-local');
+                    const lanEl = document.getElementById('port-lan');
+                    
+                    if (data.local_port.available) {
+                        localEl.textContent = '✅ ' + data.local_port.message;
+                        localEl.className = 'port-status port-ok';
+                    } else {
+                        localEl.textContent = '❌ ' + data.local_port.message;
+                        localEl.className = 'port-status port-error';
+                    }
+                    
+                    if (data.lan_port.available) {
+                        lanEl.textContent = '✅ ' + data.lan_port.message;
+                        lanEl.className = 'port-status port-ok';
+                    } else {
+                        lanEl.textContent = '❌ ' + data.lan_port.message;
+                        lanEl.className = 'port-status port-error';
+                    }
+                })
+                .catch(err => {
+                    console.error('Ошибка проверки порта:', err);
+                });
+        }
+        
+        function loadLogs() {
+            fetch('/api/tunnel-logs?lines=100')
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('logs-container');
+                    if (!data.logs || data.logs.length === 0) {
+                        container.innerHTML = '<div class="log-line">Логов пока нет</div>';
+                        return;
+                    }
+                    
+                    container.innerHTML = '';
+                    data.logs.forEach(function(line) {
+                        const logEl = document.createElement('div');
+                        logEl.className = 'log-line';
+                        
+                        // Раскраска логов
+                        if (line.includes('[ERROR]')) {
+                            logEl.className += ' log-error';
+                        } else if (line.includes('[WARNING]')) {
+                            logEl.className += ' log-warning';
+                        } else if (line.includes('[SUCCESS]')) {
+                            logEl.className += ' log-success';
+                        } else if (line.includes('[INFO]')) {
+                            logEl.className += ' log-info';
+                        }
+                        
+                        logEl.textContent = line;
+                        container.appendChild(logEl);
+                    });
+                    
+                    // Прокрутка вниз
+                    container.scrollTop = container.scrollHeight;
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки логов:', err);
+                    document.getElementById('logs-container').innerHTML = '<div class="log-line">Ошибка загрузки логов</div>';
+                });
+        }
+        
+        // Загрузка при старте
+        loadStatus();
+        loadLogs();
+        startCountdown();
+        
+        // Автообновление каждые 30 секунд
+        setInterval(loadStatus, 30000);
+    </script>
+</body>
+</html>

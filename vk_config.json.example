@@ -1,0 +1,8 @@
+{
+    "service_token": "ВАШ_ТОКЕН_ГРУППЫ_VK",
+    "group_id": "ID_ВАШЕЙ_ГРУППЫ_VK",
+    "admin_vk_id": "ВАШ_VK_ID",
+    "chat_peer_id": 2000000001,
+    "api_version": "5.131",
+    "vk_user_map": {}
+}

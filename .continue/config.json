@@ -1,0 +1,73 @@
+{
+  "models": [
+    {
+      "title": "GigaChat",
+      "model": "GigaChat:latest",
+      "apiBase": "https://gigachat.devices.sberbank.ru/api/v1",
+      "apiKey": "MDE5ZDExNzQtOWYxYi03ZTJlLWE1MGQtZWEzZDIxYzUxYTA0OmNhZWY1MDEzLTNmZDUtNDY3MS1iMjkzLTRhM2I1NmRlNDhjZg==",
+      "provider": "openai-compatible",
+      "maxContextLength": 8192,
+      "requestOptions": {
+        "headers": {
+          "Authorization": "Basic MDE5ZDExNzQtOWYxYi03ZTJlLWE1MGQtZWEzZDIxYzUxYTA0OmNhZWY1MDEzLTNmZDUtNDY3MS1iMjkzLTRhM2I1NmRlNDhjZg=="
+        }
+      }
+    },
+    {
+      "title": "GigaChat Pro",
+      "model": "GigaChat-Pro",
+      "apiBase": "https://gigachat.devices.sberbank.ru/api/v1",
+      "apiKey": "MDE5ZDExNzQtOWYxYi03ZTJlLWE1MGQtZWEzZDIxYzUxYTA0OmNhZWY1MDEzLTNmZDUtNDY3MS1iMjkzLTRhM2I1NmRlNDhjZg==",
+      "provider": "openai-compatible",
+      "maxContextLength": 16384,
+      "requestOptions": {
+        "headers": {
+          "Authorization": "Basic MDE5ZDExNzQtOWYxYi03ZTJlLWE1MGQtZWEzZDIxYzUxYTA0OmNhZWY1MDEzLTNmZDUtNDY3MS1iMjkzLTRhM2I1NmRlNDhjZg=="
+        }
+      }
+    },
+    {
+      "title": "DeepSeek",
+      "model": "deepseek-chat",
+      "apiBase": "https://api.deepseek.com",
+      "apiKey": "sk-56ded5e7b6424c43b305d85527d06aee",
+      "provider": "openai",
+      "maxContextLength": 16384
+    },
+    {
+      "title": "DeepSeek Coder",
+      "model": "deepseek-coder",
+      "apiBase": "https://api.deepseek.com",
+      "apiKey": "sk-56ded5e7b6424c43b305d85527d06aee",
+      "provider": "openai",
+      "maxContextLength": 16384
+    },
+    {
+      "title": "OpenAI GPT-4",
+      "model": "gpt-4",
+      "apiBase": "https://api.openai.com/v1",
+      "apiKey": "sk-56ded5e7b6424c43b305d85527d06aee",
+      "provider": "openai",
+      "maxContextLength": 8192
+    },
+    {
+      "title": "OpenAI GPT-3.5",
+      "model": "gpt-3.5-turbo",
+      "apiBase": "https://api.openai.com/v1",
+      "apiKey": "sk-56ded5e7b6424c43b305d85527d06aee",
+      "provider": "openai",
+      "maxContextLength": 4096
+    }
+  ],
+  "defaultModel": "GigaChat",
+  "embeddingsProvider": {
+    "provider": "transformers.js"
+  },
+  "tabAutocompleteModel": {
+    "title": "GigaChat Code",
+    "model": "GigaChat:latest",
+    "apiBase": "https://gigachat.devices.sberbank.ru/api/v1",
+    "apiKey": "MDE5ZDExNzQtOWYxYi03ZTJlLWE1MGQtZWEzZDIxYzUxYTA0OmNhZWY1MDEzLTNmZDUtNDY3MS1iMjkzLTRhM2I1NmRlNDhjZg==",
+    "provider": "openai-compatible"
+  }
+}

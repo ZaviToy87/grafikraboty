@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика продаж и приемок — ВетГид</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') + '?v=20260428_modern' }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        .daily-page {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .daily-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .daily-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .daily-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .daily-controls select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 6px;
+            background: var(--bg-primary, #fff);
+            color: var(--text-primary, #333);
+            font-size: 14px;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: var(--bg-secondary, #f8f9fa);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color, #e9ecef);
+            transition: transform 0.2s;
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+        }
+        .summary-card .card-label {
+            font-size: 13px;
+            color: var(--text-secondary, #6c757d);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .summary-card .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary, #333);
+        }
+        .summary-card .card-sub {
+            font-size: 13px;
+            color: var(--text-secondary, #6c757d);
+            margin-top: 4px;
+        }
+        .summary-card.sales-card {
+            border-left: 4px solid #10b981;
+        }
+        .summary-card.receipts-card {
+            border-left: 4px solid #3b82f6;
+        }
+        .summary-card.items-card {
+            border-left: 4px solid #f59e0b;
+        }
+        .summary-card.avg-card {
+            border-left: 4px solid #8b5cf6;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .chart-card {
+            background: var(--bg-secondary, #f8f9fa);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color, #e9ecef);
+        }
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+        .chart-card h3 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: var(--text-primary, #333);
+        }
+        .chart-card canvas {
+            max-height: 350px;
+        }
+        .daily-table-wrap {
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+        .daily-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .daily-table th {
+            background: var(--bg-tertiary, #f0f0f0);
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary, #333);
+            border-bottom: 2px solid var(--border-color, #ddd);
+            white-space: nowrap;
+        }
+        .daily-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color, #eee);
+            color: var(--text-primary, #333);
+        }
+        .daily-table tr:hover td {
+            background: var(--bg-hover, #f5f5f5);
+        }
+        .daily-table .num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .daily-table .positive {
+            color: #10b981;
+        }
+        .daily-table .negative {
+            color: #ef4444;
+        }
+        .top-products {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .top-products .product-list {
+            background: var(--bg-secondary, #f8f9fa);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color, #e9ecef);
+        }
+        .top-products .product-list h3 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .top-products .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color, #eee);
+        }
+        .top-products .product-item:last-child {
+            border-bottom: none;
+        }
+        .top-products .product-name {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary, #333);
+        }
+        .top-products .product-stats {
+            text-align: right;
+            font-size: 13px;
+            color: var(--text-secondary, #6c757d);
+            white-space: nowrap;
+        }
+        .top-products .product-stats strong {
+            color: var(--text-primary, #333);
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary, #6c757d);
+            font-size: 16px;
+        }
+        .loading .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color, #e9ecef);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #ef4444;
+        }
+        .badge-period {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #6366f1;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .top-products {
+                grid-template-columns: 1fr;
+            }
+            .summary-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="daily-page">
+        <div class="daily-header">
+            <h2>📊 Аналитика продаж и приемок</h2>
+            <div class="daily-controls">
+                <select id="period-select" onchange="loadDailyStats()">
+                    <option value="7">За 7 дней</option>
+                    <option value="14">За 14 дней</option>
+                    <option value="30" selected>За 30 дней</option>
+                    <option value="60">За 60 дней</option>
+                    <option value="90">За 90 дней</option>
+                    <option value="180">За 180 дней</option>
+                    <option value="365">За год</option>
+                </select>
+                <button class="btn btn-primary" onclick="loadDailyStats()">🔄 Обновить</button>
+                <a href="/sync-1c" class="btn btn-secondary">← Все данные 1С</a>
+                <a href="/dashboard" class="btn btn-secondary">🏠 На главную</a>
+            </div>
+        </div>
+
+        <div id="loading-indicator" class="loading">
+            <div class="spinner"></div>
+            <div>Загрузка данных...</div>
+        </div>
+        <div id="error-message" class="error-message" style="display:none;"></div>
+        <div id="content-area" style="display:none;">
+            <!-- Карточки сводки -->
+            <div class="summary-cards" id="summary-cards"></div>
+
+            <!-- Графики -->
+            <div class="charts-grid">
+                <div class="chart-card full-width">
+                    <h3>📈 Продажи и приемки по дням (сумма)</h3>
+                    <canvas id="chart-sum"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📦 Количество документов по дням</h3>
+                    <canvas id="chart-docs"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📦 Количество товаров по дням</h3>
+                    <canvas id="chart-items"></canvas>
+                </div>
+            </div>
+
+            <!-- Топ товаров -->
+            <div class="top-products" id="top-products"></div>
+
+            <!-- Таблица по дням -->
+            <div class="chart-card full-width">
+                <h3>📋 Детальная таблица по дням</h3>
+                <div class="daily-table-wrap">
+                    <table class="daily-table" id="daily-table">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th class="num">Продажи (док.)</th>
+                                <th class="num">Продажи (сумма)</th>
+                                <th class="num">Продажи (товары)</th>
+                                <th class="num">Приемки (док.)</th>
+                                <th class="num">Приемки (сумма)</th>
+                                <th class="num">Приемки (товары)</th>
+                                <th class="num">Разница (продажи - приемки)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daily-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chartSum = null;
+        let chartDocs = null;
+        let chartItems = null;
+
+        async function loadDailyStats() {
+            const days = document.getElementById('period-select').value;
+            
+            document.getElementById('loading-indicator').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('content-area').style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/sync-1c/daily-stats?days=${days}`);
+                if (!response.ok) {
+                    throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (err) {
+                document.getElementById('loading-indicator').style.display = 'none';
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = '❌ Ошибка загрузки: ' + err.message;
+            }
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('loading-indicator').style.display = 'none';
+            document.getElementById('content-area').style.display = 'block';
+
+            const { daily_data, summary, top_sold, top_received } = data;
+
+            // Сводные карточки
+            renderSummaryCards(summary);
+
+            // Графики
+            renderCharts(daily_data);
+
+            // Топ товаров
+            renderTopProducts(top_sold, top_received);
+
+            // Таблица
+            renderTable(daily_data);
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 2 }).format(val);
+        }
+
+        function formatNumber(val) {
+            return new Intl.NumberFormat('ru-RU').format(val);
+        }
+
+        function renderSummaryCards(summary) {
+            const container = document.getElementById('summary-cards');
+            container.innerHTML = `
+                <div class="summary-card sales-card">
+                    <div class="card-label">💰 Продажи (сумма)</div>
+                    <div class="card-value">${formatCurrency(summary.sales.total_sum)}</div>
+                    <div class="card-sub">${formatNumber(summary.sales.doc_count)} док. · ${formatNumber(summary.sales.items_count)} товаров</div>
+                </div>
+                <div class="summary-card receipts-card">
+                    <div class="card-label">📦 Приемки (сумма)</div>
+                    <div class="card-value">${formatCurrency(summary.receipts.total_sum)}</div>
+                    <div class="card-sub">${formatNumber(summary.receipts.doc_count)} док. · ${formatNumber(summary.receipts.items_count)} товаров</div>
+                </div>
+                <div class="summary-card items-card">
+                    <div class="card-label">📊 Средняя продажа в день</div>
+                    <div class="card-value">${formatCurrency(summary.sales.avg_per_day)}</div>
+                    <div class="card-sub">Средняя приемка: ${formatCurrency(summary.receipts.avg_per_day)}</div>
+                </div>
+                <div class="summary-card avg-card">
+                    <div class="card-label">📈 Разница (продажи - приемки)</div>
+                    <div class="card-value ${summary.sales.total_sum >= summary.receipts.total_sum ? 'positive' : 'negative'}">
+                        ${formatCurrency(summary.sales.total_sum - summary.receipts.total_sum)}
+                    </div>
+                    <div class="card-sub">За ${summary.days} дней · <span class="badge-period">${summary.days} дн.</span></div>
+                </div>
+            `;
+        }
+
+        function renderCharts(daily_data) {
+            const labels = daily_data.map(d => {
+                const parts = d.date.split('-');
+                return parts[2] + '.' + parts[1];
+            });
+
+            const salesSum = daily_data.map(d => d.sales.total_sum);
+            const receiptsSum = daily_data.map(d => d.receipts.total_sum);
+            const salesDocs = daily_data.map(d => d.sales.doc_count);
+            const receiptsDocs = daily_data.map(d => d.receipts.doc_count);
+            const salesItems = daily_data.map(d => d.sales.items_count);
+            const receiptsItems = daily_data.map(d => d.receipts.items_count);
+
+            // График сумм
+            if (chartSum) chartSum.destroy();
+            chartSum = new Chart(document.getElementById('chart-sum'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Продажи',
+                            data: salesSum,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Приемки',
+                            data: receiptsSum,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.dataset.label + ': ' + formatCurrency(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: val => formatCurrency(val)
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График документов
+            if (chartDocs) chartDocs.destroy();
+            chartDocs = new Chart(document.getElementById('chart-docs'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Продажи (док.)',
+                            data: salesDocs,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Приемки (док.)',
+                            data: receiptsDocs,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График товаров
+            if (chartItems) chartItems.destroy();
+            chartItems = new Chart(document.getElementById('chart-items'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Продано товаров',
+                            data: salesItems,
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Принято товаров',
+                            data: receiptsItems,
+                            backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                            borderColor: '#8b5cf6',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTopProducts(top_sold, top_received) {
+            const container = document.getElementById('top-products');
+            
+            const soldHtml = top_sold.map((item, i) => `
+                <div class="product-item">
+                    <span class="product-name">${i + 1}. ${item.nomenclature_name}</span>
+                    <span class="product-stats">
+                        <strong>${formatCurrency(item.total_sum)}</strong> · ${formatNumber(item.total_qty)} шт · ${item.doc_count} док.
+                    </span>
+                </div>
+            `).join('');
+
+            const receivedHtml = top_received.map((item, i) => `
+                <div class="product-item">
+                    <span class="product-name">${i + 1}. ${item.nomenclature_name}</span>
+                    <span class="product-stats">
+                        <strong>${formatCurrency(item.total_sum)}</strong> · ${formatNumber(item.total_qty)} шт · ${item.doc_count} док.
+                    </span>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="product-list">
+                    <h3>🏆 Топ-10 продаваемых товаров</h3>
+                    ${soldHtml || '<p style="color: var(--text-secondary);">Нет данных</p>'}
+                </div>
+                <div class="product-list">
+                    <h3>📦 Топ-10 принимаемых товаров</h3>
+                    ${receivedHtml || '<p style="color: var(--text-secondary);">Нет данных</p>'}
+                </div>
+            `;
+        }
+
+        function renderTable(daily_data) {
+            const tbody = document.getElementById('daily-table-body');
+            
+            if (daily_data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">Нет данных за выбранный период</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = daily_data.map(d => {
+                const diff = d.sales.total_sum - d.receipts.total_sum;
+                const diffClass = diff >= 0 ? 'positive' : 'negative';
+                return `
+                    <tr>
+                        <td><strong>${d.date}</strong></td>
+                        <td class="num">${formatNumber(d.sales.doc_count)}</td>
+                        <td class="num">${formatCurrency(d.sales.total_sum)}</td>
+                        <td class="num">${formatNumber(d.sales.items_count)}</td>
+                        <td class="num">${formatNumber(d.receipts.doc_count)}</td>
+                        <td class="num">${formatCurrency(d.receipts.total_sum)}</td>
+                        <td class="num">${formatNumber(d.receipts.items_count)}</td>
+                        <td class="num ${diffClass}">${formatCurrency(diff)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Загружаем при старте
+        document.addEventListener('DOMContentLoaded', loadDailyStats);
+    </script>
+</body>
+</html>

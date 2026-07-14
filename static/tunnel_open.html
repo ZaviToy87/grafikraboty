@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Открытие графика</title>
+</head>
+<body>
+  <p>Открываю график…</p>
+  <form id="f" method="post" action="">
+    <input type="hidden" name="password" value="">
+  </form>
+  <script>
+    (function() {
+      var params = new URLSearchParams(location.search);
+      var tunnel = params.get('tunnel') || params.get('t');
+      var pw = params.get('pw') || params.get('password') || params.get('p') || '';
+      if (!tunnel || tunnel.indexOf('.loca.lt') === -1) {
+        document.body.innerHTML = '<p>Укажите в ссылке параметры <code>tunnel</code> и <code>pw</code> (пароль туннеля).</p>';
+        return;
+      }
+      var action = tunnel.replace(/\/$/, '') + '/';
+      var form = document.getElementById('f');
+      form.action = action;
+      form.querySelector('input[name="password"]').value = pw;
+      form.submit();
+    })();
+  </script>
+</body>
+</html>

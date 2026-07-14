@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FIX CACHE - GrafikRaboty</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .box {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 { color: #667eea; }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px 5px;
+        }
+        code {
+            background: #f5f7fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🔧 Очистка кэша браузера</h1>
+        
+        <h2>СПОСОБ 1: Быстрая очистка</h2>
+        <p>Нажми комбинацию клавиш:</p>
+        <p><strong style="font-size: 24px; color: #667eea;">Ctrl + Shift + R</strong></p>
+        <p>Или:</p>
+        <p><strong style="font-size: 24px; color: #667eea;">Ctrl + F5</strong></p>
+        
+        <h2>СПОСОБ 2: Полная очистка</h2>
+        <ol>
+            <li>Нажми <code>Ctrl + Shift + Delete</code></li>
+            <li>Выбери "Кэшированные изображения и файлы"</li>
+            <li>Нажми "Удалить"</li>
+            <li>Обнови страницу</li>
+        </ol>
+        
+        <h2>СПОСОБ 3: Через DevTools</h2>
+        <ol>
+            <li>Нажми <code>F12</code></li>
+            <li>Нажми <strong>правой кнопкой</strong> на кнопку обновления</li>
+            <li>Выбери "Очистить кэш и перезагрузить"</li>
+        </ol>
+        
+        <hr style="margin: 20px 0;">
+        
+        <p><strong>После очистки кэша открой:</strong></p>
+        <a href="http://127.0.0.1:8080/login" class="btn">📅 Открыть график</a>
+        
+        <p style="margin-top: 20px; color: #666;">
+            <em>Если кнопки всё ещё без стилей — проверь консоль браузера (F12 → Console) на ошибки.</em>
+        </p>
+    </div>
+    
+    <script>
+        // Автоматическая перезагрузка с очисткой кэша через 3 секунды
+        setTimeout(function() {
+            console.log('Перезагрузка страницы с очисткой кэша...');
+            window.location.reload(true);
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Конвертер ценников - ВетГид корпоративный график</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') + '?v=20260323' }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/converter.css') + '?v=20260323' }}">
+</head>
+<body class="converter-page">
+    <div class="converter-container">
+        <header class="converter-header">
+            <h1>🏷️ Конвертер ценников 2.0</h1>
+            <p class="converter-subtitle">Загрузите Excel-файл с товарами, настройте внешний вид и получите готовые ценники</p>
+        </header>
+
+        <div class="converter-layout">
+            <!-- Левая панель: список файлов -->
+            <aside class="converter-files">
+                <div class="converter-card">
+                    <h3>📁 Готовые файлы</h3>
+                    <p class="text-muted" style="font-size:12px; margin-bottom:8px;">Файлы из папки Ценники:</p>
+                    <button type="button" id="btn-load-from-pc" class="btn btn-sm btn-primary btn-block" style="margin-bottom:10px;">
+                        📂 Загрузить с компьютера
+                    </button>
+                    <input type="file" id="file-from-pc" accept=".xlsx,.xls,.csv" style="display:none;" onchange="onFileFromPcSelected(this)">
+                    <div id="files-list" class="files-list">
+                        <p class="text-muted">Загрузка списка файлов...</p>
+                    </div>
+                    <button type="button" id="btn-refresh-files" class="btn btn-sm btn-secondary btn-block" style="margin-top: 10px;">
+                        🔄 Обновить
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Средняя панель: настройки -->
+            <aside class="converter-settings">
+                <div class="converter-card">
+                    <h3>📁 Входной файл</h3>
+                    <div class="form-group">
+                        <label for="file-input">Загрузить Excel файл:</label>
+                        <div class="file-input-wrap">
+                            <input type="file" id="file-input" accept=".xlsx" class="file-input">
+                            <label for="file-input" class="file-label">
+                                <span class="file-icon">📄</span>
+                                <span class="file-text">Выберите файл</span>
+                            </label>
+                            <span id="file-name" class="file-name"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cols-count">Количество столбцов ценников:</label>
+                        <input type="number" id="cols-count" class="form-control" min="1" max="8" value="3">
+                    </div>
+                </div>
+
+                <div class="converter-card">
+                    <h3>🎨 Настройки отображения</h3>
+
+                    <div class="setting-group">
+                        <label>Шрифт:</label>
+                        <select id="font-name" class="form-control">
+                            <option value="Calibri">Calibri (по умолчанию)</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Tahoma">Tahoma</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Организация (шапка):</label>
+                        <input type="text" id="org-name" class="form-control" value='ООО "КАКИЕ ЛЮДИ"'>
+                        <div class="setting-row">
+                            <label>Размер:</label>
+                            <input type="number" id="org-size" class="form-control form-control-sm" min="6" max="48" value="14">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="org-bold" checked> Жирный
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Наименование:</label>
+                        <div class="setting-row">
+                            <label>Размер:</label>
+                            <input type="number" id="name-size" class="form-control form-control-sm" min="6" max="48" value="10">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="name-bold"> Жирный
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Цена (базовый размер):</label>
+                        <div class="setting-row">
+                            <label>Размер:</label>
+                            <input type="number" id="price-base" class="form-control form-control-sm" min="10" max="64" value="18">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="price-bold" checked> Жирный
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Дата:</label>
+                        <div class="setting-row">
+                            <label>Размер:</label>
+                            <input type="number" id="date-size" class="form-control form-control-sm" min="6" max="48" value="11">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="date-bold" checked> Жирный
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="btn-generate" class="btn btn-primary btn-block btn-lg">
+                    ✨ Сформировать ценники
+                </button>
+                
+                <div id="status-message" class="status-message" style="display: none;"></div>
+            </aside>
+
+            <!-- Правая панель: предпросмотр и результат -->
+            <main class="converter-main">
+                <div class="converter-card converter-preview">
+                    <h3>👁️ Предпросмотр ценника</h3>
+                    <div id="preview-container" class="preview-container">
+                        <canvas id="preview-canvas" width="520" height="280"></canvas>
+                    </div>
+                </div>
+
+                <div class="converter-card converter-result" id="result-card" style="display: none;">
+                    <h3>✅ Результат</h3>
+                    <p id="result-message" class="result-message"></p>
+                    <button type="button" id="btn-download" class="btn btn-success">
+                        📥 Скачать файл
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/converter.js') }}"></script>
+</body>
+</html>

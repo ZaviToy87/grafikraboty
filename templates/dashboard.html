@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВетГид корпоративный график - {{ user.full_name }}</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Меню">☰</button>
+        <div class="nav-brand">📅 ВетГид корпоративный график</div>
+<a href="/1c/analysis/222" class="nav-link">📊 Анализ 1С</a>
+        <div class="nav-datetime-wrap" id="nav-datetime" title="Текущие дата и время">
+            <span class="nav-date" id="nav-date"></span>
+            <div class="nav-clock" id="nav-clock" aria-hidden="true"></div>
+            <span class="nav-time" id="nav-time"></span>
+        </div>
+        <div class="nav-user">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="openInstructionModal()" title="Как работать с программой">📖 Инструкция</button>
+            <button type="button" id="theme-toggle" class="btn btn-sm btn-theme" title="Тема: светлая / тёмная">🌓</button>
+            <span class="nav-user-name">{{ user.full_name }}</span>
+            <span class="badge">{{ user.role }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-danger">Выход</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Меню</span>
+                <button type="button" class="sidebar-close" id="sidebar-close" aria-label="Закрыть">×</button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#calendar" class="nav-item active" data-page="calendar">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-label">Календарь</span>
+                </a>
+                <a href="#tasks" class="nav-item" data-page="tasks">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">Задачи</span>
+                </a>
+                <a href="#files" class="nav-item" data-page="files">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-label">Файлы</span>
+                </a>
+                <a href="#chat" class="nav-item" data-page="chat">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">Чат</span>
+                </a>
+                <a href="#work-journal" class="nav-item" data-page="work-journal">
+                    <span class="nav-icon">📒</span>
+                    <span class="nav-label">Рабочий журнал</span>
+                </a>
+                <a href="#converter" class="nav-item" data-page="converter">
+                    <span class="nav-icon">🏷️</span>
+                    <span class="nav-label">Конвертер ценников</span>
+                </a>
+                <a href="#barcodes" class="nav-item" data-page="barcodes">
+                    <span class="nav-icon">🏷️</span>
+                    <span class="nav-label">Штрих-коды</span>
+                </a>
+                <a href="#revision" class="nav-item" data-page="revision">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-label">Ревизия товара</span>
+                </a>
+                <a href="#recipes" class="nav-item" data-page="recipes">
+                    <span class="nav-icon">💊</span>
+                    <span class="nav-label">Рецепты</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-page="analytics">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Аналитика</span>
+                </a>
+                <a href="/sync-1c" class="nav-item">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-label">Данные из 1С</span>
+                </a>
+                <a href="/sync-1c/daily" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Продажи и приемки</span>
+                </a>
+                <a href="/sync-1c/analytics" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-label">Аналитика 1С</span>
+                </a>
+                {% if session.role == 'admin' %}
+                <a href="#admin" class="nav-item" data-page="admin">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Админ-панель</span>
+                </a>
+                <a href="/tunnel-monitor" class="nav-item" target="_blank">
+                    <span class="nav-icon">📡</span>
+                    <span class="nav-label">Мониторинг туннеля</span>
+                </a>
+                {% endif %}
+                <a href="#" class="nav-item" id="nav-open-instruction" onclick="openInstructionModal(); return false;">
+                    <span class="nav-icon">📖</span>
+                    <span class="nav-label">Инструкция</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="nav-item nav-item-logout">Выход</a>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Напоминание: что предстоит (завтра и ближайшие дни) — всегда сверху -->
+            <div id="reminders-banner" class="reminders-banner" style="display: none;"></div>
+            <!-- Календарь: слева сетка, справа панель дня -->
+            <div id="page-calendar" class="page active">
+                <div class="page-header">
+                    <h2>📅 Календарь</h2>
+                    <div class="controls controls-calendar">
+                        <select id="month-select" class="form-control">
+                            <option value="1">Январь</option>
+                            <option value="2">Февраль</option>
+                            <option value="3">Март</option>
+                            <option value="4">Апрель</option>
+                            <option value="5">Май</option>
+                            <option value="6">Июнь</option>
+                            <option value="7">Июль</option>
+                            <option value="8">Август</option>
+                            <option value="9">Сентябрь</option>
+                            <option value="10">Октябрь</option>
+                            <option value="11">Ноябрь</option>
+                            <option value="12">Декабрь</option>
+                        </select>
+                        <select id="year-select" class="form-control"></select>
+                        {% if session.role == 'admin' %}
+                        <select id="filter-user-select" class="form-control" title="Показать график сотрудника">
+                            <option value="">Все сотрудники</option>
+                        </select>
+                        {% endif %}
+                        <span class="go-to-date-wrap">
+                            <input type="number" id="go-to-day" class="form-control go-to-day" placeholder="День" min="1" max="31" title="День">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="goToDate()" title="Перейти к дате">→</button>
+                        </span>
+                        <button class="btn btn-primary" onclick="loadCalendar()">Загрузить</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.print()" title="Печать / PDF">🖨️ Печать (PDF)</button>
+                        {% if session.role == 'admin' %}
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="sendWeeklyDigest()" title="Отправить недельный дайджест в Telegram">📤 Дайджест в Telegram</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openScheduleTemplateModal()" title="Заполнить график по шаблону">📋 Шаблон графика</button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div id="calendar-stats" class="calendar-stats" style="display: none;"></div>
+                <div id="calendar-legend" class="calendar-legend" style="display: none;"></div>
+                <div id="calendar-week-progress" class="calendar-week-progress" style="display: none;"></div>
+                <p class="hotkeys-hint" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Клавиши: N — след. месяц, P — пред. месяц, T — сегодня, Enter — меню дня</p>
+                <div class="calendar-layout">
+                    <div class="calendar-left">
+                        <div id="calendar-grid" class="calendar-grid"></div>
+                    </div>
+                    <aside id="day-dashboard" class="day-dashboard">
+                        <div class="day-dashboard-placeholder" id="day-dashboard-placeholder">
+                            Кликните по дню в календаре — здесь появятся задачи, сообщения от коллег и файлы на этот день. (Если не видите эту панель — прокрутите страницу вправо.)
+                        </div>
+                        <div class="day-dashboard-content" id="day-dashboard-content" style="display: none;">
+                            <h3 class="day-dashboard-title" id="day-dashboard-title">День 0.0.0</h3>
+                            <button type="button" class="btn btn-primary" id="day-dashboard-edit-btn" title="Поставить задачи на день, заметки">✏️ Задачи на день</button>
+                            <button type="button" class="btn btn-primary btn-sm day-dashboard-actions-btn" id="day-dashboard-actions-btn" title="Кто в смене, поставить в график, задача коллеге, файлы">📋 График дня: обзор и действия</button>
+                            <button type="button" class="btn btn-secondary btn-sm day-dashboard-copy-btn" id="day-dashboard-copy-btn" title="Скопировать с другого дня">📋 Шаблон с другого дня</button>
+                            <section class="day-dashboard-section">
+                                <h4>📝 Задачи на день</h4>
+                                <div id="day-dashboard-tasks"></div>
+                            </section>
+                            <section class="day-dashboard-section">
+                                <h4>🤝 Задачи от коллег / мне</h4>
+                                <div id="day-dashboard-colleague"></div>
+                            </section>
+                            <section class="day-dashboard-section">
+                                <h4>📎 Файлы на этот день</h4>
+                                <div id="day-dashboard-files"></div>
+                            </section>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+            
+            <!-- Задачи: список типов смен (добавить/редактировать/удалить) -->
+            <div id="page-tasks" class="page">
+                <div class="page-header">
+                    <h2>📋 Задачи</h2>
+                    <button class="btn btn-primary" id="btn-add-task" onclick="openTaskModal()">➕ Добавить задачу</button>
+                </div>
+                <p class="tasks-page-desc">Типы смен для графика. Добавляйте свои, меняйте название и цвет. В календаре при клике по дню можно поставить выбранную задачу на день.</p>
+                <div id="tasks-list" class="tasks-list"></div>
+            </div>
+            
+            <!-- Файлы -->
+            <div id="page-files" class="page">
+                <div class="page-header">
+                    <h2>📁 Файлы</h2>
+                    <button class="btn btn-primary" onclick="showUploadModal()">📤 Загрузить</button>
+                </div>
+                <div id="files-list" class="files-list"></div>
+            </div>
+            
+            <!-- Рабочий журнал: дневные финансы (открытие/закрытие смены, операции, чеки) -->
+            <div id="page-work-journal" class="page">
+                <div class="page-header">
+                    <h2>📒 Рабочий журнал</h2>
+                    <div class="controls controls-work-journal">
+                        <select id="wj-month" class="form-control"></select>
+                        <select id="wj-year" class="form-control"></select>
+                        {% if session.role == 'admin' %}
+                        <select id="wj-user" class="form-control" title="Сотрудник (админ)">
+                            <option value="">Все</option>
+                        </select>
+                        {% endif %}
+                        <button type="button" class="btn btn-primary" onclick="loadWorkJournal()">Обновить</button>
+                        <button type="button" class="btn btn-secondary" onclick="openWjOpenModalForDay()">📒 Открыть смену</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportWorkJournal()" title="Скачать CSV за выбранный месяц">📥 Экспорт в CSV</button>
+                        <button type="button" class="btn btn-secondary" onclick="printWorkJournal()" title="Печать/PDF списка смен">🖨️ Печать/PDF</button>
+                    </div>
+                </div>
+                <p class="work-journal-desc">Учёт по дням: открытие смены (утро — сумма в кассе), записи в течение дня, закрытие смены (вечер — наличные, безнал, 2 чека). Сотрудники видят только свои смены.</p>
+                <div id="work-journal-list" class="work-journal-list"></div>
+                <div id="work-journal-detail" class="work-journal-detail" style="display: none;">
+                    <h3 id="wj-detail-title">Смена</h3>
+                    <div id="wj-detail-content"></div>
+                    <div class="wj-detail-actions">
+                        <button type="button" class="btn btn-secondary" onclick="hideWorkJournalDetail()">← К списку</button>
+                        <button type="button" id="wj-edit-shift-btn" class="btn btn-secondary" style="display:none" title="Только для администратора">✏️ Редактировать смену</button>
+                        <button type="button" id="wj-delete-shift-btn" class="btn btn-danger" style="display:none" title="Только для администратора">🗑️ Удалить смену</button>
+                        <button type="button" class="btn btn-secondary" onclick="printWorkJournalDetail()" title="Печать/PDF этой смены">🖨️ Печать/PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Конвертер ценников -->
+            
+    <!-- Страница штрих-кодов -->
+    <div id="page-barcodes" class="page" style="display: none;">
+        <div class="page-header">
+            <h2>🏷️ Штрих-коды</h2>
+            <div class="controls">
+                <input type="text" id="barcode-search" class="form-control" placeholder="Поиск по названию или штрих-коду...">
+                <button type="button" class="btn btn-primary" onclick="loadBarcodes()">🔍 Поиск</button>
+                <button type="button" class="btn btn-success" onclick="showAddBarcodeModal()">➕ Добавить</button>
+                <button type="button" class="btn btn-secondary" onclick="exportBarcodes()">📥 Экспорт Excel</button>
+                <button type="button" class="btn btn-secondary" onclick="showImportModal()">📤 Импорт</button>
+                {% if user.role == 'admin' %}
+                <button type="button" class="btn btn-danger" onclick="cleanupInactiveBarcodes()">🗑️ Очистить БД</button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="barcodes-table">
+                <thead>
+                    <tr><th>Наименование</th><th>Штрих-код заводской</th><th>Штрих-код внутренний</th><th>Действия</th></tr>
+                </thead>
+                <tbody id="barcodes-body">
+                    <tr><td colspan="4" style="text-align:center;">Загрузка...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Модалка штрих-кода -->
+    <div id="barcode-modal" class="modal" style="display:none;">
+        <div class="modal-overlay" onclick="closeBarcodeModal()"></div>
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header"><h3 id="barcode-modal-title">Добавить штрих-код</h3><button class="modal-close" onclick="closeBarcodeModal()">×</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="barcode-id"><div class="form-group"><label>Наименование *</label><input type="text" id="barcode-product-name" class="form-control"></div>
+                <div class="form-group"><label>Заводской штрих-код</label><input type="text" id="barcode-factory" class="form-control"></div>
+                <div class="form-group"><label>Внутренний штрих-код (для 1С) *</label><input type="text" id="barcode-internal" class="form-control"></div>
+            </div>
+            <div class="modal-actions"><button class="btn btn-primary" onclick="saveBarcode()">Сохранить</button><button class="btn btn-secondary" onclick="closeBarcodeModal()">Отмена</button></div>
+        </div>
+    </div>
+<div id="page-converter" class="page">
+                <div class="page-header">
+                    <h2>🏷️ Конвертер ценников</h2>
+                </div>
+                <iframe id="converter-frame" src="/converter" style="width: 100%; height: calc(100vh - 200px); border: none; border-radius: 12px; background: white;"></iframe>
+            </div>
+
+            <!-- Чат — корпоративный мессенджер с темами -->
+                <!-- Рецепты -->
+    <div id="page-recipes" class="page" style="display: none;">
+        <div class="page-header"><h2>📖 Рецепты</h2></div>
+        <iframe id="recipes-frame" src="/recipes" style="width:100%;height:calc(100vh-200px);border:none;border-radius:12px;background:white;"></iframe>
+    </div>
+<div id="page-chat" class="page">
+                <div class="page-header page-header-chat">
+                    <h2>💬 Чат</h2>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="openCreateTopicModal()">➕ Новая тема</button>
+                    </div>
+                </div>
+                <div class="chat-layout">
+                    <aside class="chat-topics-sidebar" id="chat-topics-sidebar">
+                        <div class="chat-topics-list" id="chat-topics-list"></div>
+                    </aside>
+                    <div class="chat-main">
+                        <div class="chat-topic-title" id="chat-topic-title">Общий</div>
+                        <div class="chat-container">
+                            <div id="chat-messages" class="chat-messages"></div>
+                            <div class="chat-input-container">
+                                <div class="chat-input-row">
+                                    <textarea id="chat-input" class="chat-input" placeholder="Сообщение... (Enter — отправить)" rows="1" maxlength="2000" autocomplete="off"></textarea>
+                                    <input type="file" id="chat-file-input" class="chat-file-input" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" title="Прикрепить файл" style="display:none">
+                                    <button type="button" class="chat-attach-btn" onclick="document.getElementById('chat-file-input').click()" title="Прикрепить файл">📎</button>
+                                    <button type="button" class="chat-send-btn" onclick="sendMessage()" title="Отправить">Отправить</button>
+                                </div>
+                                <div id="chat-attach-name" class="chat-attach-name" style="display:none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Админ-панель -->
+            {% if session.role == 'admin' %}
+                <!-- Аналитика -->
+    <div id="page-analytics" class="page" style="display: none;">
+        <div class="page-header">
+            <h2>📊 Аналитика</h2>
+            <div class="controls">
+                <select id="analytics-month" class="form-control" style="width:auto;"></select>
+                <select id="analytics-year" class="form-control" style="width:auto;"></select>
+                <button class="btn btn-primary" onclick="initAnalyticsCharts()">Обновить</button>
+                <button class="btn btn-secondary" onclick="exportRevisionReport('excel')">📥 Экспорт ревизии (Excel)</button>
+                <button class="btn btn-secondary" onclick="exportRevisionReport('pdf')">📥 Экспорт ревизии (PDF)</button>
+            </div>
+        </div>
+        <div id="analytics-summary" class="analytics-summary"></div>
+        <div class="charts-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:20px;">
+            <div class="chart-card"><canvas id="chart-employee-load"></canvas></div>
+            <div class="chart-card"><canvas id="chart-dynamics"></canvas></div>
+        </div>
+    </div>
+<div id="page-admin" class="page">
+                <div class="page-header">
+                    <h2>⚙️ Админ-панель</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" class="btn btn-success" onclick="openUpdatePanel()" style="background: #28a745; font-weight: bold;">
+                            🚀 Обновление системы
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="openAddUserModal()">➕ Добавить сотрудника</button>
+                    </div>
+                    <a href="/api/admin/backup" class="btn btn-secondary" download target="_blank" rel="noopener" id="admin-backup-btn" onclick="showToast('Скачивание резервной копии…', 'success')">💾 Скачать резервную копию БД</a>
+                </div>
+                
+                <!-- Модальное окно обновления -->
+                <div id="update-modal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <span class="close" onclick="closeUpdatePanel()">&times;</span>
+                        <h2 style="color: #28a745;">🚀 Обновление системы</h2>
+                        <p>Загрузите новый EXE-файл для обновления. Программа автоматически обновится и перезапустится.</p>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                            <h4 style="margin-top: 0;">📤 Загрузка файла:</h4>
+                            <input type="file" id="update-file-input" accept=".exe" style="display: block; margin: 10px 0;">
+                            <div id="update-progress" style="display: none; margin: 10px 0;">
+                                <div style="background: #e9ecef; border-radius: 5px; overflow: hidden;">
+                                    <div id="update-progress-bar" style="background: #28a745; height: 20px; width: 0%; transition: width 0.3s;"></div>
+                                </div>
+                                <p id="update-status" style="margin: 5px 0; font-size: 14px;"></p>
+                            </div>
+                            <button type="button" class="btn btn-success" onclick="uploadUpdateFile()" style="width: 100%; margin-top: 10px;">
+                                📤 Загрузить и установить обновление
+                            </button>
+                        </div>
+                        
+                        <div style="background: #e7f3ff; padding: 15px; border-radius: 5px;">
+                            <h4 style="margin-top: 0;">ℹ️ Информация:</h4>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li>Файл будет загружен на сервер</li>
+                                <li>Сервер автоматически установит обновление</li>
+                                <li>Программа перезапустится автоматически</li>
+                                <li>Все данные будут сохранены</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="admin-panel">
+                    <div class="admin-section admin-section-tunnel">
+                        <h3>🌐 Ссылка для входа из интернета</h3>
+                        <p class="text-muted">Если туннель уже запущен — здесь можно запросить текущую ссылку и пароль (удобно с телефона).</p>
+                        <button type="button" class="btn btn-primary" id="btn-show-tunnel" onclick="showTunnelLink()">Показать ссылку и пароль</button>
+                    </div>
+                    <div class="admin-section">
+                        <h3>👥 Пользователи</h3>
+                        <div id="users-list"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h3>📜 Журнал действий</h3>
+                        <p class="text-muted">Входы, смена пароля, открытие/закрытие смен, удаление пользователей.</p>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="loadAuditLog()">Обновить</button>
+                        <div id="audit-log-container" class="audit-log-container" style="margin-top:8px;"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h3>📊 Статистика</h3>
+                        <div id="stats-cards" class="stats-grid"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h3>💰 Сводка зарплат за месяц</h3>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+                            <select id="salary-month" class="form-control" style="width:auto;"></select>
+                            <select id="salary-year" class="form-control" style="width:auto;"></select>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="loadSalarySummary()">Показать</button>
+                        </div>
+                        <div id="salary-summary-table"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h3>📈 Статистика сотрудников</h3>
+                        <div id="employee-stats-table"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h3>🏷️ Штрафы и бонусы</h3>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentModal()" style="margin-bottom:12px;">➕ Добавить</button>
+                        <div id="adjustments-list"></div>
+                    </div>
+                    <div class="admin-section">
+                        <h3>📱 Участники Telegram (привязка к пользователям)</h3>
+                        <p class="text-muted">Участники группы, откуда бот получает сообщения. Привяжите Telegram ID к сотруднику — тогда фото из группы будут сохраняться в его смену.</p>
+                        <button type="button" class="btn btn-secondary" id="btn-telegram-fetch-members">🔄 Загрузить участников из группы</button>
+                        <div id="telegram-seen-list" class="telegram-seen-list" style="margin-top:12px;"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+    <!-- ==================== РЕВИЗИЯ ТОВАРА ==================== -->
+    <div id="page-revision" class="page" style="display: none;">
+        <div class="page-header">
+            <h2>📦 Ревизия товара</h2>
+            <div class="controls controls-revision">
+                <select id="revision-filter" class="form-control" onchange="loadRevisions()" style="width:auto;min-width:120px;">
+                    <option value="all">Все товары</option>
+                    <option value="active">Активные</option>
+                    <option value="decision">Требуют решения</option>
+                    <option value="my">Мои товары</option>
+                    <option value="archive">Архив</option>
+                </select>
+                <input type="text" id="revision-search" class="form-control" placeholder="🔍 Поиск..." oninput="loadRevisions()" style="max-width:200px;flex:1;">
+                <select id="revision-sort" class="form-control" onchange="loadRevisions()" style="width:auto;min-width:100px;">
+                    <option value="expiry_date">📅 По сроку</option>
+                    <option value="created_at">🆕 По дате</option>
+                    <option value="name">🔤 По названию</option>
+                    <option value="discount">💰 По скидке</option>
+                </select>
+                <button type="button" class="btn btn-primary" onclick="openAddRevisionModal()">➕ Добавить</button>
+                <button type="button" class="btn btn-secondary" onclick="loadRevisions()">🔄</button>
+                <button type="button" class="btn btn-info" onclick="openSmartStats()">📊 Статистика</button>
+            </div>
+        </div>
+        
+        <div id="smart-control-banner" class="smart-control-banner" style="display:none;"></div>
+        <div id="revision-stats" class="revision-stats"></div>
+        
+        <div id="promotion-panel" class="promotion-panel" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div><h3>🏷️ Акционные ценники</h3><p style="margin:4px 0 0;color:#6b7280;font-size:14px;">Выбрано: <strong id="promotion-count">0</strong></p></div>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-promotion" onclick="generatePromotionPriceTags()">🖨️ Печать ценников</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearPromotionSelection()">✕ Очистить</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="revisions-table-wrap">
+            <table id="revisions-table">
+                <thead>
+                    <tr>
+                        <th style="width:36px;"><input type="checkbox" id="select-all-revisions" onchange="toggleSelectAllRevisions(this.checked)" title="Выбрать все"></th>
+                        <th>Товар</th>
+                        <th style="width:60px;">Кол-во</th>
+                        <th style="width:80px;">Цена</th>
+                        <th style="width:100px;">Срок</th>
+                        <th style="width:80px;">Остаток</th>
+                        <th style="width:60px;">Скидка</th>
+                        <th style="width:80px;">Итог</th>
+                        <th style="width:80px;">Статус</th>
+                        <th style="width:200px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="revisions-body">
+                    <tr><td colspan="10" style="text-align:center;padding:40px;">Нажмите "Ревизия товара" в меню</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+        </div>
+    </div>
+    
+    <!-- Меню дня (как в десктопе: первое окно при клике на день) -->
+    <div id="day-menu-modal" class="modal">
+        <div class="modal-content day-menu-content">
+            <span class="close" onclick="closeDayMenuModal()">&times;</span>
+            <div class="day-menu-header">
+                <h3 id="day-menu-title">День 6.2.2026</h3>
+                <p class="day-menu-subtitle">Кто в смене, задачи коллегам, файлы — обзор и действия</p>
+                <div id="day-menu-summary" class="day-menu-summary"></div>
+            </div>
+            <div class="day-menu-body">
+                <button type="button" class="day-menu-btn day-menu-btn-info" onclick="dayMenuOpenMyTasks()">📝 Мои задачи на день</button>
+                <p class="day-menu-section">⚡ Быстрое добавление задач:</p>
+                <div class="day-menu-quick">
+                    <button type="button" class="day-menu-btn day-menu-btn-green" onclick="quickAddTaskForDay('Влажная уборка полок', '#4CAF50')">➕ Влажная уборка полок</button>
+                    <button type="button" class="day-menu-btn day-menu-btn-blue" onclick="quickAddTaskForDay('Ревизия', '#2196F3')">➕ Ревизия</button>
+                    <button type="button" class="day-menu-btn day-menu-btn-orange" onclick="quickAddTaskForDay('Уборка сан узла', '#FF9800')">➕ Уборка сан узла</button>
+                    <button type="button" class="day-menu-btn day-menu-btn-purple" onclick="quickAddTaskForDay('Проверка ценников', '#9C27B0')">➕ Проверка ценников</button>
+                </div>
+                <button type="button" class="day-menu-btn day-menu-btn-accent" onclick="dayMenuUploadFile()">📎 Загрузить файл / фото</button>
+                <button type="button" class="day-menu-btn day-menu-btn-green" onclick="openColleagueTaskModal()">🤝 Поставить задачу коллеге</button>
+                {% if session.role == 'admin' %}
+                <button type="button" class="day-menu-btn day-menu-btn-info" onclick="dayMenuAdminTasks()">👥 Мои задачи на день (админ)</button>
+                <button type="button" class="day-menu-btn day-menu-btn-green" onclick="dayMenuAssignEmployee()">👤 Поставить сотрудника в график</button>
+                {% endif %}
+                <button type="button" class="btn btn-secondary day-menu-close" onclick="closeDayMenuModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шаблон с другого дня -->
+    <div id="copy-day-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCopyDayModal()">&times;</span>
+            <h3>📋 Скопировать с другого дня</h3>
+            <p>Скопировать задачи и заметки с выбранного дня на <strong id="copy-day-target">—</strong>.</p>
+            <div class="form-group">
+                <label>С какого дня копировать (число 1–31):</label>
+                <input type="number" id="copy-day-source" class="form-control" min="1" max="31" placeholder="День">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="doCopyDay()">Скопировать</button>
+            <button type="button" class="btn btn-secondary" onclick="closeCopyDayModal()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Добавить сотрудника / пользователя (админ) -->
+    <div id="add-user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddUserModal()">&times;</span>
+            <h3>➕ Новый пользователь</h3>
+            <div class="form-group">
+                <label>Логин (для входа):</label>
+                <input type="text" id="add-user-username" class="form-control" placeholder="логин" maxlength="64" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Пароль (не менее 4 символов):</label>
+                <input type="password" id="add-user-password" class="form-control" placeholder="пароль" minlength="4" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label>ФИО (как отображать):</label>
+                <input type="text" id="add-user-fullname" class="form-control" placeholder="Иванова Мария" maxlength="200">
+            </div>
+            <div class="form-group">
+                <label>Роль:</label>
+                <select id="add-user-role" class="form-control">
+                    <option value="employee">Сотрудник</option>
+                    <option value="admin">Администратор</option>
+                </select>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="submitAddUser()">Создать</button>
+            <button type="button" class="btn btn-secondary" onclick="closeAddUserModal()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Инструкция: как работать с программой «График» -->
+    <div id="instruction-modal" class="modal">
+        <div class="modal-content instruction-modal-content">
+            <span class="close" onclick="closeInstructionModal()">&times;</span>
+            <h2 style="margin-top:0;">📖 Инструкция по программе «ВетГид корпоративный график»</h2>
+            <div class="instruction-body">
+                <section>
+                    <h3>1. Вход в программу</h3>
+                    <ol>
+                        <li>Откройте ссылку, которую выдал администратор (локальная сеть или внешняя).</li>
+                        <li>Введите логин и пароль. Нажмите «Войти».</li>
+                        <li>Откроется главный экран — календарь текущего месяца.</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>2. Календарь — просмотр графика</h3>
+                    <ol>
+                        <li>Вверху выберите <strong>месяц</strong> и <strong>год</strong>, нажмите «Загрузить».</li>
+                        <li>В ячейках дней видны задачи (типы смен) и заметки. Цвета задач задаёт администратор.</li>
+                        <li><strong>Клик по дню</strong> — справа откроется панель дня: задачи на этот день, задачи от коллег, файлы. Если панель не видна — прокрутите страницу вправо.</li>
+                        <li>Клавиши: <kbd>N</kbd> — следующий месяц, <kbd>P</kbd> — предыдущий, <kbd>T</kbd> — перейти на сегодня, <kbd>Enter</kbd> — открыть меню выбранного дня.</li>
+                        <li>Администратор может отфильтровать календарь по сотруднику (выпадающий список «Все сотрудники»).</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>3. Работа с конкретным днём</h3>
+                    <ol>
+                        <li>Выберите день в календаре. Справа появятся кнопки и блоки.</li>
+                        <li><strong>«Задачи на день»</strong> — поставить себе задачи (чекбоксы), заметки. Сохранить.</li>
+                        <li><strong>«График дня: обзор и действия»</strong> — кто в смене, поставить себя/сотрудника в график, поставить задачу коллеге, загрузить файл на этот день.</li>
+                        <li><strong>«Шаблон с другого дня»</strong> — скопировать задачи и заметки с другого числа этого месяца.</li>
+                        <li>В панели дня видны «Задачи от коллег / мне» и «Файлы на этот день» — можно открывать и скачивать.</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>4. Раздел «Задачи» (типы смен)</h3>
+                    <ol>
+                        <li>Меню → <strong>Задачи</strong>. Здесь список типов смен (например «Утро», «Ревизия», «Закрытие»).</li>
+                        <li>Добавлять и менять типы задач может только <strong>администратор</strong>. Сотрудники только выбирают их в своём дне.</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>5. Раздел «Файлы»</h3>
+                    <ol>
+                        <li>Меню → <strong>Файлы</strong>. Можно загружать файлы и фото (до 50 МБ), привязывая к дате (год, месяц, день).</li>
+                        <li>Удобно загружать с телефона: выберите день, нажмите «Загрузить файл», выберите фото или PDF.</li>
+                        <li>Файлы можно переименовать, изменить дату или удалить (свои — всегда, чужие — только админ).</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>6. Чат и Telegram</h3>
+                    <ol>
+                        <li>Меню → <strong>Чат</strong>. Темы создаёт администратор. Сообщения видны всем, кто имеет доступ к теме.</li>
+                        <li>Тема <strong>«Telegram»</strong> — сообщения из неё автоматически отправляются в группу Telegram (если настроен бот).</li>
+                        <li>При новых сообщениях в чате браузер может запросить разрешение на уведомления — удобно не пропускать сообщения.</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>7. Рабочий журнал</h3>
+                    <ol>
+                        <li>Меню → <strong>Рабочий журнал</strong>. Записи по сменам: открытие (утро, касса), записи за день, закрытие (вечер, безнал, чеки, Z-отчёт).</li>
+                        <li>Сотрудник видит только те дни, когда он есть в графике. Администратор видит все смены.</li>
+                        <li>Открыть смену → вносить записи → закрыть смену (при необходимости приложить файлы чеков).</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>8. Админ-панель (только для администратора)</h3>
+                    <ol>
+                        <li>Меню → <strong>Админ-панель</strong>. Здесь: список пользователей (добавить/удалить), статистика, привязка участников Telegram к пользователям.</li>
+                        <li><strong>Участники Telegram</strong> — кнопка «Загрузить участников из группы» подтягивает тех, кто писал в группу; можно привязать Telegram-аккаунт к сотруднику, чтобы фото из группы сохранялись в его смену.</li>
+                    </ol>
+                </section>
+                <section>
+                    <h3>9. Печать и доступ с телефона</h3>
+                    <ol>
+                        <li><strong>Печать (PDF)</strong> — кнопка в шапке календаря. Откроется печать браузера, можно сохранить страницу как PDF.</li>
+                        <li>Для входа с телефона или из другой сети используйте ссылку, которую присылают в Telegram при запуске программы (или из файла ВНЕШНИЙ_ДОСТУП.txt).</li>
+                    </ol>
+                </section>
+            </div>
+            <div class="modal-actions" style="margin-top:16px;">
+                <button type="button" class="btn btn-primary" id="btn-start-tour" onclick="closeInstructionModal(); startGuidedTour();">👆 Показать подсказки по экрану</button>
+                <button type="button" class="btn btn-secondary" onclick="closeInstructionModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подсказки по экрану (тур) -->
+    <div id="tour-overlay" class="tour-overlay" style="display:none;"></div>
+    <div id="tour-tooltip" class="tour-tooltip" style="display:none;">
+        <div class="tour-tooltip-title" id="tour-tooltip-title"></div>
+        <div class="tour-tooltip-text" id="tour-tooltip-text"></div>
+        <div class="tour-tooltip-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="tour-btn-next">Далее</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="tour-btn-skip">Пропустить</button>
+        </div>
+    </div>
+
+    <!-- Редактирование дня (задачи + заметки + задачи от коллег) -->
+    <div id="day-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDayModal()">&times;</span>
+            <h3 id="modal-title">Редактирование дня</h3>
+            <div id="modal-colleague-tasks" style="margin-bottom:16px;"></div>
+            <div id="modal-tasks"></div>
+            <textarea id="modal-notes" class="form-control" placeholder="Заметки..." rows="3"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="saveDay()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeDayModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно редактирования файла (название и дата) -->
+    <div id="file-form-modal" class="modal">
+        <div class="modal-content task-form-modal-content">
+            <span class="close" onclick="closeFileModal()">&times;</span>
+            <h3>Изменить файл</h3>
+            <div class="task-form-body">
+                <label class="task-form-label">Название файла</label>
+                <input type="text" id="file-form-filename" class="form-control" placeholder="Имя файла" maxlength="255">
+                <label class="task-form-label">Дата (день, месяц, год)</label>
+                <div class="file-form-date-row">
+                    <input type="number" id="file-form-day" class="form-control" placeholder="День" min="1" max="31" style="width: 70px;">
+                    <input type="number" id="file-form-month" class="form-control" placeholder="Месяц" min="1" max="12" style="width: 70px;">
+                    <input type="number" id="file-form-year" class="form-control" placeholder="Год" min="2020" max="2100" style="width: 90px;">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="saveFileFromModal()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeFileModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Рабочий журнал: открыть смену (утро, сумма в кассе) -->
+    <div id="wj-open-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeWjOpenModal()">&times;</span>
+            <h3>📒 Открыть смену</h3>
+            <p id="wj-open-date-caption">День</p>
+            <div class="form-group">
+                <label>Сумма в кассе (утро)</label>
+                <input type="number" id="wj-morning-cash" class="form-control" step="0.01" min="0" placeholder="0">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="submitWjOpen()">Открыть смену</button>
+            <button type="button" class="btn btn-secondary" onclick="closeWjOpenModal()">Отмена</button>
+        </div>
+    </div>
+    <!-- Рабочий журнал: добавить запись (внесла в кассу, отдала деньги и т.д.) -->
+    <div id="wj-entry-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeWjEntryModal()">&times;</span>
+            <h3>➕ Запись в журнал</h3>
+            <div class="form-group">
+                <label>Тип операции</label>
+                <select id="wj-entry-kind" class="form-control">
+                    <option value="Внесла в кассу">Внесла в кассу</option>
+                    <option value="Отдала деньги">Отдала деньги</option>
+                    <option value="Взяла зарплату">Взяла зарплату</option>
+                    <option value="Сняла в банк">Сняла в банк</option>
+                    <option value="Другое">Другое</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Сумма (необязательно)</label>
+                <input type="number" id="wj-entry-amount" class="form-control" step="0.01" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Заметка</label>
+                <input type="text" id="wj-entry-note" class="form-control" placeholder="Комментарий" maxlength="500">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="submitWjEntry()">Добавить</button>
+            <button type="button" class="btn btn-secondary" onclick="closeWjEntryModal()">Отмена</button>
+        </div>
+    </div>
+    <!-- Рабочий журнал: закрыть смену (вечер, выручка ККТ, эквайринг, безнал, 2 чека) -->
+    <div id="wj-close-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeWjCloseModal()">&times;</span>
+            <h3>📒 Закрыть смену</h3>
+            <p id="wj-close-date-caption">День</p>
+            <div class="form-group">
+                <label>Общая выручка за день (по ККТ), ₽</label>
+                <input type="number" id="wj-revenue-total" class="form-control" step="0.01" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Эквайринг (сумма), ₽ — если нет чека, введите вручную</label>
+                <input type="number" id="wj-acquiring-amount" class="form-control" step="0.01" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Наличные в кассе (вечер)</label>
+                <input type="number" id="wj-evening-cash" class="form-control" step="0.01" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Безнал (эквайринг) — итог по чекам</label>
+                <input type="number" id="wj-evening-cashless" class="form-control" step="0.01" min="0" placeholder="0">
+            </div>
+            <div id="wj-close-totals-block" class="wj-totals-block" style="display:none; margin:12px 0; padding:12px; background:var(--bg-secondary,#f0f4f8); border-radius:8px; border:1px solid var(--border,#ddd);">
+                <p><strong>Итого должно остаться в кассе:</strong> <span id="wj-close-expected-cash">—</span></p>
+                <p><strong>Зарплата по вилке:</strong> <span id="wj-close-salary-due">—</span></p>
+                <p id="wj-close-salary-taken-row" style="display:none;"><strong>Забрала зарплату (по записям):</strong> <span id="wj-close-salary-taken">—</span></p>
+                <p id="wj-close-discrepancy-cash-row" style="display:none;"><strong>Расхождение по кассе:</strong> <span id="wj-close-discrepancy-cash" class="wj-discrepancy"></span></p>
+                <p id="wj-close-discrepancy-salary-row" style="display:none;"><strong>Расхождение по зарплате:</strong> <span id="wj-close-discrepancy-salary" class="wj-discrepancy"></span></p>
+            </div>
+            <div class="form-group">
+                <label>Заметка</label>
+                <input type="text" id="wj-close-note" class="form-control" placeholder="Комментарий" maxlength="500">
+            </div>
+            <div class="form-group">
+                <label>Чек эквайринга (фото)</label>
+                <input type="file" id="wj-acquiring-file" class="form-control" accept="image/*,.pdf" style="max-width:100%">
+                <span id="wj-acquiring-name" class="text-muted"></span>
+            </div>
+            <div class="form-group">
+                <label>Чек Z-отчёта (фото)</label>
+                <input type="file" id="wj-zreport-file" class="form-control" accept="image/*,.pdf" style="max-width:100%">
+                <span id="wj-zreport-name" class="text-muted"></span>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="submitWjClose()">Закрыть смену</button>
+            <button type="button" class="btn btn-secondary" onclick="closeWjCloseModal()">Отмена</button>
+        </div>
+    </div>
+    <!-- Рабочий журнал: редактирование смены (только админ) -->
+    <div id="wj-edit-shift-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeWjEditShiftModal()">&times;</span>
+            <h3>✏️ Редактировать смену</h3>
+            <p id="wj-edit-shift-caption">Смена</p>
+            <div class="form-group">
+                <label>Сотрудник (кто открывал смену)</label>
+                <select id="wj-edit-user-id" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>Утро (касса)</label>
+                <input type="number" id="wj-edit-morning-cash" class="form-control" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label>Вечер: наличные</label>
+                <input type="number" id="wj-edit-evening-cash" class="form-control" step="0.01" min="0" placeholder="—">
+            </div>
+            <div class="form-group">
+                <label>Вечер: безнал</label>
+                <input type="number" id="wj-edit-evening-cashless" class="form-control" step="0.01" min="0" placeholder="—">
+            </div>
+            <div class="form-group">
+                <label>Выручка за день (ККТ)</label>
+                <input type="number" id="wj-edit-revenue-total" class="form-control" step="0.01" min="0" placeholder="—">
+            </div>
+            <div class="form-group">
+                <label>Эквайринг (сумма)</label>
+                <input type="number" id="wj-edit-acquiring-amount" class="form-control" step="0.01" min="0" placeholder="—">
+            </div>
+            <div class="form-group">
+                <label>Заметка закрытия</label>
+                <input type="text" id="wj-edit-close-note" class="form-control" maxlength="500" placeholder="—">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="submitWjEditShift()">Сохранить</button>
+            <button type="button" class="btn btn-secondary" onclick="closeWjEditShiftModal()">Отмена</button>
+        </div>
+    </div>
+    <!-- Рабочий журнал: редактирование записи (только админ) -->
+    <div id="wj-edit-entry-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeWjEditEntryModal()">&times;</span>
+            <h3>✏️ Редактировать запись</h3>
+            <div class="form-group">
+                <label>Тип операции</label>
+                <select id="wj-edit-entry-kind" class="form-control">
+                    <option value="Внесла в кассу">Внесла в кассу</option>
+                    <option value="Отдала деньги">Отдала деньги</option>
+                    <option value="Взяла зарплату">Взяла зарплату</option>
+                    <option value="Сняла в банк">Сняла в банк</option>
+                    <option value="Другое">Другое</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Сумма</label>
+                <input type="number" id="wj-edit-entry-amount" class="form-control" step="0.01" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Заметка</label>
+                <input type="text" id="wj-edit-entry-note" class="form-control" maxlength="500" placeholder="—">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="submitWjEditEntry()">Сохранить</button>
+            <button type="button" class="btn btn-secondary" onclick="closeWjEditEntryModal()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Окно: поставить задачу коллеге (название, описание, файл, цвет, кому адресована) -->
+    <div id="colleague-task-modal" class="modal">
+        <div class="modal-content task-form-modal-content colleague-task-modal-content">
+            <span class="close" onclick="closeColleagueTaskModal()">&times;</span>
+            <h3 id="colleague-task-modal-title">🤝 Поставить задачу коллеге</h3>
+            <div class="task-form-body">
+                <label class="task-form-label">Кому адресована задача <span class="required">*</span></label>
+                <select id="colleague-task-assignee" class="form-control" required>
+                    <option value="">— Выберите коллегу —</option>
+                </select>
+                <label class="task-form-label">Название задачи <span class="required">*</span></label>
+                <input type="text" id="colleague-task-title" class="form-control" placeholder="Краткое название" maxlength="200" required>
+                <label class="task-form-label">Описание</label>
+                <textarea id="colleague-task-description" class="form-control" placeholder="Подробности (необязательно)" rows="3" maxlength="2000"></textarea>
+                <div class="form-group">
+                    <label>Срок выполнения (необязательно):</label>
+                    <input type="date" id="colleague-task-due-date" class="form-control">
+                </div>
+                <label class="task-form-label">Цвет в календаре</label>
+                <div class="task-form-color-row">
+                    <input type="color" id="colleague-task-color" value="#3498db" class="task-form-color-input">
+                    <input type="text" id="colleague-task-color-hex" class="form-control task-form-color-hex" value="#3498db" placeholder="#RRGGBB" maxlength="7">
+                </div>
+                <label class="task-form-label">Приложить файл / фото (необязательно)</label>
+                <div class="colleague-task-file-row">
+                    <input type="file" id="colleague-task-file-input" accept="image/*,.pdf,.doc,.docx" style="display:none">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('colleague-task-file-input').click()">Выбрать файл</button>
+                    <span id="colleague-task-file-name" class="colleague-task-file-name"></span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="colleague-task-submit" onclick="submitColleagueTask()">Создать задачу</button>
+                <button class="btn btn-secondary" onclick="closeColleagueTaskModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно добавления/редактирования задачи -->
+    <div id="task-form-modal" class="modal">
+        <div class="modal-content task-form-modal-content">
+            <span class="close" onclick="closeTaskModal()">&times;</span>
+            <h3 id="task-form-title">Добавить задачу</h3>
+            <div class="task-form-body">
+                <label class="task-form-label">Название задачи</label>
+                <input type="text" id="task-form-name" class="form-control" placeholder="Например: Смена, Выходной, Ревизия..." maxlength="200">
+                <label class="task-form-label">Цвет в календаре</label>
+                <div class="task-form-color-row">
+                    <input type="color" id="task-form-color" value="#3498db" class="task-form-color-input">
+                    <input type="text" id="task-form-color-hex" class="form-control task-form-color-hex" value="#3498db" placeholder="#RRGGBB" maxlength="7">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="task-form-save" onclick="saveTaskFromModal()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeTaskModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модалки чата: новая тема, редактирование темы -->
+    <div id="chat-topic-modal" class="modal">
+        <div class="modal-content task-form-modal-content">
+            <span class="close" onclick="closeChatTopicModal()">&times;</span>
+            <h3 id="chat-topic-modal-title">Новая тема</h3>
+            <div class="task-form-body">
+                <label class="task-form-label">Название темы</label>
+                <input type="text" id="chat-topic-name" class="form-control" placeholder="Например: Смена, Вопросы по графику" maxlength="100">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="chat-topic-save-btn" onclick="saveChatTopic()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeChatTopicModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- Редактирование сообщения -->
+    <div id="chat-edit-msg-modal" class="modal">
+        <div class="modal-content task-form-modal-content">
+            <span class="close" onclick="closeChatEditMsgModal()">&times;</span>
+            <h3>Редактировать сообщение</h3>
+            <input type="hidden" id="chat-edit-msg-id" value="">
+            <div class="task-form-body">
+                <textarea id="chat-edit-msg-text" class="form-control" rows="4" maxlength="2000"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="submitChatEditMessage()">Сохранить</button>
+                <button class="btn btn-secondary" onclick="closeChatEditMsgModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Тосты (уведомления вместо alert) -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Модальное подтверждение опасных действий -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="confirm-modal-title">Подтверждение</h3>
+            <p id="confirm-modal-message"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-danger" id="confirm-modal-ok">Да</button>
+                <button type="button" class="btn btn-secondary" id="confirm-modal-cancel">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Смена пароля (админ) -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePasswordModal()">&times;</span>
+            <h3>🔑 Новый пароль</h3>
+            <p class="text-muted" id="password-modal-user-caption">Пользователь</p>
+            <div class="form-group">
+                <label>Новый пароль (не менее 4 символов)</label>
+                <input type="password" id="password-modal-password" class="form-control" minlength="4" placeholder="пароль" autocomplete="new-password">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">Сохранить</button>
+                <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Штраф/бонус -->
+    <div id="tunnel-link-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTunnelLinkModal()">&times;</span>
+            <h3>🌐 Ссылка туннеля</h3>
+            <p class="text-muted">Откройте эту ссылку на телефоне. При запросе пароля введите значение ниже.</p>
+            <div class="form-group">
+                <label>Ссылка</label>
+                <input type="text" id="tunnel-link-url" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="text" id="tunnel-link-password" class="form-control" readonly>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="copyTunnelLink()">📋 Копировать ссылку</button>
+                <button type="button" class="btn btn-secondary" onclick="closeTunnelLinkModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <div id="adjustment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAdjustmentModal()">&times;</span>
+            <h3>🏷️ Штраф / Бонус</h3>
+            <div class="form-group">
+                <label>Сотрудник:</label>
+                <select id="adj-user" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>Сумма (+ бонус, − штраф):</label>
+                <input type="number" id="adj-amount" class="form-control" step="50" placeholder="500 или -300">
+            </div>
+            <div class="form-group">
+                <label>Причина:</label>
+                <input type="text" id="adj-reason" class="form-control" placeholder="За ревизию без расхождений" maxlength="200">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="submitAdjustment()">Сохранить</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAdjustmentModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шаблон графика -->
+    <div id="schedule-template-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeScheduleTemplateModal()">&times;</span>
+            <h3>📋 Шаблон графика на месяц</h3>
+            <div class="form-group">
+                <label>Сотрудник:</label>
+                <select id="tpl-user" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>Задача (тип смены):</label>
+                <select id="tpl-task" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>Режим:</label>
+                <select id="tpl-mode" class="form-control" onchange="toggleTemplateMode()">
+                    <option value="weekdays">По дням недели</option>
+                    <option value="rotation">Сменный (2/2, 3/3…)</option>
+                </select>
+            </div>
+            <div id="tpl-weekdays-block">
+                <div class="form-group">
+                    <label>Дни недели:</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <label class="tpl-wd-label"><input type="checkbox" value="0"> Пн</label>
+                        <label class="tpl-wd-label"><input type="checkbox" value="1"> Вт</label>
+                        <label class="tpl-wd-label"><input type="checkbox" value="2"> Ср</label>
+                        <label class="tpl-wd-label"><input type="checkbox" value="3"> Чт</label>
+                        <label class="tpl-wd-label"><input type="checkbox" value="4"> Пт</label>
+                        <label class="tpl-wd-label"><input type="checkbox" value="5"> Сб</label>
+                        <label class="tpl-wd-label"><input type="checkbox" value="6"> Вс</label>
+                    </div>
+                </div>
+            </div>
+            <div id="tpl-rotation-block" style="display:none;">
+                <div class="form-group">
+                    <label>Рабочих дней подряд:</label>
+                    <input type="number" id="tpl-work-days" class="form-control" value="2" min="1" max="15">
+                </div>
+                <div class="form-group">
+                    <label>Выходных дней подряд:</label>
+                    <input type="number" id="tpl-off-days" class="form-control" value="2" min="1" max="15">
+                </div>
+                <div class="form-group">
+                    <label>Первый рабочий день (число месяца):</label>
+                    <input type="number" id="tpl-start-day" class="form-control" value="1" min="1" max="31">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="submitScheduleTemplate()">Заполнить</button>
+                <button type="button" class="btn btn-secondary" onclick="closeScheduleTemplateModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script id="user-data" type="application/json">{{ {"id": session.user_id, "user_id": session.user_id, "role": session.role, "full_name": session.full_name, "username": session.username} | tojson }}</script>
+    <script>
+        var userData = JSON.parse(document.getElementById('user-data').textContent);
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    <!-- PWA Service Worker -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="js/sw.js") }}')
+                .then(reg => console.log('✅ Service Worker зарегистрирован:', reg.scope))
+                .catch(err => console.error('❌ Ошибка Service Worker:', err));
+        });
+    }
+    </script>
+
+    <!-- Модалка добавления товара -->
+    <div id="revision-add-modal" class="modal" style="display:none;">
+        <div class="modal-overlay" onclick="closeAddRevisionModal()"></div>
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header"><h3>📦 Добавить товар</h3><button type="button" class="modal-close" onclick="closeAddRevisionModal()">×</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Название товара *</label><input type="text" id="rev-product-name" class="form-control" placeholder="Молоко 3.2%"></div>
+                <div class="form-group"><label>Количество *</label><input type="number" id="rev-quantity" class="form-control" placeholder="1" min="1" value="1"></div>
+                <div class="form-group"><label>Штрих-код</label><input type="text" id="rev-barcode" class="form-control" placeholder="2000747309716"></div>
+                <div class="form-group"><label>Розничная цена (₽) *</label><input type="number" id="rev-retail-price" class="form-control" placeholder="100" step="0.01" min="0"></div>
+                <div class="form-group"><label>Срок годности до *</label><input type="date" id="rev-expiry-date" class="form-control"></div>
+                <p style="font-size:12px;color:var(--text-secondary);">* Скидка рассчитается автоматически по регламенту</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="addRevision()">Добавить</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddRevisionModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- Модалка редактирования -->
+    <div id="edit-revision-modal" class="modal" style="display:none;">
+        <div class="modal-overlay" onclick="closeEditRevisionModal()"></div>
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header"><h3>✏️ Редактировать товар</h3><button type="button" class="modal-close" onclick="closeEditRevisionModal()">×</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-rev-id">
+                <div class="form-group"><label>Название товара *</label><input type="text" id="edit-rev-product-name" class="form-control"></div>
+                <div class="form-group"><label>Количество *</label><input type="number" id="edit-rev-quantity" class="form-control" min="1" value="1"></div>
+                <div class="form-group"><label>Штрих-код</label><input type="text" id="edit-rev-barcode" class="form-control"></div>
+                <div class="form-group"><label>Розничная цена (₽) *</label><input type="number" id="edit-rev-retail-price" class="form-control" step="0.01" min="0"></div>
+                <div class="form-group"><label>Срок годности до *</label><input type="date" id="edit-rev-expiry-date" class="form-control"></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="saveEditRevision()">Сохранить</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditRevisionModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- Модалка операции -->
+    <div id="operation-modal" class="modal" style="display:none;">
+        <div class="modal-overlay" onclick="closeOperationModal()"></div>
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header"><h3>📦 Операция с товаром</h3><button type="button" class="modal-close" onclick="closeOperationModal()">×</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Тип операции</label><select id="operation-type" class="form-control">
+                    <option value="sold">Продажа</option>
+                    <option value="written_off_expired">Списание (просрочка)</option>
+                    <option value="written_off_damaged">Списание (брак)</option>
+                    <option value="taken_personal">Личное использование</option>
+                </select></div>
+                <div class="form-group"><label>Количество</label><input type="number" id="operation-quantity" class="form-control" min="1" value="1"></div>
+                <div class="form-group"><label>Причина</label><input type="text" id="operation-reason" class="form-control" placeholder="Например: продано покупателю"></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="confirmOperation()">Выполнить</button>
+                <button type="button" class="btn btn-secondary" onclick="closeOperationModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// === РЕВИЗИЯ ТОВАРА ===
+let currentAdminRevId = null;
+
+async function loadRevisions() {
+    var tb = document.getElementById('revisions-body');
+    if (!tb) return;
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;">Загрузка...</td></tr>';
+    var f = document.getElementById('revision-filter')?.value || 'all';
+    var s = document.getElementById('revision-search')?.value || '';
+    var o = document.getElementById('revision-sort')?.value || 'expiry_date';
+    try {
+        var r = await fetch('/revisions?filter=' + f + '&search=' + encodeURIComponent(s) + '&sort=' + o, {credentials:'include'});
+        var d = await r.json();
+        if (d.status === 'success') {
+            renderRevisions(d.revisions);
+            renderStats(d.revisions);
+            checkWarnings(d.revisions);
+        } else tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:red;">' + d.message + '</td></tr>';
+    } catch(e) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;">Ошибка загрузки</td></tr>'; }
+}
+
+function renderStats(revs) {
+    var el = document.getElementById('revision-stats');
+    if (!el) return;
+    var a = revs.filter(function(x){return x.status==='active';}).length;
+    var d = revs.filter(function(x){return x.status==='admin_decision';}).length;
+    var e = revs.filter(function(x){return x.days_remaining<0;}).length;
+    var p = revs.filter(function(x){return x.is_promotional;}).length;
+    el.innerHTML = '<div class="stat-card"><div class="stat-value">' + revs.length + '</div><div class="stat-label">Всего товаров</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + a + '</div><div class="stat-label">В продаже</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + d + '</div><div class="stat-label">Ждут решения</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + e + '</div><div class="stat-label">Просрочено</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + p + '</div><div class="stat-label">Акционные</div></div>';
+}
+
+function renderRevisions(revs) {
+    var tb = document.getElementById('revisions-body');
+    if (!tb) return;
+    if (!revs.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-secondary);">Нет товаров</td></tr>'; return; }
+    var sl = {'active':'В продаже','admin_decision':'Ждёт решения','reserved_admin':'Забронировано','sold':'Продано','utilized':'Утилизировано'};
+    tb.innerHTML = revs.map(function(rev){
+        var rc = rev.color_status==='red'?'background:#fef2f2;':rev.color_status==='orange'?'background:#fff7ed;':rev.color_status==='yellow'?'background:#fefce8;':'';
+        var qd = rev.quantity>1?'<strong style="color:#dc2626;">' + rev.quantity + ' шт</strong>':'<span style="color:var(--text-secondary);">1</span>';
+        var pt = '';
+        if (rev.is_promotional) pt = '<span style="display:inline-block;padding:2px 6px;background:#dc2626;color:white;border-radius:4px;font-size:10px;font-weight:bold;margin-left:4px;">АКЦИЯ</span>';
+        else if (rev.is_regular) pt = '<span style="display:inline-block;padding:2px 6px;background:#22c55e;color:white;border-radius:4px;font-size:10px;font-weight:bold;margin-left:4px;">ОБЫЧНЫЙ</span>';
+        return '<tr style="' + rc + '" data-revision-id="' + rev.id + '">' +
+            '<td style="padding:10px 8px;text-align:center;cursor:pointer;" onclick="toggleCb(this)"><input type="checkbox" class="revision-checkbox" style="width:18px;height:18px;cursor:pointer;" data-revision-id="' + rev.id + '" data-product-name="' + escH(rev.product_name) + '" data-price="' + (rev.final_price||0) + '" data-retail-price="' + (rev.retail_price||0) + '" data-discount="' + (rev.discount_percent||0) + '" onchange="updPanel()"></td>' +
+            '<td style="padding:10px 8px;"><strong>' + escH(rev.product_name) + '</strong><br><small style="color:var(--text-secondary);">' + escH(rev.full_name||'') + '</small></td>' +
+            '<td style="padding:10px 8px;">' + qd + '</td>' +
+            '<td style="padding:10px 8px;">' + (rev.retail_price||0).toFixed(2) + ' ₽</td>' +
+            '<td style="padding:10px 8px;">' + fmtD(rev.expiry_date) + '</td>' +
+            '<td style="padding:10px 8px;">' + (rev.days_remaining_formatted||'—') + '</td>' +
+            '<td style="padding:10px 8px;"><span class="discount-badge ' + (rev.discount_percent>=40?'high':rev.discount_percent>=25?'medium':'low') + '">' + (rev.discount_percent||0) + '%</span></td>' +
+            '<td style="padding:10px 8px;"><strong>' + (rev.final_price||0).toFixed(2) + ' ₽</strong> ' + pt + '</td>' +
+            '<td style="padding:10px 8px;"><span class="status-badge ' + rev.status + '">' + (sl[rev.status]||rev.status) + '</span></td>' +
+            '<td style="padding:10px 8px;"><div class="action-buttons" onclick="event.stopPropagation();">' +
+            (rev.status==='admin_decision'?'<button class="btn btn-sm btn-success" onclick="admDecision(' + rev.id + ','sell')">Продать</button><button class="btn btn-sm btn-warning" onclick="admDecision(' + rev.id + ','reserve')">Забрать</button>':'') +
+            (rev.status==='active' && rev.days_remaining>=0 && rev.quantity>0?'<button class="btn btn-sm btn-success" onclick="openOp(' + rev.id + ')">📦 Операция</button>':'') +
+            (rev.days_remaining<0 && rev.quantity>0?'<button class="btn btn-sm btn-danger" onclick="buyExp(' + rev.id + ')">🛒 Купить просрочку</button>':'') +
+            '<button class="btn btn-sm btn-info" onclick="openTx(' + rev.id + ')">📋 Журнал</button>' +
+            '<button class="btn btn-sm btn-primary" onclick="openEdit(' + rev.id + ')">✏️</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="delRev(' + rev.id + ')">🗑️</button>' +
+            (rev.quantity===0?'<span style="color:#6b7280;font-size:11px;">✅ Продано</span>':'') +
+            '</div></td></tr>';
+    }).join('');
+}
+
+function toggleCb(cell){var cb=cell.querySelector('.revision-checkbox');if(cb){cb.checked=!cb.checked;cb.dispatchEvent(new Event('change'));}}
+function toggleSelectAllRevisions(c){document.querySelectorAll('.revision-checkbox').forEach(function(x){x.checked=c;});updPanel();}
+function updPanel(){var ck=document.querySelectorAll('.revision-checkbox:checked'),pn=document.getElementById('promotion-panel'),ce=document.getElementById('promotion-count');if(!pn||!ce)return;pn.style.display=ck.length?'block':'none';ce.textContent=ck.length;}
+function clearPromotionSelection(){document.querySelectorAll('.revision-checkbox:checked').forEach(function(x){x.checked=false;});updPanel();}
+
+function generatePromotionPriceTags(){
+    var cbs=document.querySelectorAll('.revision-checkbox:checked');
+    if(!cbs.length){alert('Выберите товары');return;}
+    var p=[];cbs.forEach(function(cb){p.push({name:cb.dataset.productName,old:parseFloat(cb.dataset.retailPrice||0),price:parseFloat(cb.dataset.price||0),disc:parseInt(cb.dataset.discount||0)});});
+    var h='<html><head><meta charset="UTF-8"><title>Ценники</title><style>@page{margin:5mm}body{padding:10px;font-family:Calibri}.t{display:inline-block;width:90mm;padding:8px;margin:4px;border:3px solid #ef4444;text-align:center;page-break-inside:avoid}.o{font-size:11pt;font-weight:bold}.n{font-size:11pt;margin:3px 0}.ol{font-size:10pt;color:#6b7280;text-decoration:line-through}.pr{font-size:22pt;font-weight:bold;color:#dc2626}.bg{background:#ef4444;color:white;padding:2px 12px;font-weight:bold;font-size:11pt;display:inline-block;margin:3px 0}.prm{font-size:14pt;font-weight:bold;color:#ef4444}
+/* REVISION STYLES */
+#revisions-table-wrap { width: 100%; overflow-x: auto; }
+#revisions-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+#revisions-table th, #revisions-table td { padding: 6px 5px !important; text-align: left; border-bottom: 1px solid #e5e7eb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.controls-revision { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.action-buttons { white-space: nowrap; }
+</style></head><body><div style="text-align:center">';
+    p.forEach(function(x){h+='<div class="t"><div class="o">ООО "ВетГид"</div><div class="prm">★ АКЦИЯ ★</div><div class="n">'+escH(x.name)+'</div><div class="ol">Старая: '+x.old.toFixed(2)+' ₽</div><div class="pr">'+x.price.toFixed(2)+' ₽</div><div class="bg">СКИДКА '+x.disc+'%</div></div>';});
+    h+='</div>
+<script>
+// === НАВИГАЦИЯ ПО СТРАНИЦАМ ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Навигация по страницам
+    var navItems = document.querySelectorAll('.nav-item[data-page]');
+    navItems.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            var page = this.getAttribute('data-page');
+            
+            // Убираем active со всех
+            document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+            this.classList.add('active');
+            
+            // Скрываем все страницы
+            document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none'; });
+            
+            // Показываем нужную
+            var target = document.getElementById('page-' + page);
+            if (target) {
+                target.style.display = 'block';
+                // Обновляем хэш
+                window.location.hash = '#' + page;
+            }
+        });
+    });
+    
+    // Переключение по хэшу
+    function handleHash() {
+        var hash = window.location.hash.replace('#', '');
+        if (hash) {
+            var target = document.querySelector('.nav-item[data-page="' + hash + '"]');
+            if (target) target.click();
+        }
+    }
+    window.addEventListener('hashchange', handleHash);
+    handleHash();
+    
+    // Закрытие модалок по клику на overlay
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function() {
+            var modal = this.closest('.modal');
+            if (modal) modal.style.display = 'none';
+        });
+    });
+});
+
+// === ШТРИХ-КОДЫ ===
+async function loadBarcodes() {
+    var search = document.getElementById('barcode-search')?.value || '';
+    try {
+        var r = await fetch('/api/barcodes?search=' + encodeURIComponent(search), {credentials:'include'});
+        var d = await r.json();
+        var tb = document.getElementById('barcodes-body');
+        if (!tb) return;
+        if (d.barcodes && d.barcodes.length) {
+            tb.innerHTML = d.barcodes.map(function(b) {
+                return '<tr><td>' + escH(b.product_name) + '</td><td>' + escH(b.barcode) + '</td><td>' + escH(b.internal_barcode || '') + '</td>' +
+                    '<td><button class="btn btn-sm btn-primary" onclick="editBarcode(' + b.id + ')">✏️</button> ' +
+                    '<button class="btn btn-sm btn-danger" onclick="deleteBarcode(' + b.id + ')">🗑️</button></td></tr>';
+            }).join('');
+        } else {
+            tb.innerHTML = '<tr><td colspan="4" style="text-align:center;">Ничего не найдено</td></tr>';
+        }
+    } catch(e) { console.error('Barcode load error:', e); }
+}
+function showAddBarcodeModal() {
+    document.getElementById('barcode-id').value = '';
+    document.getElementById('barcode-product-name').value = '';
+    document.getElementById('barcode-factory').value = '';
+    document.getElementById('barcode-internal').value = '';
+    document.getElementById('barcode-modal-title').textContent = 'Добавить штрих-код';
+    document.getElementById('barcode-modal').style.display = 'block';
+}
+function closeBarcodeModal() { document.getElementById('barcode-modal').style.display = 'none'; }
+async function saveBarcode() {
+    var id = document.getElementById('barcode-id').value;
+    var data = {
+        product_name: document.getElementById('barcode-product-name').value.trim(),
+        barcode: document.getElementById('barcode-factory').value.trim(),
+        internal_barcode: document.getElementById('barcode-internal').value.trim()
+    };
+    if (!data.product_name || !data.barcode) { alert('Заполните обязательные поля'); return; }
+    try {
+        var url = id ? '/api/barcodes/' + id : '/api/barcodes';
+        var method = id ? 'PUT' : 'POST';
+        var r = await fetch(url, {method:method, headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(data)});
+        var d = await r.json();
+        if (d.status === 'success') { closeBarcodeModal(); loadBarcodes(); }
+        else alert('Ошибка: ' + d.message);
+    } catch(e) { alert('Ошибка сети'); }
+}
+async function deleteBarcode(id) {
+    if (!confirm('Удалить штрих-код?')) return;
+    try { var r = await fetch('/api/barcodes/' + id, {method:'DELETE', credentials:'include'}); var d = await r.json(); if (d.status === 'success') loadBarcodes(); else alert(d.message); } catch(e) { alert('Ошибка сети'); }
+}
+function exportBarcodes() { window.open('/api/barcodes/export', '_blank'); }
+function showImportModal() { alert('Импорт: выберите файл Excel с колонками: Наименование, штрих код заводской, штрих код присвоенный'); }
+
+// === АНАЛИТИКА ===
+function initAnalyticsCharts() {
+    var month = document.getElementById('analytics-month')?.value;
+    var year = document.getElementById('analytics-year')?.value;
+    document.getElementById('analytics-summary').innerHTML = '<p>Аналитика загрузки...</p>';
+    // Simple placeholder
+    setTimeout(function() {
+        document.getElementById('analytics-summary').innerHTML = '<p>Данные аналитики загружены</p>';
+    }, 500);
+}
+function exportRevisionReport(type) {
+    var filter = document.getElementById('revision-filter')?.value || 'all';
+    window.open('/revisions/export/' + type + '?filter=' + filter, '_blank');
+}
+function escH(s) { if (!s) return ''; return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }
+</script>
+</body></html>';
+    var w=window.open('','_blank','width=800,height=600');
+    w.document.write(h);w.document.close();
+    setTimeout(function(){w.focus();w.print();},500);
+    clearPromotionSelection();
+}
+
+function openAddRevisionModal(){document.getElementById('revision-add-modal').style.display='block';document.getElementById('rev-quantity').value='1';document.getElementById('rev-1c-search').value='';}
+function closeAddRevisionModal(){document.getElementById('revision-add-modal').style.display='none';}
+async function addRevision(){
+    var n=document.getElementById('rev-product-name').value.trim(),q=parseInt(document.getElementById('rev-quantity').value)||1,b=document.getElementById('rev-barcode').value.trim(),p=parseFloat(document.getElementById('rev-retail-price').value),e=document.getElementById('rev-expiry-date').value;
+    if(!n||!p||!e){alert('Заполните название, цену и срок');return;}
+    try{var r=await fetch('/revisions',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({product_name:n,full_name:'',quantity:q,barcode:b,retail_price:p,expiry_date:e})});var d=await r.json();if(d.status==='success'){closeAddRevisionModal();loadRevisions();}else alert('Ошибка: '+d.message);}catch(e){alert('Ошибка сети');}
+}
+
+function openEdit(id){document.getElementById('edit-revision-modal').style.display='block';}
+function closeEditRevisionModal(){document.getElementById('edit-revision-modal').style.display='none';}
+async function saveEditRevision(){
+    var id=document.getElementById('edit-rev-id').value,data={product_name:document.getElementById('edit-rev-product-name').value.trim(),quantity:parseInt(document.getElementById('edit-rev-quantity').value)||1,barcode:document.getElementById('edit-rev-barcode').value.trim(),retail_price:parseFloat(document.getElementById('edit-rev-retail-price').value),expiry_date:document.getElementById('edit-rev-expiry-date').value};
+    if(!data.product_name||!data.retail_price||!data.expiry_date){alert('Заполните поля');return;}
+    try{var r=await fetch('/revisions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(data)});var d=await r.json();if(d.status==='success'){closeEditRevisionModal();loadRevisions();}else alert(d.message);}catch(e){alert('Ошибка сети');}
+}
+
+async function delRev(id){if(!confirm('Удалить товар?'))return;try{var r=await fetch('/revisions/'+id,{method:'DELETE',credentials:'include'});var d=await r.json();if(d.status==='success')loadRevisions();else alert(d.message);}catch(e){alert('Ошибка сети');}}
+async function admDecision(id,dec){try{var r=await fetch('/revisions/'+id+'/decision',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({decision:dec})});var d=await r.json();if(d.status==='success')loadRevisions();else alert(d.message);}catch(e){alert('Ошибка сети');}}
+async function buyExp(id){if(!confirm('Купить просроченный товар по цене со скидкой?'))return;try{var r=await fetch('/revisions/'+id+'/buy-expired',{method:'POST',credentials:'include'});var d=await r.json();if(d.status==='success'){alert(d.message);loadRevisions();}else alert(d.message);}catch(e){alert('Ошибка сети');}}
+function openOp(id){currentAdminRevId=id;document.getElementById('operation-modal').style.display='block';}
+function closeOperationModal(){document.getElementById('operation-modal').style.display='none';}
+async function confirmOperation(){
+    var a=document.getElementById('operation-type').value,q=parseInt(document.getElementById('operation-quantity').value)||1,r=document.getElementById('operation-reason').value.trim();
+    if(!currentAdminRevId)return;
+    try{var resp=await fetch('/revisions/'+currentAdminRevId+'/operation',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({action:a,quantity:q,reason:r})});var d=await resp.json();if(d.status==='success'){closeOperationModal();loadRevisions();}else alert(d.message);}catch(e){alert('Ошибка сети');}
+}
+async function openTx(id){
+    try{var r=await fetch('/revisions/'+id+'/transactions',{credentials:'include'});var d=await r.json();if(d.status!=='success'){alert(d.message);return;}
+    var h='<div class="modal" style="display:block;"><div class="modal-content" style="max-width:700px;"><div class="modal-header"><h3>📋 Журнал операций</h3><button class="modal-close" onclick="this.closest('.modal').remove()">×</button></div><div class="modal-body"><table style="width:100%"><tr><th>Дата</th><th>Кто</th><th>Действие</th><th>Кол-во</th></tr>';
+    if(d.transactions&&d.transactions.length){d.transactions.forEach(function(t){h+='<tr><td>'+fmtD(t.created_at)+'</td><td>'+escH(t.full_name)+'</td><td>'+escH(t.action)+'</td><td>'+t.quantity+'</td></tr>';});}
+    else h+='<tr><td colspan="4">Нет операций</td></tr>';
+    h+='</table></div><div class="modal-actions"><button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Закрыть</button></div></div></div>';
+    var dv=document.createElement('div');dv.innerHTML=h;document.body.appendChild(dv.firstElementChild);}catch(e){alert('Ошибка');}
+}
+
+function checkWarnings(r){
+    var b=document.getElementById('smart-control-banner');if(!b)return;
+    var exp=r.filter(function(x){return x.days_remaining<0;}).length;
+    var soon=r.filter(function(x){return x.days_remaining>=0&&x.days_remaining<=7;}).length;
+    var high=r.filter(function(x){return x.discount_percent&&x.discount_percent>=40;}).length;
+    if(!exp&&!soon&&!high){b.style.display='none';return;}
+    var h='<div class="smart-alert-summary">';
+    if(exp)h+='<div class="smart-summary-card critical"><div class="smart-summary-value" style="color:#ef4444;">'+exp+'</div><div class="smart-summary-label">⚠️ Просрочено</div></div>';
+    if(soon)h+='<div class="smart-summary-card warning"><div class="smart-summary-value" style="color:#f97316;">'+soon+'</div><div class="smart-summary-label">⏳ Скоро истекает</div></div>';
+    if(high)h+='<div class="smart-summary-card" style="background:#fff7ed;border-left:4px solid #ea580c;"><div class="smart-summary-value" style="color:#ea580c;">'+high+'</div><div class="smart-summary-label">🏷️ Большая скидка</div></div>';
+    h+='</div>';
+    b.innerHTML='<div style="padding:12px;background:linear-gradient(135deg,#fef2f2,#fff7ed);border-radius:10px;border:2px solid #f97316;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><h3 style="margin:0;font-size:15px;">🧠 Умный контроль</h3><button class="btn btn-sm btn-secondary" onclick="this.parentElement.parentElement.parentElement.style.display='none'">✕</button></div>'+h+'</div>';
+    b.style.display='block';
+}
+function openSmartStats(){window.open('/api/smart/dashboard','_blank');}
+function fmtD(d){if(!d)return'—';return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});}
+function escH(s){if(!s)return'';return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
+
+// Init revision observer
+document.addEventListener('DOMContentLoaded', function(){
+    var rp=document.getElementById('page-revision');
+    if(rp){var obs=new MutationObserver(function(){if(rp.style.display!=='none')loadRevisions();});obs.observe(rp,{attributes:true,attributeFilter:['style']});}
+});
+</script>
+
+<script>
+// === НАВИГАЦИЯ ПО СТРАНИЦАМ ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Навигация по страницам
+    var navItems = document.querySelectorAll('.nav-item[data-page]');
+    navItems.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            var page = this.getAttribute('data-page');
+            
+            // Убираем active со всех
+            document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+            this.classList.add('active');
+            
+            // Скрываем все страницы
+            document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none'; });
+            
+            // Показываем нужную
+            var target = document.getElementById('page-' + page);
+            if (target) {
+                target.style.display = 'block';
+                // Обновляем хэш
+                window.location.hash = '#' + page;
+            }
+        });
+    });
+    
+    // Переключение по хэшу
+    function handleHash() {
+        var hash = window.location.hash.replace('#', '');
+        if (hash) {
+            var target = document.querySelector('.nav-item[data-page="' + hash + '"]');
+            if (target) target.click();
+        }
+    }
+    window.addEventListener('hashchange', handleHash);
+    handleHash();
+    
+    // Закрытие модалок по клику на overlay
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function() {
+            var modal = this.closest('.modal');
+            if (modal) modal.style.display = 'none';
+        });
+    });
+});
+
+// === ШТРИХ-КОДЫ ===
+async function loadBarcodes() {
+    var search = document.getElementById('barcode-search')?.value || '';
+    try {
+        var r = await fetch('/api/barcodes?search=' + encodeURIComponent(search), {credentials:'include'});
+        var d = await r.json();
+        var tb = document.getElementById('barcodes-body');
+        if (!tb) return;
+        if (d.barcodes && d.barcodes.length) {
+            tb.innerHTML = d.barcodes.map(function(b) {
+                return '<tr><td>' + escH(b.product_name) + '</td><td>' + escH(b.barcode) + '</td><td>' + escH(b.internal_barcode || '') + '</td>' +
+                    '<td><button class="btn btn-sm btn-primary" onclick="editBarcode(' + b.id + ')">✏️</button> ' +
+                    '<button class="btn btn-sm btn-danger" onclick="deleteBarcode(' + b.id + ')">🗑️</button></td></tr>';
+            }).join('');
+        } else {
+            tb.innerHTML = '<tr><td colspan="4" style="text-align:center;">Ничего не найдено</td></tr>';
+        }
+    } catch(e) { console.error('Barcode load error:', e); }
+}
+function showAddBarcodeModal() {
+    document.getElementById('barcode-id').value = '';
+    document.getElementById('barcode-product-name').value = '';
+    document.getElementById('barcode-factory').value = '';
+    document.getElementById('barcode-internal').value = '';
+    document.getElementById('barcode-modal-title').textContent = 'Добавить штрих-код';
+    document.getElementById('barcode-modal').style.display = 'block';
+}
+function closeBarcodeModal() { document.getElementById('barcode-modal').style.display = 'none'; }
+async function saveBarcode() {
+    var id = document.getElementById('barcode-id').value;
+    var data = {
+        product_name: document.getElementById('barcode-product-name').value.trim(),
+        barcode: document.getElementById('barcode-factory').value.trim(),
+        internal_barcode: document.getElementById('barcode-internal').value.trim()
+    };
+    if (!data.product_name || !data.barcode) { alert('Заполните обязательные поля'); return; }
+    try {
+        var url = id ? '/api/barcodes/' + id : '/api/barcodes';
+        var method = id ? 'PUT' : 'POST';
+        var r = await fetch(url, {method:method, headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(data)});
+        var d = await r.json();
+        if (d.status === 'success') { closeBarcodeModal(); loadBarcodes(); }
+        else alert('Ошибка: ' + d.message);
+    } catch(e) { alert('Ошибка сети'); }
+}
+async function deleteBarcode(id) {
+    if (!confirm('Удалить штрих-код?')) return;
+    try { var r = await fetch('/api/barcodes/' + id, {method:'DELETE', credentials:'include'}); var d = await r.json(); if (d.status === 'success') loadBarcodes(); else alert(d.message); } catch(e) { alert('Ошибка сети'); }
+}
+function exportBarcodes() { window.open('/api/barcodes/export', '_blank'); }
+function showImportModal() { alert('Импорт: выберите файл Excel с колонками: Наименование, штрих код заводской, штрих код присвоенный'); }
+
+// === АНАЛИТИКА ===
+function initAnalyticsCharts() {
+    var month = document.getElementById('analytics-month')?.value;
+    var year = document.getElementById('analytics-year')?.value;
+    document.getElementById('analytics-summary').innerHTML = '<p>Аналитика загрузки...</p>';
+    // Simple placeholder
+    setTimeout(function() {
+        document.getElementById('analytics-summary').innerHTML = '<p>Данные аналитики загружены</p>';
+    }, 500);
+}
+function exportRevisionReport(type) {
+    var filter = document.getElementById('revision-filter')?.value || 'all';
+    window.open('/revisions/export/' + type + '?filter=' + filter, '_blank');
+}
+function escH(s) { if (!s) return ''; return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }
+</script>
+</body>
+</html>
+
