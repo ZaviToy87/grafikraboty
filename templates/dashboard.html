@@ -2584,9 +2584,9 @@
                     <td style="padding: 16px 12px;"><strong>${(rev.final_price || 0).toFixed(2)} ₽</strong></td>
                     <td style="padding: 16px 12px;"><span style="${statusColors[rev.status] || ''}; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;">${statusLabels[rev.status] || rev.status}</span></td>
                     <td style="padding: 16px 12px;">
-                        ${rev.status === 'admin_decision' && currentUser.role === 'admin' ? `
-                            <button type="button" class="btn btn-sm btn-success" onclick="adminRevisionDecision(${rev.id}, 'sell')" style="padding: 6px 12px; margin-right: 4px;">Разрешить продать</button>
-                            <button type="button" class="btn btn-sm btn-warning" onclick="adminRevisionDecision(${rev.id}, 'reserve')" style="padding: 6px 12px;">Забрать</button>
+                        ${rev.status === 'admin_decision' ? `
+                            <button type="button" class="btn btn-sm btn-success" onclick="adminRevisionDecision(${rev.id}, 'sell')" style="padding: 6px 12px; margin-right: 4px;">✅ Разрешить продать</button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="adminRevisionDecision(${rev.id}, 'reserve')" style="padding: 6px 12px;">📦 Забрать (скидка)</button>
                         ` : ''}
                         ${rev.status === 'active' && rev.days_remaining >= 0 && rev.quantity > 0 ? `
                             <button type="button" class="btn btn-sm btn-success" onclick="openOperationModal(${rev.id})" style="padding: 6px 12px; margin-right: 4px;">📦 Операция</button>

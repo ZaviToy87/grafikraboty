@@ -3214,19 +3214,27 @@
 #revisions-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin: 0 -12px;
-    padding: 0 12px;
+    margin: 0;
+    padding: 0;
     width: 100%;
 }
 #revisions-table-wrap table {
-    min-width: 1200px;
-    width: 100%;
+    min-width: 100%;
+    width: auto;
+    table-layout: auto;
 }
-/* Всегда показываем все колонки ревизии (не скрываем на мобильных) */
+/* Всегда показываем все колонки ревизии */
 #revisions-table th,
 #revisions-table td {
     display: table-cell !important;
     white-space: nowrap;
+    padding: 8px 10px !important;
+}
+/* Фиксируем первую колонку с чекбоксом */
+#revisions-table th:first-child,
+#revisions-table td:first-child {
+    width: 40px;
+    text-align: center;
 }
 
 /* Специально для таблицы штрих-кодов */
