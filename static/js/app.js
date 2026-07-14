@@ -5512,15 +5512,6 @@ function initRevisionPage() {
         showShiftWarnings();
     }, 500);
     
-    // Наблюдаем за изменениями в панели акций
-    const promotionPanel = document.getElementById('promotion-panel');
-    if (promotionPanel) {
-        const observer = new MutationObserver(() => {
-            updatePromotionPanel();
-        });
-        observer.observe(promotionPanel, { childList: true, subtree: true });
-    }
-    
     // Наблюдаем за появлением страницы ревизии
     const revisionPage = document.getElementById('page-revision');
     if (revisionPage) {
