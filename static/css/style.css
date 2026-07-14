@@ -3216,9 +3216,17 @@
     -webkit-overflow-scrolling: touch;
     margin: 0 -12px;
     padding: 0 12px;
+    width: 100%;
 }
 #revisions-table-wrap table {
-    min-width: 900px;
+    min-width: 1200px;
+    width: 100%;
+}
+/* Всегда показываем все колонки ревизии (не скрываем на мобильных) */
+#revisions-table th,
+#revisions-table td {
+    display: table-cell !important;
+    white-space: nowrap;
 }
 
 /* Специально для таблицы штрих-кодов */
