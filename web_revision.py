@@ -542,14 +542,12 @@ def edit_revision(revision_id):
 @revision_bp.route('/revisions/<int:revision_id>/decision', methods=['POST'])
 def admin_decision(revision_id):
     """
-    Решение администратора по просроченному товару
-    decision: 'reserve' (забрать себе) или 'sell' (разрешить продать)
+    Решение по товару, требующему решения (просрочка, истекающий срок)
+    decision: 'reserve' (забрать себе/скидка) или 'sell' (разрешить продать)
+    Доступно всем сотрудникам, а не только администратору.
     """
     if 'user_id' not in session:
         return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
-    
-    if session['role'] != 'admin':
-        return jsonify({'status': 'error', 'message': 'Только для админа'}), 403
     
     data = request.json or {}
     decision = data.get('decision')
@@ -562,7 +560,7 @@ def admin_decision(revision_id):
     
     if decision == 'reserve':
         new_status = 'reserved_admin'
-        message = 'Товар забронирован администратором'
+        message = 'Товар забронирован'
     else:  # sell
         new_status = 'active'
         message = 'Разрешено к продаже со скидкой 50%'
