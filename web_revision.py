@@ -118,20 +118,28 @@ def get_revisions():
     conditions = []
     params = []
 
-    # Все видят ВСЕ товары (сотрудники тоже)
+    # Фильтрация:
+    # all = активные + требующие решения (без проданных/архивных)
+    # active = только активные
+    # decision = требующие решения
+    # my = только мои
+    # archive = проданные, утилизированные, забронированные
     if filter_type == 'my':
-        conditions.append('user_id = ?')
-        params.append(user_id)
+        conditions.append('user_id = ? AND status NOT IN (?, ?, ?, ?, ?)')
+        params.extend([user_id, 'sold', 'utilized', 'sold_discount', 'sold_promo', 'reserved_admin'])
     elif filter_type == 'decision':
         conditions.append('status = ?')
         params.append('admin_decision')
     elif filter_type == 'active':
+        conditions.append('status = ?')
+        params.append('active')
+    elif filter_type == 'archive':
+        conditions.append('status IN (?, ?, ?, ?, ?)')
+        params.extend(['sold', 'utilized', 'reserved_admin', 'sold_discount', 'sold_promo'])
+    else:  # 'all' - показываем только активные и требующие решения
         conditions.append('status IN (?, ?)')
         params.append('active')
         params.append('admin_decision')
-    elif filter_type == 'archive':
-        conditions.append('status IN (?, ?, ?)')
-        params.extend(['sold', 'utilized', 'reserved_admin'])
 
     # Поиск по названию или штрих-коду (регистронезависимо через Python)
     if search:
