@@ -4052,7 +4052,121 @@
     }
     </style>
 
+    <style>
+    /* ===== COMPACT + RESIZABLE REVISION TABLE ===== */
+    #revisions-table-wrap {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+    }
+    #revisions-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    #revisions-table th, #revisions-table td {
+        padding: 6px 8px !important;
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #revisions-table th {
+        position: relative;
+        cursor: pointer;
+        user-select: none;
+        white-space: normal;
+    }
+    #revisions-table th .resize-handle {
+        position: absolute;
+        top: 0;
+        right: -3px;
+        width: 6px;
+        height: 100%;
+        cursor: col-resize;
+        z-index: 5;
+    }
+    #revisions-table th .resize-handle:hover {
+        background: rgba(99,102,241,0.4);
+    }
+    #revisions-table td:nth-child(2) {
+        word-break: break-word;
+        white-space: normal;
+    }
+    #revisions-table td:last-child .btn-sm {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        min-height: 26px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+    #revisions-table th:first-child,
+    #revisions-table td:first-child {
+        position: sticky !important; left: 0; z-index: 2;
+        background: var(--bg-secondary, #fff);
+        border-right: 2px solid var(--border, #e5e7eb);
+    }
+    #revisions-table thead th:first-child { z-index: 4; }
+    #revisions-table th:nth-child(2),
+    #revisions-table td:nth-child(2) {
+        position: sticky !important; left: 36px; z-index: 2;
+        background: var(--bg-secondary, #fff);
+        border-right: 2px solid var(--border, #e5e7eb);
+    }
+    #revisions-table thead th:nth-child(2) { z-index: 4; }
+    </style>
+
     <script src="{{ url_for('static', filename='js/smart_revision.js') }}"></script>
+
+<script>
+// ===== Resizable columns for revision table =====
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('revisions-table');
+    if (!table) return;
+    const thead = table.querySelector('thead tr');
+    if (!thead) return;
+
+    thead.querySelectorAll('th').forEach(th => {
+        // Skip checkbox column (first)
+        if (th.classList && th.classList.contains('rev-col-check')) return;
+
+        const handle = document.createElement('div');
+        handle.className = 'resize-handle';
+        th.appendChild(handle);
+
+        let startX = 0, startWidth = 0;
+
+        handle.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            startX = e.clientX;
+            startWidth = th.getBoundingClientRect().width;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        function onMouseMove(e) {
+            const diff = e.clientX - startX;
+            const newWidth = Math.max(40, startWidth + diff);
+            th.style.width = newWidth + 'px';
+            const colIndex = Array.from(thead.children).indexOf(th);
+            table.querySelectorAll('tr').forEach(tr => {
+                const cell = tr.children[colIndex];
+                if (cell) {
+                    cell.style.width = newWidth + 'px';
+                    cell.style.minWidth = '40px';
+                }
+            });
+        }
+
+        function onMouseUp() {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+    });
+});
+</script>
 
 </body>
 </html>
