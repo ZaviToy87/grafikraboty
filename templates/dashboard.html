@@ -495,7 +495,7 @@
         </div>
 
         <!-- Таблица товаров -->
-        <div class="table-responsive" id="revisions-table-wrap" style="overflow-x: auto; max-width: 100%;">
+        <div class="table-responsive" id="revisions-table-wrap" style="overflow: auto; max-width: 100%; max-height: 70vh; border: 1px solid var(--border, #e5e7eb); border-radius: 8px;">
             <table class="table table-striped" id="revisions-table">
                 <thead>
                     <tr>
@@ -4053,42 +4053,59 @@
     </style>
 
     <style>
-    /* ===== COMPACT + RESIZABLE REVISION TABLE ===== */
+    /* ===== COMPACT + FIXED HEIGHT + EXCEL-LIKE RESIZABLE ===== */
     #revisions-table-wrap {
         max-width: 100% !important;
-        overflow-x: auto !important;
+        overflow: auto;
+        max-height: 70vh;              /* фикс. высота: скроллбар всегда виден внизу */
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 8px;
+        background: var(--bg-secondary, #fff);
+        position: relative;
     }
     #revisions-table {
         width: 100%;
-        table-layout: fixed;
+        min-width: 900px;              /* одинаковая мин. ширина для всех колонок */
+        table-layout: auto;            /* колонки подстраиваются под содержимое */
+        border-collapse: collapse;
     }
     #revisions-table th, #revisions-table td {
         padding: 6px 8px !important;
         vertical-align: middle;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 13px;
     }
     #revisions-table th {
         position: relative;
-        cursor: pointer;
         user-select: none;
         white-space: normal;
+        font-weight: 600;
+        background: var(--bg-tertiary, #f8f9fb);
+        border-bottom: 2px solid var(--border);
     }
     #revisions-table th .resize-handle {
         position: absolute;
-        top: 0;
-        right: -3px;
-        width: 6px;
-        height: 100%;
+        top: 0; right: 0;
+        width: 8px; height: 100%;
         cursor: col-resize;
         z-index: 5;
+        background: transparent;
     }
-    #revisions-table th .resize-handle:hover {
-        background: rgba(99,102,241,0.4);
+    #revisions-table th .resize-handle:hover,
+    #revisions-table th .resize-handle.active {
+        background: var(--primary, #6366f1);
+        opacity: 0.5;
     }
-    #revisions-table td:nth-child(2) {
+    /* Наименование товара — ШИРОКОЕ, читаемое, переносится */
+    #revisions-table td:nth-child(2),
+    #revisions-table th:nth-child(2) {
+        min-width: 250px;
+        max-width: none;
         word-break: break-word;
         white-space: normal;
+    }
+    /* Действия — кнопки не обрезаются */
+    #revisions-table td:last-child {
+        white-space: nowrap;
     }
     #revisions-table td:last-child .btn-sm {
         padding: 4px 8px !important;
@@ -4097,19 +4114,21 @@
         margin-bottom: 2px;
         white-space: nowrap;
     }
+    /* Sticky первые 2 колонки (чекбокс + название всегда видны) */
     #revisions-table th:first-child,
     #revisions-table td:first-child {
         position: sticky !important; left: 0; z-index: 2;
         background: var(--bg-secondary, #fff);
-        border-right: 2px solid var(--border, #e5e7eb);
+        border-right: 2px solid var(--border);
+        width: 36px; min-width: 36px; max-width: 36px;
     }
-    #revisions-table thead th:first-child { z-index: 4; }
     #revisions-table th:nth-child(2),
     #revisions-table td:nth-child(2) {
         position: sticky !important; left: 36px; z-index: 2;
         background: var(--bg-secondary, #fff);
-        border-right: 2px solid var(--border, #e5e7eb);
+        border-right: 2px solid var(--border);
     }
+    #revisions-table thead th:first-child,
     #revisions-table thead th:nth-child(2) { z-index: 4; }
     </style>
 
