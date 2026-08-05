@@ -495,21 +495,21 @@
         </div>
 
         <!-- Таблица товаров -->
-        <div class="table-responsive">
+        <div class="table-responsive" id="revisions-table-wrap" style="overflow-x: auto; max-width: 100%;">
             <table class="table table-striped" id="revisions-table">
                 <thead>
                     <tr>
-                        <th style="width: 40px;"><input type="checkbox" id="select-all-revisions" onchange="toggleSelectAllRevisions(this.checked)" title="Выбрать все"></th>
-                        <th>Товар</th>
-                        <th>Кол-во</th>
-                        <th>Штрих-код</th>
-                        <th>Цена</th>
-                        <th>Срок годности</th>
-                        <th>Остаток</th>
-                        <th>Скидка</th>
-                        <th>Итог</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
+                        <th class="rev-col-check" style="width: 36px; min-width: 36px; max-width: 36px;"><input type="checkbox" id="select-all-revisions" onchange="toggleSelectAllRevisions(this.checked)" title="Выбрать все"></th>
+                        <th class="rev-col-name" style="width: 18%; max-width: 280px;">Товар</th>
+                        <th class="rev-col-qty" style="width: 6%;">Кол-во</th>
+                        <th class="rev-col-barcode" style="width: 12%;">Штрих-код</th>
+                        <th class="rev-col-price" style="width: 8%;">Цена</th>
+                        <th class="rev-col-expiry" style="width: 9%;">Срок годности</th>
+                        <th class="rev-col-left" style="width: 8%;">Остаток</th>
+                        <th class="rev-col-discount" style="width: 6%;">Скидка</th>
+                        <th class="rev-col-total" style="width: 8%;">Итог</th>
+                        <th class="rev-col-status" style="width: 9%;">Статус</th>
+                        <th class="rev-col-actions" style="width: 16%;">Действия</th>
                     </tr>
                 </thead>
                 <tbody id="revisions-body">
@@ -2571,32 +2571,32 @@
             
             return `
                 <tr style="${rowColor}" data-revision-id="${rev.id}">
-                    <td style="padding: 16px 12px; text-align: center;">
+                    <td style="text-align: center;">
                         <input type="checkbox" class="revision-checkbox" data-revision-id="${rev.id}" data-product-name="${escapeHtml(rev.product_name)}" data-quantity="${rev.quantity || 1}" data-barcode="${rev.barcode || ''}" data-price="${rev.final_price || 0}" data-retail-price="${rev.retail_price || 0}" data-discount="${rev.discount_percent || 0}" onchange="updatePromotionPanel()">
                     </td>
-                    <td style="padding: 16px 12px;"><strong>${escapeHtml(rev.product_name)}</strong><br><small style="color: var(--text-secondary);">${escapeHtml(rev.full_name)}</small></td>
-                    <td style="padding: 16px 12px;">${quantityDisplay}</td>
-                    <td style="padding: 16px 12px;">${barcodeDisplay}</td>
-                    <td style="padding: 16px 12px;">${(rev.retail_price || 0).toFixed(2)} ₽</td>
-                    <td style="padding: 16px 12px;">${formatDateRu(rev.expiry_date)}</td>
-                    <td style="padding: 16px 12px;">${rev.days_remaining_formatted || '—'}</td>
-                    <td style="padding: 16px 12px;"><span style="background: ${rev.discount_percent >= 40 ? '#f97316' : rev.discount_percent >= 25 ? '#eab308' : '#22c55e'}; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 13px;">${rev.discount_percent || 0}%</span></td>
-                    <td style="padding: 16px 12px;"><strong>${(rev.final_price || 0).toFixed(2)} ₽</strong></td>
-                    <td style="padding: 16px 12px;"><span style="${statusColors[rev.status] || ''}; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;">${statusLabels[rev.status] || rev.status}</span></td>
-                    <td style="padding: 16px 12px;">
+                    <td><strong>${escapeHtml(rev.product_name)}</strong><br><small style="color: var(--text-secondary);">${escapeHtml(rev.full_name)}</small></td>
+                    <td>${quantityDisplay}</td>
+                    <td>${barcodeDisplay}</td>
+                    <td>${(rev.retail_price || 0).toFixed(2)} ₽</td>
+                    <td>${formatDateRu(rev.expiry_date)}</td>
+                    <td>${rev.days_remaining_formatted || '—'}</td>
+                    <td><span style="background: ${rev.discount_percent >= 40 ? '#f97316' : rev.discount_percent >= 25 ? '#eab308' : '#22c55e'}; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; white-space: nowrap;">${rev.discount_percent || 0}%</span></td>
+                    <td><strong>${(rev.final_price || 0).toFixed(2)} ₽</strong></td>
+                    <td><span style="${statusColors[rev.status] || ''}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap;">${statusLabels[rev.status] || rev.status}</span></td>
+                    <td>
                         ${rev.status === 'admin_decision' ? `
-                            <button type="button" class="btn btn-sm btn-success" onclick="adminRevisionDecision(${rev.id}, 'sell')" style="padding: 6px 12px; margin-right: 4px;">✅ Разрешить продать</button>
-                            <button type="button" class="btn btn-sm btn-warning" onclick="adminRevisionDecision(${rev.id}, 'reserve')" style="padding: 6px 12px;">📦 Забрать (скидка)</button>
+                            <button type="button" class="btn btn-sm btn-success" onclick="adminRevisionDecision(${rev.id}, 'sell')" style="padding: 4px 8px; margin: 2px 4px 2px 0;">✅ Продать</button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="adminRevisionDecision(${rev.id}, 'reserve')" style="padding: 4px 8px; margin: 2px 0;">📦 Забрать</button>
                         ` : ''}
                         ${rev.status === 'active' && rev.days_remaining >= 0 && rev.quantity > 0 ? `
-                            <button type="button" class="btn btn-sm btn-success" onclick="openOperationModal(${rev.id})" style="padding: 6px 12px; margin-right: 4px;">📦 Операция</button>
+                            <button type="button" class="btn btn-sm btn-success" onclick="openOperationModal(${rev.id})" style="padding: 4px 8px; margin: 2px 4px 2px 0;">📦 Операция</button>
                         ` : ''}
                         ${currentUser.role === 'admin' ? `
-                            <button type="button" class="btn btn-sm btn-info" onclick="openTransactionLog(${rev.id})" style="padding: 6px 12px; margin-right: 4px;">📋 Журнал</button>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openEditRevisionModal(${rev.id})" style="padding: 6px 12px; margin-right: 4px;">✏️</button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteRevision(${rev.id})" style="padding: 6px 12px;">🗑️</button>
+                            <button type="button" class="btn btn-sm btn-info" onclick="openTransactionLog(${rev.id})" style="padding: 4px 8px; margin: 2px 4px 2px 0;">📋</button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openEditRevisionModal(${rev.id})" style="padding: 4px 8px; margin: 2px 4px 2px 0;">✏️</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteRevision(${rev.id})" style="padding: 4px 8px; margin: 2px 0;">🗑️</button>
                         ` : ''}
-                        ${rev.quantity === 0 ? '<span style="color: #6b7280; font-size: 12px;">✅ Продано</span>' : ''}
+                        ${rev.quantity === 0 ? '<span style="color: #6b7280; font-size: 11px;">✅ Продано</span>' : ''}
                     </td>
                 </tr>
             `;
