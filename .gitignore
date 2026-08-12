@@ -103,3 +103,13 @@ mobile_app/
 # Data directories
 screenshots/
 sales_data/
+
+# Static uploads (user photos, not source code)
+static/uploads/
+
+# Uninstaller artifact
+unins000.dat
+
+# Temporary check scripts
+_check_*.py
+

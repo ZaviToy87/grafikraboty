@@ -1,0 +1,73 @@
+# Docker ignore file
+node_modules
+npm-debug.log
+.git
+.gitignore
+*.md
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis
+*.log
+.env
+venv
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# Logs
+logs/
+*.log
+
+# Database (SQLite - не нужно в Docker)
+schedule.db
+*.db
+
+# Uploads (используем volumes)
+uploads/*
+!uploads/.gitkeep
+
+# Instance folder
+instance/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MCP backups
+.mcp/backups/*
+
+# EXE builds
+dist/
+build/
+*.exe
+
+# Installer
+*.exe
+*.msi

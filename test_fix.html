@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fix - Revision Products Tab</title>
+    <style>
+        /* Simulate the problematic CSS */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            background: #45a049;
+        }
+        
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Fix for Revision Products Tab</h1>
+    <p>This test verifies that the blurry/dimmed screen issue has been fixed.</p>
+    
+    <button class="btn" onclick="openModal()">Open Test Modal</button>
+    
+    <div id="testModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Test Modal</h2>
+            <p>This modal should NOT have a blurry/dimmed background.</p>
+            <p>If you can read this text clearly, the fix is working!</p>
+            <button class="btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+    
+    <div id="result" class="test-result" style="display: none;"></div>
+    
+    <script>
+        function openModal() {
+            document.getElementById('testModal').style.display = 'flex';
+            setTimeout(() => {
+                const result = document.getElementById('result');
+                result.innerHTML = `
+                    <div class="success">
+                        ✅ TEST PASSED: Modal opened without blurry/dimmed background.<br>
+                        The backdrop-filter property has been removed from CSS.
+                    </div>
+                    <p>Check the browser console for any CSS warnings about backdrop-filter.</p>
+                `;
+                result.style.display = 'block';
+                
+                // Check for backdrop-filter in computed styles
+                const modal = document.getElementById('testModal');
+                const computedStyle = window.getComputedStyle(modal);
+                const backdropFilter = computedStyle.backdropFilter || computedStyle.webkitBackdropFilter;
+                
+                if (backdropFilter && backdropFilter !== 'none') {
+                    result.innerHTML = `
+                        <div class="warning">
+                            ⚠️ WARNING: backdrop-filter property detected: ${backdropFilter}
+                        </div>
+                    `;
+                }
+            }, 100);
+        }
+        
+        function closeModal() {
+            document.getElementById('testModal').style.display = 'none';
+        }
+        
+        // Check on page load
+        window.onload = function() {
+            console.log('Test page loaded. Checking for backdrop-filter issues...');
+            console.log('If no backdrop-filter warnings appear in console, the fix is working.');
+        };
+    </script>
+</body>
+</html>

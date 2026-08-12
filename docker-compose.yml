@@ -1,0 +1,112 @@
+version: '3.8'
+
+# GrafikRaboty Docker Compose
+# Запуск сервера с PostgreSQL базой данных и Redis для Socket.IO
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: grafikraboty_db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-grafikraboty}
+      POSTGRES_USER: ${POSTGRES_USER:-grafik}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grafik_secret_2026}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grafik} -d ${POSTGRES_DB:-grafikraboty}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - grafikraboty_network
+
+  # Redis для Socket.IO (production режим)
+  redis:
+    image: redis:7-alpine
+    container_name: grafikraboty_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - grafikraboty_network
+
+  # Flask Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: grafikraboty_web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./instance:/app/instance
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grafik}:${POSTGRES_PASSWORD:-grafik_secret_2026}@db:5432/${POSTGRES_DB:-grafikraboty}
+      REDIS_URL: redis://redis:6379/0
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      VK_TOKEN: ${VK_TOKEN}
+      VK_GROUP_ID: ${VK_GROUP_ID:-199112265}
+      ADMIN_USER_ID: ${ADMIN_USER_ID:-701768868}
+      ADMIN_VK_ID: ${ADMIN_VK_ID:-146411666}
+      TUNNEL_ENABLED: ${TUNNEL_ENABLED:-false}
+      TUNNEL_URL: ${TUNNEL_URL:-}
+      LOCAL_IP: ${LOCAL_IP:-192.168.1.207}
+      PUBLIC_IP: ${PUBLIC_IP:-81.23.181.238}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - grafikraboty_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Nginx Reverse Proxy (опционально, для production с SSL)
+  nginx:
+    image: nginx:alpine
+    container_name: grafikraboty_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - web
+    networks:
+      - grafikraboty_network
+    profiles:
+      - production  # Запускается только с флагом --profile production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  grafikraboty_network:
+    driver: bridge

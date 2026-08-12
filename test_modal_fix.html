@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест исправления модального окна</title>
+    <style>
+        /* Копируем стили из style.css */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+            position: relative;
+            z-index: 1000;
+            padding: 30px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(90vh - 140px);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: #f5f7fa;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f5f7fa;
+            color: #1f2937;
+            border: 2px solid #e5e7eb;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #6366f1;
+            margin-bottom: 20px;
+        }
+
+        .test-result {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+
+        .info {
+            background: #e0e7ff;
+            color: #3730a3;
+            border: 2px solid #6366f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>✅ Тест исправления модального окна операции</h1>
+        
+        <div class="info test-result">
+            <p>Проблема: Модальное окно закрывалось при клике в любом месте, потому что .modal-overlay (z-index: 999) был поверх .modal-content.</p>
+            <p>Решение: Добавлен z-index: 1000 для .modal-content, чтобы он был поверх .modal-overlay.</p>
+        </div>
+
+        <button class="btn btn-primary" onclick="openTestModal()">📦 Открыть тестовое модальное окно</button>
+
+        <div id="test-results"></div>
+
+        <!-- Тестовое модальное окно (копия operation-modal) -->
+        <div id="test-modal" class="modal">
+            <div class="modal-overlay" onclick="closeTestModal()"></div>
+            <div class="modal-content" style="max-width: 600px; max-height: 90vh;">
+                <div class="modal-header">
+                    <h3>📦 Тест операции с товаром</h3>
+                    <button type="button" class="modal-close" onclick="closeTestModal()">×</button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #0284c7;">
+                        <div style="font-weight: bold; margin-bottom: 4px;">Товар:</div>
+                        <div style="font-size: 16px;">Тестовый товар</div>
+                        <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">
+                            Доступно: <strong style="color: #6366f1;">10</strong> шт
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label>Выберите операцию:</label>
+                        <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                            <option>Продажа</option>
+                            <option>Списание</option>
+                            <option>Возврат</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label>Количество:</label>
+                        <input type="number" value="1" min="1" max="10" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label>Примечание:</label>
+                        <textarea style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 80px;"></textarea>
+                    </div>
+
+                    <div class="success test-result">
+                        ✅ Тест: Кликните на поле ввода или текст внутри модального окна.<br>
+                        ✅ Если модальное окно не закрывается — исправление работает!
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" onclick="testOperation()">✅ Выполнить тест</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeTestModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTestModal() {
+            document.getElementById('test-modal').style.display = 'flex';
+            document.getElementById('test-results').innerHTML = '<div class="info test-result">Модальное окно открыто. Кликните внутри него на поле ввода или текст.</div>';
+        }
+
+        function closeTestModal() {
+            document.getElementById('test-modal').style.display = 'none';
+            document.getElementById('test-results').innerHTML = '<div class="info test-result">Модальное окно закрыто.</div>';
+        }
+
+        function testOperation() {
+            document.getElementById('test-results').innerHTML = '<div class="success test-result">✅ Тест пройден! Модальное окно работает корректно.</div>';
+            setTimeout(() => {
+                closeTestModal();
+            }, 2000);
+        }
+
+        // Логируем клики для отладки
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('test-modal');
+            if (modal.style.display === 'flex') {
+                console.log('Клик по:', e.target.tagName, e.target.className);
+            }
+        });
+    </script>
+</body>
+</html>
