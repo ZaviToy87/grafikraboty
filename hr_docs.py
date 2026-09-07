@@ -182,6 +182,16 @@ def render_parties(doc, ctx, worker_label='Работник'):
         worker_label.upper(),
         ctx.get('fio') or '',
         'Должность: %s' % (ctx.get('position') or '____________'),
+    ]
+    if (ctx.get('birth_date') or '').strip():
+        right.append('Дата рождения: %s' % ctx.get('birth_date'))
+    if (ctx.get('phone') or '').strip():
+        right.append('Телефон: %s' % ctx.get('phone'))
+    if (ctx.get('inn') or '').strip():
+        right.append('ИНН: %s' % ctx.get('inn'))
+    if (ctx.get('snils') or '').strip():
+        right.append('СНИЛС: %s' % ctx.get('snils'))
+    right += [
         '',
         'Паспорт: %s' % (ctx.get('passport') or '________________________'),
         'Кем выдан: %s' % (ctx.get('passport_by') or '____________________'),
@@ -220,7 +230,11 @@ def build_anketa(emp, path):
         ('Заработная плата (оклад/порядок)', 'salary_scheme'),
     ]
     for label, key in fields:
-        line(doc, label + ':', 60)
+        val = (ctx.get(key) or '').strip()
+        if val:
+            P(doc, '%s: %s' % (label, val), space_after=6)
+        else:
+            line(doc, label + ':', 60)
     P(doc, '', space_after=4)
     P(doc, 'С правилами внутреннего трудового распорядка, должностной '
            'инструкцией, правилами охраны труда и пожарной безопасности, '
