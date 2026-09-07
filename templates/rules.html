@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Правила и методичка</title>
+    <style>
+        body { font-family: Segoe UI, Arial, sans-serif; margin: 0; background: #f4f5fb; color: #222; }
+        .top { background: #6366f1; color: #fff; padding: 10px 18px; display: flex;
+               justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .top a { color: #fff; text-decoration: none; font-weight: 600; }
+        .top .who { font-size: 13px; opacity: .9; }
+        .wrap { max-width: 900px; margin: 18px auto; padding: 0 14px; }
+        .hint { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px;
+                padding: 8px 12px; font-size: 13px; color: #3730a3; margin-bottom: 14px; }
+        .doc { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+               margin-bottom: 18px; overflow: hidden; }
+        .doc h2 { margin: 0; padding: 12px 16px; background: #eef0ff; font-size: 17px; }
+        .doc .cat { float: right; font-weight: 400; font-size: 12px; color: #6b7280; }
+        .doc pre { margin: 0; padding: 16px; white-space: pre-wrap; word-break: break-word;
+                   font-family: Segoe UI, Arial, sans-serif; font-size: 14px; line-height: 1.5; }
+        .btn { border: 0; background: #dc2626; color: #fff; padding: 8px 14px; border-radius: 8px;
+               cursor: pointer; font-size: 13px; }
+        .btn:hover { opacity: .9; }
+        .search { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+                  box-sizing: border-box; margin-bottom: 14px; font-size: 14px; }
+        #status { font-size: 13px; margin-left: 8px; color: #16a34a; }
+    </style>
+</head>
+<body>
+<div class="top">
+    <div><a href="/dashboard">← В график</a> &nbsp;|&nbsp; <b>📖 Правила и методичка</b></div>
+    <div class="who">{{ user_name or '' }}</div>
+</div>
+<div class="wrap">
+    <div class="hint">Здесь всегда доступны «Правила магазина» и «Методичка сотрудника».
+        Читайте перед сменой и по мере необходимости. {% if is_admin %}
+        <button class="btn" style="margin-left:8px" onclick="sendRemind()">📣 Разослать напоминание о смене сейчас</button>
+        <span id="status"></span>{% endif %}</div>
+    <input type="text" class="search" id="q" placeholder="🔍 Поиск по тексту документов..."
+           oninput="filterDocs()">
+    {% for doc in docs %}
+    <div class="doc" data-title="{{ doc.title }}">
+        <h2>{{ doc.title }} <span class="cat">{{ doc.category }}</span></h2>
+        <pre>{{ doc.body }}</pre>
+    </div>
+    {% endfor %}
+</div>
+<script>
+function filterDocs() {
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    document.querySelectorAll('.doc').forEach(el => {
+        const body = el.querySelector('pre').textContent.toLowerCase();
+        const title = (el.dataset.title || '').toLowerCase();
+        el.style.display = (!q || body.includes(q) || title.includes(q)) ? '' : 'none';
+    });
+}
+async function sendRemind() {
+    const st = document.getElementById('status');
+    st.textContent = 'Отправка…';
+    try {
+        const r = await fetch('/api/rules/remind', { method: 'POST' });
+        const d = await r.json();
+        st.textContent = d.sent > 0 ? ('✅ Отправлено: ' + d.sent)
+                                    : (d.error ? ('❌ ' + d.error) : '✅ Готово (сегодня напоминание уже ушло)');
+    } catch (e) { st.textContent = '❌ ' + e.message; }
+}
+</script>
+</body>
+</html>

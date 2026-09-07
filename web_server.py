@@ -37,6 +37,7 @@ from web_notifications import notifications_bp, create_notifications_table, init
 from web_analytics import analytics_bp
 from web_export import export_bp
 from web_sync_1c import sync_1c_bp
+from web_rules import rules_bp
 
 
 
@@ -60,6 +61,14 @@ try:
     logger.info("Revision scheduler started")
 except Exception as e:
     logger.warning(f"Revision scheduler not started: {e}")
+
+# Запуск ежедневных напоминаний «Правила и методичка» по графику смен
+try:
+    from company_rules import start_rules_scheduler
+    start_rules_scheduler()
+    logger.info("Rules reminder scheduler started")
+except Exception as e:
+    logger.warning(f"Rules reminder scheduler not started: {e}")
 
 # Запуск COM-сканеров штрих-кодов
 # ТЕПЕРЬ НЕ ЗАПУСКАЮТСЯ АВТОМАТИЧЕСКИ — пользователь включает кнопкой в интерфейсе
@@ -106,6 +115,7 @@ app.register_blueprint(notifications_bp)
 app.register_blueprint(analytics_bp)
 app.register_blueprint(export_bp)
 app.register_blueprint(sync_1c_bp)
+app.register_blueprint(rules_bp)
 
 
 # Создание таблицы уведомлений при старте
