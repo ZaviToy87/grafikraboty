@@ -1,0 +1,28 @@
+{
+  "organization": {
+    "full_name": "Общество с ограниченной ответственностью «КАКИЕ ЛЮДИ»",
+    "short_name": "ООО «КАКИЕ ЛЮДИ»",
+    "brand": "ВетГид",
+    "activity": "Зоомагазин и ветаптека",
+    "inn": "6382069820",
+    "kpp": "638201001",
+    "ogrn": "",
+    "legal_address": "",
+    "actual_address": "",
+    "director_position": "Генеральный директор",
+    "director_fio": "",
+    "director_basis": "Устава",
+    "bank_name": "",
+    "bank_bik": "",
+    "bank_account": "",
+    "bank_corr_account": "",
+    "phone": "",
+    "email": "",
+    "website": "www.vetgid.ru"
+  },
+  "docs_year": 2026,
+  "generator": {
+    "default_document_date": "«____» __________ 20___ г.",
+    "output_dir": "documents_out"
+  }
+}

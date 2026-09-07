@@ -121,3 +121,7 @@ _1c_backups/
 # Sales analysis reports
 sales_reports/
 
+
+# Generated employee documents
+documents_out/
+
