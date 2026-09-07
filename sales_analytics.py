@@ -207,19 +207,28 @@ class SalesAnalytics:
                 'code': code, 'display': name or code}
 
     # ---------- основной анализ ----------
-    def analyze(self):
+    def analyze(self, start=None, end=None):
         rep = {'cfg': self.cfg,
                'meta': {'generated': datetime.now().strftime('%d.%m.%Y %H:%M')}}
         cfg_a = self.cfg.get('anomaly', {})
         tol_rub = float(cfg_a.get('cash_delta_tolerance_rub', 500))
         tol_ratio = float(cfg_a.get('cash_delta_tolerance_ratio', 1.05))
 
+        def in_range(day):
+            if not day:
+                return False
+            if start and day < start:
+                return False
+            if end and day > end:
+                return False
+            return True
+
         # Продажи 1С, привязанные к сотрудникам
         # Кто открыл кассу в день (по сменам) — для корректной привязки продаж
         sess_day_users = {}
         for sess in self.sessions:
             d = self.session_date(sess)
-            if d:
+            if d and in_range(d):
                 sess_day_users.setdefault(d, set()).add(sess.get('user_id'))
         uname_of = {u['id']: (u.get('full_name') or u.get('username'))
                     for u in self.users}
@@ -231,7 +240,7 @@ class SalesAnalytics:
 
         for s in self.sales:
             day = self._day(s.get('date'))
-            if not day:
+            if not day or not in_range(day):
                 continue
             uid, disp = self.resolve_seller(s.get('seller_name'))
             # Если продавца по имени нет/не совпадает со сменой этого дня,
@@ -269,7 +278,7 @@ class SalesAnalytics:
         sess_by_day = defaultdict(lambda: {'rev': 0.0, 'cashless': 0.0})
         for sess in self.sessions:
             day = self.session_date(sess)
-            if not day:
+            if not day or not in_range(day):
                 continue
             rev = _money(sess.get('revenue_total'))
             acq = _money(sess.get('acquiring_amount'))
@@ -298,6 +307,32 @@ class SalesAnalytics:
             cash_rows.append({'uid': uid, 'day': day, 'cash': cash, 'rev1c': rev1c,
                               'delta': delta, 'flag': flag,
                               'docs': by_day_docs.get((uid, day), 0)})
+
+        # --- Дневная сводка (представление «по дням») ---
+        day_items = defaultdict(int)   # день -> число проданных позиций
+        day_qty = defaultdict(float)
+        for si in sale_items:
+            day_items[si['day']] += 1
+            day_qty[si['day']] += _money(si['item'].get('quantity'))
+        day_map = {}
+        for (uid, day) in sorted(set(sess_by_day) | set(by_day_1c)):
+            if not day or not in_range(day):
+                continue
+            dm = day_map.setdefault(day, {'docs': 0, 'sum_1c': 0.0, 'cash': 0.0,
+                                          'items': 0, 'qty': 0.0,
+                                          'workers': [], 'flags': []})
+            dm['docs'] += by_day_docs.get((uid, day), 0)
+            dm['sum_1c'] += by_day_1c.get((uid, day), 0.0)
+            dm['cash'] += sess_by_day.get((uid, day), {}).get('rev', 0.0)
+        for day, dm in day_map.items():
+            dm['items'] = day_items.get(day, 0)
+            dm['qty'] = day_qty.get(day, 0.0)
+            dm['workers'] = sorted(
+                uname_of.get(u, '—') for u in sess_day_users.get(day, set()))
+            for r in cash_rows:
+                if r['day'] == day and r['flag'] != 'ok':
+                    dm['flags'].append(r['flag'])
+        days_view = [{'day': d, **m} for d, m in sorted(day_map.items())]
 
         # ЗП по продавцам
         emp_salary = defaultdict(lambda: {'days': 0, 'cash_days': 0,
@@ -607,6 +642,7 @@ class SalesAnalytics:
             'overlap_days': len([r for r in cash_rows
                                  if r['cash'] > 0 and r['rev1c'] > 0])}
         rep['cash_rows'] = cash_rows
+        rep['days'] = days_view
         rep['employees'] = employee_summary
         rep['profiles'] = profiles
         rep['price_anomalies'] = sorted(price_anomalies,

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Аналитика продаж</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
+.top{background:#7c3aed;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.top a{color:#fff;text-decoration:none;font-weight:600}
+.wrap{max-width:1280px;margin:14px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#ede9fe;padding:7px;text-align:left;white-space:nowrap}
+td{padding:6px 7px;border-top:1px solid #eee}
+.r{color:#dc2626}.g{color:#16a34a}.o{color:#d97706}
+form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,button{padding:7px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px}
+button{background:#7c3aed;color:#fff;border:0;cursor:pointer}
+.small{font-size:11px;color:#6b7280}
+.b{font-weight:700}
+</style>
+</head>
+<body>
+<div class="top"><div><a href="/dashboard">← В график</a> | <b>📊 Аналитика продаж</b></div>
+<div><a href="/rules">📖 Правила</a></div></div>
+<div class="wrap">
+<div class="card"><form method="get" action="/analytics-sales">
+  <label>С <input type="date" name="start" value="{{ start }}"></label>
+  <label>по <input type="date" name="end" value="{{ end }}"></label>
+  <button>Показать</button>
+  <a href="/analytics-sales" class="small">сбросить</a>
+  <span class="small">Сформировано: {{ rep.meta.generated }}</span>
+</form></div>
+
+<div class="card">
+<h2>1. Продажи по дням (кто работал по графику/сменам)</h2>
+<table>
+<thead><tr><th>Дата</th><th>Кто работал</th><th>Док.</th><th>Позиций</th><th>Кол-во</th>
+<th>Выручка 1С</th><th>Касса смены</th><th>Δ ₽</th><th>Флаги</th></tr></thead>
+<tbody>
+{% for d in rep.days %}
+<tr>
+<td class="b">{{ d.day }}</td>
+<td>{{ d.workers | join(', ') if d.workers else '—' }}</td>
+<td>{{ d.docs }}</td><td>{{ d.items }}</td><td>{{ d.qty }}</td>
+<td>{{ '%.2f' % d.sum_1c }}</td><td>{{ '%.2f' % d.cash }}</td>
+<td class="{{ 'r' if (d.cash-d.sum_1c)|abs>500 else '' }}">{{ '%.2f' % (d.cash-d.sum_1c) }}</td>
+<td>{% for f in d.flags %}<span class="o small">{{ f }}</span> {% endfor %}</td>
+</tr>
+{% endfor %}
+{% if not rep.days %}<tr><td colspan="9" style="text-align:center">Нет данных за период</td></tr>{% endif %}
+</tbody></table>
+</div>
+
+<div class="card">
+<h2>2. По сотрудникам (сверка и расчёт ЗП)</h2>
+<table>
+<thead><tr><th>Сотрудник</th><th>Дней</th><th>Смен (касса)</th><th>Выручка 1С</th>
+<th>Выручка касса</th><th>Δ ₽</th><th>ЗП (расчёт по порогам)</th></tr></thead>
+<tbody>
+{% for e in rep.employees %}
+<tr>
+<td class="b">{{ e.name }}</td><td>{{ e.days }}</td><td>{{ e.cash_days }}</td>
+<td>{{ '%.2f' % e.rev_1c }}</td><td>{{ '%.2f' % e.rev_cash }}</td>
+<td class="{{ 'r' if (e.rev_cash-e.rev_1c)|abs>1000 else '' }}">{{ '%.2f' % (e.rev_cash-e.rev_1c) }}</td>
+<td>{{ '%.2f' % e.salary }}</td>
+</tr>
+{% endfor %}
+</tbody></table>
+<div class="small" style="margin-top:8px">
+{% for e in rep.employees %}
+<b>{{ e.name }}:</b> {% for m in e.monthly %}{{ m.ym }} — {{ m.days }} смен, выручка {{ '%.2f' % m.rev }}, оплата {{ '%.2f' % m.pay }} ₽; {% endfor %}<br>
+{% endfor %}
+</div>
+</div>
+
+<div class="card"><h2>Рекомендации</h2>
+{% for r in rep.recommendations %}<div>• {{ r }}</div>{% endfor %}</div>
+</div>
+</body></html>

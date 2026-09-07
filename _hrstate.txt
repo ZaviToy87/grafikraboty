@@ -1,0 +1,51 @@
+== user_id=1 Администратор (Юлия и Денис) (admin) ==
+  fio                    Администратор (Юлия и Денис)
+  position               Сотрудник
+  birth_date             —
+  phone                  —
+  passport               —
+  passport_by            —
+  passport_date          —
+  passport_code          —
+  address_registration   —
+  address_residence      —
+  inn                    —
+  snils                  —
+  date_start             —
+  work_schedule          —
+  salary_scheme          —
+  active                 1
+== user_id=2 Зубарева Валерия Ивановна (валерия) ==
+  fio                    Зубарева Валерия Ивановна
+  position               Продавец-кассир
+  birth_date             03.04.1990
+  phone                  89649721990
+  passport               3614 879416
+  passport_by            Отдел УФМС России по Самарской области в Автозаводском районе г. Тольятти
+  passport_date          26.03.2014
+  passport_code          630-033
+  address_registration   Самарская обл., г. Тольятти, ул. Юбилейная, д. 1, кв. 115
+  address_residence      Самарская обл., г. Тольятти, ул. Тополиная, д. 47, кв. 77
+  inn                    —
+  snils                  —
+  date_start             —
+  work_schedule          —
+  salary_scheme          —
+  active                 1
+== user_id=3 Ольга (ольга) ==
+  fio                    Ольга
+  position               Продавец-кассир
+  birth_date             —
+  phone                  —
+  passport               —
+  passport_by            —
+  passport_date          —
+  passport_code          —
+  address_registration   —
+  address_residence      —
+  inn                    —
+  snils                  —
+  date_start             —
+  work_schedule          —
+  salary_scheme          —
+  active                 1
