@@ -451,7 +451,7 @@
                 case 'receipts':
                     return ['Дата', 'Номер', 'Тип операции', 'Организация', 'Склад', 'Сумма', 'Действия'];
                 case 'counterparties':
-                    return ['Код', 'Наименование', 'ИНН', 'Телефон', 'Email', 'Адрес'];
+                    return ['Наименование', 'Полное наименование', 'ИНН', 'КПП', 'Тип', 'Группа'];
                 default:
                     return ['Данные'];
             }
@@ -506,12 +506,12 @@
                     ];
                 case 'counterparties':
                     return [
-                        { value: item.code },
                         { value: item.name },
-                        { value: item.inn },
-                        { value: item.phone },
-                        { value: item.email },
-                        { value: item.actual_address || item.legal_address },
+                        { value: item.full_name || '-' },
+                        { value: item.inn || '-' },
+                        { value: item.kpp || '-' },
+                        { value: item.legal_type || '-' },
+                        { value: item.group_name || '-' },
                     ];
                 default:
                     return [{ value: JSON.stringify(item) }];

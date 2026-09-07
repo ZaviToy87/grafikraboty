@@ -231,8 +231,9 @@ def get_counterparties():
     c = db.cursor()
     
     c.execute(
-        'SELECT guid, code, name, full_name, inn, kpp, legal_address, actual_address, '
-        'phone, email, is_deleted, updated_at '
+        'SELECT guid, name, full_name, inn, kpp, legal_type, '
+        'is_individual_entrepreneur, is_self_employed, group_name, '
+        'is_deleted, updated_at '
         'FROM sync_counterparties ORDER BY name'
     )
     items = [dict(zip([col[0] for col in c.description], row)) for row in c.fetchall()]
