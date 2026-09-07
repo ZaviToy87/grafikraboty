@@ -1,0 +1,8 @@
+script open: 11
+script close: 11
+script src: 7
+script inline: 3
+inline script blocks: 3
+block 0 len 90 -> _tmp_script_0.js
+block 1 len 112974 -> _tmp_script_1.js
+block 2 len 1897 -> _tmp_script_2.js

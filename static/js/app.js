@@ -421,11 +421,16 @@ function initFileFilters() {
 function initNavigation() {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            // Внешние ссылки (не начинающиеся с #) — не блокируем, даём браузеру перейти
+            if (href && !href.startsWith('#')) {
+                return;
+            }
             e.preventDefault();
             const page = this.getAttribute('data-page');
             showPage(page);
-       });
-   });
+        });
+    });
 }
 
 function showPage(pageName) {
