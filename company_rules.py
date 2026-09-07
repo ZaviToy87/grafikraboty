@@ -20,6 +20,7 @@ import schedule
 from datetime import datetime, date
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOCS_DIR = os.path.join(BASE_DIR, 'docs')
 try:
     from app_paths import DB_PATH, DATA_DIR
 except Exception:
@@ -258,11 +259,84 @@ def _tips_for(task_names):
     tips = []
     for name in task_names:
         low = (name or '').lower()
+        short = ''
         for kw, tip in REPEAT_TASKS:
             if kw in low:
-                tips.append('• %s: %s' % (name, tip))
+                short = tip
                 break
+        detail = _task_guidance(low)
+        if short and not detail:
+            tips.append('• %s: %s' % (name, short))
+        elif detail:
+            tips.append('• %s — %s\n%s' % (name, short or 'инструкция:',
+                                            detail))
+        elif low:
+            pass
     return tips
+
+
+_docs_cache = {}
+
+
+def _load_docs():
+    if not _docs_cache:
+        for key, fn in (('rules', 'Правила_магазина.txt'),
+                        ('method', 'МЕТОДИЧКА_сотрудника.txt')):
+            try:
+                with io.open(os.path.join(DOCS_DIR, fn), 'r',
+                             encoding='utf-8') as f:
+                    _docs_cache[key] = f.read().splitlines()
+            except Exception:
+                _docs_cache[key] = []
+    return _docs_cache
+
+
+def _task_guidance(low, max_chars=1700):
+    """Ищет в Правилах/Методичке раздел, подходящий задаче, и возвращает текст."""
+    import re as _re
+    # тема раздела по ключевым словам задачи
+    theme = None
+    for kw, theme_key in [
+        ('полк', 'полк'), ('протир', 'полк'), ('уборк', 'полк'),
+        ('мусор', 'мусор'), ('сануз', 'унитаз'), ('унитаз', 'унитаз'),
+        ('чайник', 'чайник'), ('микроволн', 'микроволн'),
+        ('холодильн', 'холодильник'), ('посуд', 'посуд'),
+        ('развеш', 'развешивать корм'), ('корм', 'развешивать корм'),
+        ('ценник', 'ценник'), ('срок', 'срок'), ('акци', 'акци'),
+        ('ревиз', 'ревизи'), ('приемк', 'приемк'),
+    ]:
+        if kw in low:
+            theme = theme_key
+            break
+    if not theme:
+        return ''
+    rules = _load_docs()['rules']
+    method = _load_docs()['method']
+    # сначала Правила магазина, потом Методичка
+    for lines in (rules, method):
+        started = False
+        buf = []
+        for ln in lines:
+            s = ln.strip()
+            if not s:
+                continue
+            if _re.match(r'^\s*\d+\.', s) or _re.match(r'^(К[А-Я]К|ПРАВИЛ|МЕТОД)', s):
+                if started:
+                    break
+                if theme in s.lower():
+                    started = True
+                    buf.append(s)
+                    continue
+                continue
+            if started:
+                if '……' in s or _re.match(r'^_{6,}', s):
+                    break
+                buf.append(s)
+            if len('\n'.join(buf)) > max_chars:
+                break
+        if len(buf) >= 3:
+            return '\n'.join(buf[:60])
+    return ''
 
 
 def _ensure_state_and_notif(db):
