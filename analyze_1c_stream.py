@@ -45,7 +45,7 @@ with open(filepath, 'r', encoding='utf-8') as f:
         line = f.readline()
         if not line:
             break
-    if '<Body' in line or '<msg:Body>' in line:
+        if '<Body' in line or '<msg:Body>' in line:
             break
     
     print("Начало Body найдено, анализируем...")

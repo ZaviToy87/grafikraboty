@@ -1599,7 +1599,7 @@
     <script>
         var userData = JSON.parse(document.getElementById('user-data').textContent);
     </script>
-    <script src="{{ url_for('static', filename='js/app.js') + '?v=20260409_vk_sync_v6' }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') + '?v=20260812_fix' }}"></script>
     
     <!-- PWA Components -->
     <script src="{{ url_for('static', filename='js/sw.js') + '?v=20260331' }}"></script>
@@ -4143,6 +4143,21 @@
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('revisions-table');
     if (!table) return;
+
+    // Страховка выбора товаров: делегирование change на таблицу.
+    // Работает всегда, даже если inline-атрибут onchange у чекбокса не выполнился.
+    table.addEventListener('change', function(e) {
+        const t = e.target;
+        if (!t) return;
+        try {
+            if (t.classList && t.classList.contains('revision-checkbox')) {
+                if (typeof window.updatePromotionPanel === 'function') window.updatePromotionPanel();
+            } else if (t.id === 'select-all-revisions') {
+                if (typeof window.toggleSelectAllRevisions === 'function') window.toggleSelectAllRevisions(t.checked);
+            }
+        } catch (err) { /* не критично */ }
+    });
+
     const thead = table.querySelector('thead tr');
     if (!thead) return;
 
