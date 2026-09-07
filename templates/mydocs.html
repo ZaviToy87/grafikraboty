@@ -27,6 +27,12 @@ a.doc:hover{background:#e0e7ff}
   <h2>{{ emp.fio or emp.username }}</h2>
   <div class="info">{{ emp.position or '' }} · {{ emp.phone or '' }}</div>
 </div>
+{% if missing %}
+<div class="card note">⚠️ Ваши документы ещё не готовы: в системе не заполнены обязательные
+данные — <b>{{ missing | join(', ') }}</b>.<br>
+Пожалуйста, сообщите руководству недостающие сведения (паспорт, адрес, дата рождения,
+ИНН/СНИЛС и т.п.) — после этого документы появятся здесь автоматически.</div>
+{% endif %}
 <div class="card">
   <a class="btn" href="/api/hr/employee/{{ emp.id }}/package">📦 Скачать весь пакет документов (zip)</a>
   <div class="info" style="margin-top:8px">Пакет: анкета · договор о материальной ответственности ·

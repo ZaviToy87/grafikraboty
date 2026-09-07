@@ -72,7 +72,8 @@ input[type=checkbox]{width:auto}
 <tbody>
 {% for e in employees %}
 <tr id="row-{{ e.id }}">
-  <td><b>{{ e.fio or '—' }}</b><br><span class="small">{{ e.username or '' }} {% if not e.active %}(архив){% endif %}</span></td>
+  <td><b>{{ e.fio or '—' }}</b><br><span class="small">{{ e.username or '' }} {% if not e.active %}(архив){% endif %}</span>
+  {% if e.missing %}<br><span style="color:#dc2626;font-size:11px">⚠ не заполнено: {{ e.missing|length }}</span>{% endif %}</td>
   <td>{{ e.position or '—' }}</td>
   <td>{{ e.phone or '—' }}</td>
   <td>{{ e.date_start or '—' }}</td>

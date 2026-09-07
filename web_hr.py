@@ -41,6 +41,23 @@ HR_COLS = ['user_id', 'username', 'password', 'fio', 'surname', 'name',
 
 FILE_CATEGORIES = ['договор', 'паспорт', 'снилс', 'диплом', 'прочее']
 
+# Обязательные данные для формирования документов
+REQUIRED_FIELDS = [
+    ('fio', 'ФИО'), ('position', 'Должность'),
+    ('birth_date', 'Дата рождения'), ('phone', 'Телефон'),
+    ('passport', 'Паспорт (серия и номер)'), ('passport_by', 'Кем выдан паспорт'),
+    ('passport_date', 'Дата выдачи паспорта'),
+    ('passport_code', 'Код подразделения'),
+    ('address_registration', 'Адрес регистрации'),
+    ('address_residence', 'Адрес проживания'),
+    ('inn', 'ИНН'), ('snils', 'СНИЛС'),
+]
+
+
+def missing_required(emp):
+    return [label for key, label in REQUIRED_FIELDS
+            if not (emp.get(key) or '').strip()]
+
 
 def _db():
     c = sqlite3.connect(DB_PATH)
@@ -172,6 +189,8 @@ def hr_page():
         return 'Доступ только для администратора', 403
     _ensure()
     employees = _employee_rows()
+    for e in employees:
+        e['missing'] = missing_required(e)
     return render_template('hr.html', employees=employees,
                            doc_builders=[{'kind': k, 'label': l}
                                          for k, l, _ in H.DOC_BUILDERS],
@@ -259,8 +278,13 @@ def _employee_rows():
 # ---------- документы сотрудника ----------
 @hr_bp.route('/api/hr/employee/<int:emp_id>/doc/<kind>')
 def hr_doc(emp_id, kind):
-    if not _owner_ok(_row_emp(emp_id)):
+    emp = _row_emp(emp_id)
+    if not _owner_ok(emp):
         return 'Нет доступа к документам этого сотрудника', 403
+    missing = missing_required(emp)
+    if missing:
+        return ('Сначала заполните обязательные данные: %s' % ', '.join(missing),
+                400)
     path, name = _gen_emp_file(emp_id, kind)
     if not path:
         return 'Документ не найден', 404
@@ -272,6 +296,10 @@ def hr_package(emp_id):
     emp = _row_emp(emp_id)
     if not _owner_ok(emp):
         return 'Нет доступа к документам этого сотрудника', 403
+    missing = missing_required(emp)
+    if missing:
+        return ('Нельзя сформировать пакет — сначала заполните обязательные '
+                'данные: %s' % ', '.join(missing), 400)
     ctx = _emp_doc_ctx(emp_id)
     if not ctx:
         return 'Сотрудник не найден', 404
@@ -375,7 +403,8 @@ def my_docs_page():
                     ).fetchone()
     c.close()
     emp = dict(emp) if emp else None
-    return render_template('mydocs.html', emp=emp,
+    missing = missing_required(emp) if emp else []
+    return render_template('mydocs.html', emp=emp, missing=missing,
                            doc_builders=[{'kind': k, 'label': l}
                                          for k, l, _ in H.DOC_BUILDERS])
 
