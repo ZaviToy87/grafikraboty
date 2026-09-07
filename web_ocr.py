@@ -26,28 +26,39 @@ def ocr_page():
     if not _admin():
         return 'Доступ только для администратора', 403
 
-    result = {'text': '', 'fields': {}, 'error': '', 'name': ''}
+    result = {'items': [], 'text': '', 'fields': {}, 'error': '', 'count': 0}
     if request.method == 'POST':
-        f = request.files.get('file')
-        if not f or not f.filename:
-            result['error'] = 'Файл не выбран'
+        files = request.files.getlist('files')
+        files = [f for f in files if f and f.filename]
+        if not files:
+            result['error'] = 'Файлы не выбраны'
         else:
             os.makedirs(UPLOADS, exist_ok=True)
-            name = '%s_%s' % (int(time.time()), uuid.uuid4().hex[:6])
-            ext = os.path.splitext(f.filename)[1] or '.jpg'
-            path = os.path.join(UPLOADS, '_ocr_%s%s' % (name, ext))
-            f.save(path)
-            try:
-                text = ocr.ocr_image(path)
-                if not text:
-                    result['error'] = ('Текст не распознан (OCR не смог прочитать '
-                                       'изображение). Попробуйте более чёткий скан.')
-                result['text'] = text
-                result['fields'] = ocr.extract_fields(text) or {}
-                result['name'] = f.filename
-            finally:
+            combined = []
+            combined_fields = {}
+            for f in files:
+                name = '%s_%s' % (int(time.time()), uuid.uuid4().hex[:6])
+                ext = os.path.splitext(f.filename)[1] or '.jpg'
+                path = os.path.join(UPLOADS, '_ocr_%s%s' % (name, ext))
+                f.save(path)
                 try:
-                    os.remove(path)
-                except OSError:
-                    pass
+                    text = ocr.ocr_image(path)
+                    fields = ocr.extract_fields(text) if text else {}
+                    item = {'name': f.filename, 'text': text}
+                    result['items'].append(item)
+                    if text:
+                        combined.append('===== %s =====\n%s' % (f.filename, text))
+                        for k, v in fields.items():
+                            if k != 'text' and v:
+                                combined_fields.setdefault(k, v)
+                finally:
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+            result['count'] = len(result['items'])
+            result['text'] = '\n\n'.join(combined)
+            result['fields'] = combined_fields
+            if not result['items']:
+                result['error'] = 'Файлы не обработаны'
     return render_template('ocr.html', result=result)

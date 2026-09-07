@@ -20,19 +20,20 @@ button{background:#0d9488;color:#fff;border:0;padding:9px 16px;border-radius:7px
 <div class="top"><div><a href="/dashboard">← В график</a> | <b>🔍 Анализатор сканов</b></div></div>
 <div class="wrap">
 <div class="card">
-<h2>Распознать текст со скана / фото</h2>
-<p class="small">Загрузите изображение (фото паспорта, выписки ЕГРЮЛ, договора и т.п.) —
-система распознает текст и выделит типовые реквизиты (ИНН, ОГРН, КПП, СНИЛС, паспорт).</p>
+<h2>Распознать текст со сканов / фото</h2>
+<p class="small">Загрузите одно или несколько изображений (паспорт, выписка, договор и т.п.) — каждое
+распознается, и все результаты соберутся в один общий текст с заголовками файлов.</p>
 <form method="post" enctype="multipart/form-data">
-  <input type="file" name="file" accept="image/*" required style="margin-bottom:8px;display:block">
-  <button>Распознать</button>
+  <input type="file" name="files" accept="image/*" multiple required
+         style="margin-bottom:8px;display:block">
+  <button>Распознать все</button>
 </form>
 {% if result.error %}<p class="err">{{ result.error }}</p>{% endif %}
 </div>
 
-{% if result.text %}
+{% if result.items %}
 <div class="card">
-<h3>Распознанный текст{% if result.name %} — «{{ result.name }}»{% endif %}</h3>
+<h3>Распознано файлов: {{ result.count }}</h3>
 {% if result.fields %}
 <table class="kv">
 {% for k,v in result.fields.items() if k != 'text' %}
@@ -40,9 +41,17 @@ button{background:#0d9488;color:#fff;border:0;padding:9px 16px;border-radius:7px
 {% endfor %}
 </table>
 {% endif %}
+<h3>Общий текст</h3>
 <pre>{{ result.text }}</pre>
-<button onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(()=>this.textContent='Скопировано ✓')">📋 Скопировать текст</button>
+<button onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(()=>this.textContent='Скопировано ✓')">📋 Скопировать общий текст</button>
 </div>
+
+{% for it in result.items %}
+<div class="card">
+<h4>{{ it.name }}</h4>
+<pre>{{ it.text or '(текст не распознан)' }}</pre>
+</div>
+{% endfor %}
 {% endif %}
 </div>
 </body></html>
