@@ -108,8 +108,12 @@ def org_header(doc, ctx, city='Самара'):
     P(doc, ctx.get('full_name', ''), center=True, bold=True, size=13)
     P(doc, ctx.get('actual_address', '') or ctx.get('legal_address', ''),
       center=True, size=10)
-    P(doc, 'ИНН %s, КПП %s' % (value_or_blank(ctx.get('inn'), 14),
-                               value_or_blank(ctx.get('kpp'), 14)),
+    if ctx.get('phone') or ctx.get('email'):
+        P(doc, ('%s  %s' % (ctx.get('phone', ''), ctx.get('email', ''))).strip(),
+          center=True, size=10)
+    P(doc, 'ИНН %s, КПП %s, ОГРН %s' % (value_or_blank(ctx.get('inn'), 14),
+                                         value_or_blank(ctx.get('kpp'), 14),
+                                         value_or_blank(ctx.get('ogrn'), 15)),
       center=True, size=10)
     P(doc, '', space_after=6)
 
@@ -215,10 +219,14 @@ def build_material_contract(emp, path):
     P(doc, '', space_after=6)
     P(doc, '7. АДРЕСА И ПОДПИСИ СТОРОН', bold=True)
     P(doc, 'Работодатель:', bold=True)
-    P(doc, '%s\n%s\nИНН %s КПП %s\n%s'
-      % (ctx.get('full_name', ''), ctx.get('legal_address', ''),
-         ctx.get('inn', ''), ctx.get('kpp', ''),
+    P(doc, '%s\nОГРН %s, ИНН %s, КПП %s\n%s\n%s'
+      % (ctx.get('full_name', ''), ctx.get('ogrn', ''), ctx.get('inn', ''),
+         ctx.get('kpp', ''), ctx.get('legal_address', ''),
          ctx.get('actual_address', '')), size=11)
+    P(doc, 'Банк: %s, БИК %s, р/с %s, к/с %s'
+      % (ctx.get('bank_name', ''), ctx.get('bank_bik', ''),
+         ctx.get('bank_account', ''), ctx.get('bank_corr_account', '')),
+      size=11)
     P(doc, fill('{director_position}: ________________ /{director_fio}/', ctx),
       size=11)
     P(doc, '', space_after=4)

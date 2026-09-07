@@ -6,23 +6,24 @@
     "activity": "Зоомагазин и ветаптека",
     "inn": "6382069820",
     "kpp": "638201001",
-    "ogrn": "",
-    "legal_address": "",
-    "actual_address": "",
+    "ogrn": "1156382000774",
+    "legal_address": "Самарская область, с. Выселки, Пионерский проезд 2",
+    "actual_address": "Самарская область, г. Тольятти, 70 Лет Октября 60",
     "director_position": "Генеральный директор",
-    "director_fio": "",
+    "director_fio": "Малич Юлия Борисовна",
     "director_basis": "Устава",
-    "bank_name": "",
-    "bank_bik": "",
-    "bank_account": "",
-    "bank_corr_account": "",
-    "phone": "",
-    "email": "",
-    "website": "www.vetgid.ru"
+    "bank_name": "АО «АЛЬФА-БАНК»",
+    "bank_inn": "7728168971",
+    "bank_bik": "042202824",
+    "bank_account": "40702810929780001563",
+    "bank_corr_account": "30101810200000000824",
+    "phone": "89278910201, 8(8482)610201",
+    "email": "vetgid@mail.ru",
+    "website": "vetgid"
   },
   "docs_year": 2026,
   "generator": {
-    "default_document_date": "«____» __________ 20___ г.",
+    "default_document_date": "«____» __________ 2026 г.",
     "output_dir": "documents_out"
   }
 }
