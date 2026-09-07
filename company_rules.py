@@ -137,6 +137,70 @@ def _load_tg():
         return {'token': '', 'group': [], 'users': {}, 'time': '08:40'}
 
 
+def _vk_config():
+    """Загружает vk_config.json (service_token, vk_user_map)."""
+    cfg = {}
+    for folder in (DATA_DIR, BASE_DIR):
+        try:
+            with io.open(os.path.join(folder, 'vk_config.json'),
+                         'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+            if cfg.get('service_token'):
+                break
+        except Exception:
+            continue
+    return cfg
+
+
+def _vk_ids_by_user():
+    """user_id системы -> список его VK ID (из vk_user_map)."""
+    cfg = _vk_config()
+    umap = cfg.get('vk_user_map') or {}
+    result = {}
+    for vk_id, uid in umap.items():
+        result.setdefault(int(uid), []).append(int(vk_id))
+    return result
+
+
+def _send_vk_user(vk_id, text):
+    """Отправляет личное сообщение пользователю ВК через сообщество."""
+    if not vk_id:
+        return False
+    cfg = _vk_config()
+    token = cfg.get('service_token') or ''
+    if not token:
+        return False
+    try:
+        import urllib.request
+        import urllib.parse
+        import json as _json
+        import ssl as _ssl
+        ctx = _ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = _ssl.CERT_NONE
+        params = urllib.parse.urlencode({
+            'peer_id': int(vk_id),
+            'message': text,
+            'random_id': int(__import__('time').time() * 1000),
+            'access_token': token,
+            'v': '5.131',
+        }).encode('utf-8')
+        url = 'https://api.vk.com/method/messages.send'
+        req = urllib.request.Request(url, data=params)
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+            data = _json.loads(resp.read().decode('utf-8', 'replace'))
+            return bool(data.get('response'))
+    except Exception as e:
+        try:
+            import logging
+            logging.getLogger('company_rules').warning(
+                'VK send to %s failed: %s' % (vk_id, e))
+        except Exception:
+            pass
+        return False
+
+
+
 def _today_tasks(db, d):
     """Задачи на дату d: по графику сотрудников + повторяющиеся по числам."""
     from web_config import send_telegram_message  # noqa: F401 (просто импорт гарантирует зависимости)
@@ -249,7 +313,7 @@ def send_today_shift_reminder(force=False):
         return 0
 
     tg = _load_tg()
-    token = tg.get('token', '')
+    vk_ids_by_user = _vk_ids_by_user()
     users_tasks = _today_tasks(db, d)
     if not users_tasks:
         db.close()
@@ -260,54 +324,56 @@ def send_today_shift_reminder(force=False):
     for r in db.execute('SELECT id, username, full_name FROM users'):
         unames[r['id']] = r['full_name'] or r['username']
 
-    sent = 0
     try:
         from web_config import send_telegram_message
     except Exception:
         send_telegram_message = None
 
-    group_text = ('📋 <b>Напоминание на %s</b>\n\n'
-                  % _fmt_date(d))
-    parts = []
+    sent = 0
     for uid, tasks in sorted(users_tasks.items()):
         name = unames.get(uid, 'Сотрудник')
         tips = _tips_for(tasks)
-        msg = ('👤 <b>%s</b> — твоя смена сегодня (%s).\n'
-               'Задачи: %s'
-               % (name, _fmt_date(d),
-                  ', '.join(tasks) if tasks else 'работа по графику'))
+        lines = ['📋 Напоминание на %s' % _fmt_date(d), '']
+        lines.append('👤 %s — сегодня твоя смена.' % name)
+        lines.append('Задачи: %s' % (', '.join(tasks)
+                                     if tasks else 'работа по графику'))
         if tips:
-            msg += '\n\n📌 Не забудь:\n' + '\n'.join(tips)
-        msg += ('\n\n📖 Правила магазина и методичка — в программе, '
-                'раздел «📖 Правила и методичка» (или спроси у руководства).')
-        # личное сообщение
-        if send_telegram_message and token:
+            lines.append('')
+            lines.append('📌 Не забудь:')
+            lines.extend(tips)
+        lines.append('')
+        lines.append('📖 Правила магазина и методичка — в программе, '
+                     'раздел «📖 Правила и методичка».')
+        msg = '\n'.join(lines)
+
+        # Личное сообщение в ВК (основной канал)
+        delivered = False
+        for vk_id in vk_ids_by_user.get(uid, []):
+            if _send_vk_user(vk_id, msg):
+                sent += 1
+                delivered = True
+        # Если для сотрудника нет VK — пробуем Telegram
+        if not delivered and send_telegram_message:
             for cid in (tg.get('users') or {}).get(str(uid), []):
                 try:
-                    s, _ = send_telegram_message([cid], msg, token=token)
+                    s, _ = send_telegram_message([cid], msg,
+                                                 token=tg.get('token', ''))
                     sent += s
+                    delivered = True
+                    break
                 except Exception:
                     pass
-        # внутреннее уведомление
+
+        # Внутреннее уведомление в программе
         try:
             db.execute('INSERT INTO notifications (user_id, type, title, '
                        'message, link) VALUES (?, ?, ?, ?, ?)',
                        (uid, 'rule_reminder', 'Напоминание о смене %s'
-                        % _fmt_date(d), msg.replace('<b>', '').replace('</b>', ''),
-                        '/rules'))
+                        % _fmt_date(d), msg, '/rules'))
         except Exception:
             pass
-        parts.append(msg)
     db.commit()
 
-    if send_telegram_message and token:
-        full = group_text + '\n'.join(parts)
-        try:
-            s, _ = send_telegram_message(tg.get('group') or [], full,
-                                         token=token)
-            sent += s
-        except Exception:
-            pass
     _mark_sent(db, key)
     db.close()
     return sent
