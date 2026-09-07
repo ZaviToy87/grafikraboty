@@ -29,6 +29,42 @@ from docx.oxml.ns import qn
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT = 'Times New Roman'
 DOCS_DIR = os.path.join(BASE_DIR, 'docs')
+RUS_MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+              'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+
+
+def rus_date_text(d):
+    return '«%02d» %s %d г.' % (d.day, RUS_MONTHS[d.month - 1], d.year)
+
+
+def ensure_dates(ctx):
+    """Ставит дату составления = сегодня, если она не заполнена/шаблонная,
+    и срок окончания = один год от даты составления."""
+    import re as _re
+    from datetime import timedelta
+    dc = str(ctx.get('date_contract') or '')
+    if not dc or '___' in dc or '…' in dc:
+        dc = rus_date_text(datetime.now())
+        ctx['date_contract'] = dc
+    m = _re.search(r'«(\d{1,2})»\s+([а-яА-ЯёЁ]+)\s+(\d{4})', dc)
+    if m:
+        try:
+            day = int(m.group(1))
+            year = int(m.group(3))
+            mon_name = m.group(2).lower()
+            month = next((i for i, name in enumerate(RUS_MONTHS, 1)
+                          if name.startswith(mon_name[:6])
+                          or mon_name.startswith(name[:6])), 1)
+            start = datetime(year, month, day)
+            end = start.replace(year=year + 1) - timedelta(days=1)
+            ctx['contract_start_text'] = rus_date_text(start)
+            ctx['contract_end_text'] = rus_date_text(end)
+        except Exception:
+            pass
+    if not ctx.get('contract_start_text'):
+        ctx['contract_start_text'] = dc
+        ctx['contract_end_text'] = dc
+    return ctx
 
 
 def load_requisites():
@@ -62,7 +98,8 @@ def _base_ctx(emp):
     ctx = dict(org)
     ctx['year'] = req.get('docs_year', 2026)
     ctx.update(emp or {})
-    return _split_fio(ctx)
+    ctx = _split_fio(ctx)
+    return ensure_dates(ctx)
 
 
 def new_doc(landscape=False):
@@ -626,18 +663,7 @@ def _text_doc(path, title, src_path):
 # ============================================================
 # Пакет документов сотрудника
 # ============================================================
-# (kind, метка_для_файла, функция-генератор)
-DOC_BUILDERS = [
-    ('anketa', '01_Анкета_сотрудника', build_anketa),
-    ('material', '02_Договор_материальная_ответственность',
-     build_material_contract),
-    ('agent', '03_Агентский_договор', build_agent_contract),
-    ('nda', '04_Договор_о_неразглашении', build_nda_contract),
-    ('memo', '05_Памятка_учётные_данные', build_access_memo),
-    ('methodichka', '06_Методичка_сотрудника', build_methodichka),
-    ('pravila', '07_Правила_магазина', build_pravila),
-]
-DOC_LABELS = {k: l for k, l, _ in DOC_BUILDERS}
+# (список DOC_BUILDERS определён ниже — после всех функций-генераторов)
 
 def sanitize(name):
     return re.sub(r'[\\/:*?"<>|]+', '_', str(name or '').strip()) or 'документы'
@@ -690,7 +716,7 @@ def build_kit_zip(emp, zip_path):
     return zip_path
 
 
-def build_agent_contract(emp, path):
+def build_agent_contract_full(emp, path):
     """Агентский договор (полная редакция) с продавцом-агентом."""
     ctx = _base_ctx(emp)
     doc = new_doc()
@@ -770,8 +796,10 @@ def build_agent_contract(emp, path):
            'том числе сведения о покупателях, ценах, выручке и учётных '
            'данных (ФЗ от 29.07.2004 № 98-ФЗ «О коммерческой тайне»).')
     P(doc, '8. СРОК ДЕЙСТВИЯ И РАСТОРЖЕНИЕ', bold=True)
-    P(doc, '8.1. Договор вступает в силу с даты подписания и действует '
-           'по 31.12.%s г. с возможностью пролонгации.' % ctx.get('year', 2026))
+    P(doc, '8.1. Договор вступает в силу с даты подписания (не ранее '
+           'указанной в нём даты составления {contract_start_text}) и '
+           'действует по {contract_end_text} включительно (один год) с '
+           'возможностью пролонгации по соглашению сторон.'.format(**ctx))
     P(doc, '8.2. Каждая из Сторон вправе отказаться от Договора, '
            'предупредив другую Сторону не позднее чем за 14 (четырнадцать) '
            'календарных дней (ст. 1011 ГК РФ во взаимосвязи со ст. 1005 ГК РФ).')
@@ -789,6 +817,20 @@ def build_agent_contract(emp, path):
     render_parties(doc, ctx, 'Агент')
     doc.save(path)
     return path
+
+
+# Список документов пакета (после всех генераторов)
+DOC_BUILDERS = [
+    ('anketa', '01_Анкета_сотрудника', build_anketa),
+    ('material', '02_Договор_материальная_ответственность',
+     build_material_contract),
+    ('agent', '03_Агентский_договор', build_agent_contract_full),
+    ('nda', '04_Договор_о_неразглашении', build_nda_contract),
+    ('memo', '05_Памятка_учётные_данные', build_access_memo),
+    ('methodichka', '06_Методичка_сотрудника', build_methodichka),
+    ('pravila', '07_Правила_магазина', build_pravila),
+]
+DOC_LABELS = {k: l for k, l, _ in DOC_BUILDERS}
 
 
 
