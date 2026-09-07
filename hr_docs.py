@@ -304,7 +304,9 @@ def build_material_contract(emp, path):
     ctx = _base_ctx(emp)
     doc = new_doc()
     org_header(doc, ctx)
-    P(doc, 'ДОГОВОР', center=True, bold=True, size=13, space_after=0)
+    ctx['doc_number'] = next_doc_number('material')
+    P(doc, 'ДОГОВОР № %s' % ctx['doc_number'], center=True, bold=True,
+      size=13, space_after=0)
     P(doc, 'о полной индивидуальной материальной ответственности работника',
       center=True, bold=True, size=13, space_after=2)
     place_and_date(doc, 'г. Тольятти', ctx.get('date_contract', ''))
@@ -443,7 +445,9 @@ def build_nda_contract(emp, path):
     ctx = _base_ctx(emp)
     doc = new_doc()
     org_header(doc, ctx)
-    P(doc, 'ДОГОВОР № ______', center=True, bold=True, size=13, space_after=0)
+    ctx['doc_number'] = next_doc_number('nda')
+    P(doc, 'ДОГОВОР № %s' % ctx['doc_number'], center=True, bold=True,
+      size=13, space_after=0)
     P(doc, 'о неразглашении конфиденциальной информации '
            '(коммерческой тайны)', center=True, bold=True, size=12,
       space_after=2)
@@ -683,6 +687,35 @@ def default_employee():
     }
 
 
+DOC_NUM_PREFIX = {'agent': 'А', 'material': 'МО', 'nda': 'НД'}
+
+
+def next_doc_number(doc_type):
+    """Сквозная нумерация договоров по году: А-2026-001, МО-2026-001, НД-2026-001…"""
+    import sqlite3
+    prefix = DOC_NUM_PREFIX.get(doc_type, 'ДОК')
+    year = datetime.now().year
+    db_path = os.path.join(BASE_DIR, 'schedule.db')
+    try:
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS hr_doc_numbers (
+                doc_type TEXT, year INTEGER, seq INTEGER,
+                PRIMARY KEY (doc_type, year))
+        ''')
+        row = cur.execute('SELECT seq FROM hr_doc_numbers WHERE doc_type=? '
+                          'AND year=?', (doc_type, year)).fetchone()
+        seq = (row[0] if row else 0) + 1
+        cur.execute('INSERT OR REPLACE INTO hr_doc_numbers (doc_type, year, seq) '
+                    'VALUES (?, ?, ?)', (doc_type, year, seq))
+        conn.commit()
+        conn.close()
+        return '%s-%d-%03d' % (prefix, year, seq)
+    except Exception:
+        return '%s-%d-001' % (prefix, year)
+
+
 def build_employee_kit(emp, out_dir):
     """Формирует комплект документов нового сотрудника и возвращает пути."""
     ctx = dict(default_employee())
@@ -721,8 +754,9 @@ def build_agent_contract_full(emp, path):
     ctx = _base_ctx(emp)
     doc = new_doc()
     org_header(doc, ctx)
-    P(doc, 'АГЕНТСКИЙ ДОГОВОР № ______', center=True, bold=True, size=13,
-      space_after=0)
+    ctx['doc_number'] = next_doc_number('agent')
+    P(doc, 'АГЕНТСКИЙ ДОГОВОР № %s' % ctx['doc_number'], center=True,
+      bold=True, size=13, space_after=0)
     P(doc, 'на совершение юридических и фактических действий по продаже '
            'товаров от имени и за счёт Принципала', center=True, bold=True,
       size=11, space_after=2)
