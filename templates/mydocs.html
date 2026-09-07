@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мои документы</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
+.top{background:#16a34a;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.top a{color:#fff;text-decoration:none;font-weight:600}
+.wrap{max-width:900px;margin:14px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:14px}
+h2{margin:0 0:10px}
+a.doc{display:block;padding:8px 10px;border:1px solid #e0e7ff;border-radius:8px;margin:6px 0;color:#3730a3;text-decoration:none;background:#eef2ff}
+a.doc:hover{background:#e0e7ff}
+.btn{display:inline-block;background:#16a34a;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:15px;text-decoration:none}
+.info{font-size:13px;color:#6b7280}
+.note{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="top"><div><a href="/dashboard">← В график</a> | <b>📄 Мои документы</b></div>
+<div><a href="/rules">📖 Правила и методичка</a></div></div>
+<div class="wrap">
+{% if emp %}
+<div class="card">
+  <h2>{{ emp.fio or emp.username }}</h2>
+  <div class="info">{{ emp.position or '' }} · {{ emp.phone or '' }}</div>
+</div>
+<div class="card">
+  <a class="btn" href="/api/hr/employee/{{ emp.id }}/package">📦 Скачать весь пакет документов (zip)</a>
+  <div class="info" style="margin-top:8px">Пакет: анкета · договор о материальной ответственности ·
+    агентский договор · договор о неразглашении · памятка · методичка · правила.</div>
+</div>
+<div class="card">
+  <h3>Документы по отдельности (.docx):</h3>
+  {% for d in doc_builders %}
+  <a class="doc" href="/api/hr/employee/{{ emp.id }}/doc/{{ d.kind }}">📄 {{ d.label }}</a>
+  {% endfor %}
+</div>
+<div class="card">
+  <h3>Мои файлы</h3>
+  <div id="files">Загрузка…</div>
+</div>
+<div class="card note">🔒 Вы видите только свои документы и файлы. Чужие документы и данные
+других сотрудников вам недоступны.</div>
+{% else %}
+<div class="card note">У вас пока нет оформленных документов.
+Обратитесь к руководству — администратор оформит вашу карточку, и документы появятся здесь.</div>
+<div class="card"><a class="btn" href="/rules">📖 Правила и методичка</a></div>
+{% endif %}
+</div>
+<script>
+{% if emp %}
+async function loadFiles(){const box=document.getElementById('files');
+ const r=await fetch('/api/hr/employee/{{ emp.id }}/files'); const d=await r.json();
+ box.innerHTML=(d.files||[]).length
+  ? d.files.map(f=>'<a class="doc" href="/api/hr/employee/{{ emp.id }}/file/'+f.id+'">📎 '+f.orig_name+' <span style="color:#888">('+f.category+')</span></a>').join('')
+  : '<div class="info">Файлов пока нет.</div>';}
+loadFiles();
+{% endif %}
+</script>
+</body>
+</html>

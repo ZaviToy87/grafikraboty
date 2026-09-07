@@ -126,6 +126,13 @@
                 </a>
                 {% endif %}
 
+                {% if session.role != 'admin' %}
+                <a href="/my-docs" class="nav-item">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-label">Мои документы</span>
+                </a>
+                {% endif %}
+
                 <a href="#" class="nav-item" id="nav-open-instruction" onclick="openInstructionModal(); return false;">
                     <span class="nav-icon">📖</span>
                     <span class="nav-label">Инструкция</span>

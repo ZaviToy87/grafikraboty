@@ -88,6 +88,16 @@ def _admin():
     return session.get('role') == 'admin'
 
 
+def _owner_ok(emp):
+    """Сотрудник может работать только со СВОИМИ документами."""
+    if _admin():
+        return True
+    if not emp:
+        return False
+    uid = session.get('user_id')
+    return bool(uid) and str(emp.get('user_id')) == str(uid)
+
+
 def _hash_password(p):
     return hashlib.sha256(p.encode('utf-8')).hexdigest()
 
@@ -249,8 +259,8 @@ def _employee_rows():
 # ---------- документы сотрудника ----------
 @hr_bp.route('/api/hr/employee/<int:emp_id>/doc/<kind>')
 def hr_doc(emp_id, kind):
-    if not _admin():
-        return 'Доступ только для администратора', 403
+    if not _owner_ok(_row_emp(emp_id)):
+        return 'Нет доступа к документам этого сотрудника', 403
     path, name = _gen_emp_file(emp_id, kind)
     if not path:
         return 'Документ не найден', 404
@@ -259,8 +269,9 @@ def hr_doc(emp_id, kind):
 
 @hr_bp.route('/api/hr/employee/<int:emp_id>/package')
 def hr_package(emp_id):
-    if not _admin():
-        return 'Доступ только для администратора', 403
+    emp = _row_emp(emp_id)
+    if not _owner_ok(emp):
+        return 'Нет доступа к документам этого сотрудника', 403
     ctx = _emp_doc_ctx(emp_id)
     if not ctx:
         return 'Сотрудник не найден', 404
@@ -282,7 +293,7 @@ def hr_package(emp_id):
 # ---------- файлы сотрудника ----------
 @hr_bp.route('/api/hr/employee/<int:emp_id>/files', methods=['GET'])
 def hr_files_list(emp_id):
-    if not _admin():
+    if not _owner_ok(_row_emp(emp_id)):
         return jsonify({'error': 'Нет доступа'}), 403
     c = _db()
     rows = c.execute('SELECT * FROM hr_employee_files WHERE employee_id = ? '
@@ -320,8 +331,8 @@ def hr_files_upload(emp_id):
 
 @hr_bp.route('/api/hr/employee/<int:emp_id>/file/<int:fid>')
 def hr_file_download(emp_id, fid):
-    if not _admin():
-        return 'Доступ только для администратора', 403
+    if not _owner_ok(_row_emp(emp_id)):
+        return 'Нет доступа', 403
     c = _db()
     row = c.execute('SELECT * FROM hr_employee_files WHERE id = ? AND '
                     'employee_id = ?', (fid, emp_id)).fetchone()
@@ -350,5 +361,23 @@ def hr_file_delete(emp_id, fid):
         c.commit()
     c.close()
     return jsonify({'status': 'ok'})
+
+
+# ---------- «Мои документы» для сотрудника ----------
+@hr_bp.route('/my-docs')
+def my_docs_page():
+    if 'user_id' not in session:
+        return redirect('/login')
+    _ensure()
+    uid = session.get('user_id')
+    c = _db()
+    emp = c.execute('SELECT * FROM hr_employee WHERE user_id = ?', (uid,)
+                    ).fetchone()
+    c.close()
+    emp = dict(emp) if emp else None
+    return render_template('mydocs.html', emp=emp,
+                           doc_builders=[{'kind': k, 'label': l}
+                                         for k, l, _ in H.DOC_BUILDERS])
+
 
 
