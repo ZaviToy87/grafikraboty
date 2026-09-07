@@ -240,6 +240,15 @@ def hr_save():
     vals['login'] = username
     vals['password'] = password if (password or created_user) else ''
     vals['fio'] = fio or vals.get('fio')
+    # раскладываем ФИО на части, если части не заполнены
+    if not (vals.get('surname') or vals.get('name') or vals.get('patronymic')):
+        words = [w for w in (vals.get('fio') or '').strip().split() if w]
+        if len(words) >= 3:
+            vals['surname'], vals['name'], vals['patronymic'] = words[0], words[1], words[2]
+        elif len(words) == 2:
+            vals['surname'], vals['name'] = words[0], words[1]
+        elif len(words) == 1:
+            vals['name'] = words[0]
     if not vals.get('position'):
         vals['position'] = 'Продавец-кассир'
     if not vals.get('site_url'):

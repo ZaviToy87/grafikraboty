@@ -40,13 +40,29 @@ def load_requisites():
         return {}
 
 
+def _split_fio(ctx):
+    """Разбивает полное ФИО на фамилию/имя/отчество, если частей нет."""
+    if ctx.get('surname') or ctx.get('name') or ctx.get('patronymic'):
+        return ctx
+    words = [w for w in (ctx.get('fio') or '').strip().split() if w]
+    if not words:
+        return ctx
+    if len(words) >= 3:
+        ctx['surname'], ctx['name'], ctx['patronymic'] = words[0], words[1], words[2]
+    elif len(words) == 2:
+        ctx['surname'], ctx['name'] = words[0], words[1]
+    else:
+        ctx['name'] = words[0]
+    return ctx
+
+
 def _base_ctx(emp):
     req = load_requisites()
     org = req.get('organization', {})
     ctx = dict(org)
     ctx['year'] = req.get('docs_year', 2026)
     ctx.update(emp or {})
-    return ctx
+    return _split_fio(ctx)
 
 
 def new_doc(landscape=False):
