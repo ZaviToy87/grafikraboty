@@ -1,4 +1,0 @@
-typlib64_win64=0 
-typlib64_helpdir=0 
-typlib32_win64=0 
-typlib32_helpdir=0 

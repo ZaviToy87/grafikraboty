@@ -1,2 +1,0 @@
-unregister_1343_comcntr=5 
-register_1522_comcntr=0 
