@@ -26,7 +26,7 @@ def ocr_page():
     if not _admin():
         return 'Доступ только для администратора', 403
 
-    result = {'items': [], 'text': '', 'fields': {}, 'error': '', 'count': 0}
+    result = {'docs': [], 'text': '', 'fields': {}, 'error': '', 'count': 0}
     if request.method == 'POST':
         files = request.files.getlist('files')
         files = [f for f in files if f and f.filename]
@@ -48,7 +48,7 @@ def ocr_page():
                     text = ocr.ocr_image(path)
                     fields = ocr.extract_fields(text) if text else {}
                     item = {'name': f.filename, 'text': text}
-                    result['items'].append(item)
+                    result['docs'].append(item)
                     if text:
                         combined.append('===== %s =====\n%s' % (f.filename, text))
                         for k, v in fields.items():
@@ -59,9 +59,9 @@ def ocr_page():
                         os.remove(path)
                     except OSError:
                         pass
-            result['count'] = len(result['items'])
+            result['count'] = len(result['docs'])
             result['text'] = '\n\n'.join(combined)
             result['fields'] = combined_fields
-            if not result['items']:
+            if not result['docs']:
                 result['error'] = 'Файлы не обработаны'
     return render_template('ocr.html', result=result)

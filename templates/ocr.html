@@ -68,7 +68,7 @@ function updateCnt(){
 }
 </script>
 
-{% if result.items %}
+{% if result.docs %}
 <div class="card">
 <h3>Распознано файлов: {{ result.count }}</h3>
 {% if result.fields %}
@@ -83,7 +83,7 @@ function updateCnt(){
 <button onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(()=>this.textContent='Скопировано ✓')">📋 Скопировать общий текст</button>
 </div>
 
-{% for it in result.items %}
+{% for it in result.docs %}
 <div class="card">
 <h4>{{ it.name }}</h4>
 <pre>{{ it.text or '(текст не распознан)' }}</pre>
