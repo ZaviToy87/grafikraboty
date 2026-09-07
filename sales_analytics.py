@@ -215,6 +215,15 @@ class SalesAnalytics:
         tol_ratio = float(cfg_a.get('cash_delta_tolerance_ratio', 1.05))
 
         # Продажи 1С, привязанные к сотрудникам
+        # Кто открыл кассу в день (по сменам) — для корректной привязки продаж
+        sess_day_users = {}
+        for sess in self.sessions:
+            d = self.session_date(sess)
+            if d:
+                sess_day_users.setdefault(d, set()).add(sess.get('user_id'))
+        uname_of = {u['id']: (u.get('full_name') or u.get('username'))
+                    for u in self.users}
+
         sales_rows = []
         by_day_1c = defaultdict(float)
         by_day_docs = defaultdict(int)
@@ -225,6 +234,14 @@ class SalesAnalytics:
             if not day:
                 continue
             uid, disp = self.resolve_seller(s.get('seller_name'))
+            # Если продавца по имени нет/не совпадает со сменой этого дня,
+            # а смену в этот день открыл ровно один сотрудник — относим
+            # продажи дня к нему (кассу закрывал реальный работник).
+            if day in sess_day_users:
+                users_today = sess_day_users[day]
+                if len(users_today) == 1 and uid not in users_today:
+                    uid = next(iter(users_today))
+                    disp = uname_of.get(uid, disp)
             total = _money(s.get('total_sum'))
             sales_rows.append({'day': day, 'ym': day[:7], 'uid': uid,
                                'seller': disp, 'sum': total,
