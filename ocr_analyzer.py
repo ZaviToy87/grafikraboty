@@ -36,7 +36,23 @@ $bitmap = Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.S
 $engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
 if ($engine -eq $null) { Write-Output '__NO_OCR_LANG__'; exit }
 $result = Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])
-Write-Output $result.Text
+# выводим построчно с учётом структуры линий (каждая строка документа — отдельной)
+$sb = New-Object System.Text.StringBuilder
+foreach($line in $result.Lines) {
+  $words = @($line.Words | ForEach-Object { $_.Text })
+  $txt = $words -join ' '
+  if ([string]::IsNullOrWhiteSpace($txt)) { continue }
+  # лёгкий отступ по левому краю строки для сохранения «колонок»
+  $indent = 0
+  try {
+    $leftPx = [double]($line.Words[0].BoundingRect.Left)
+    $indent = [math]::Max(0, [int]($leftPx / 14))
+  } catch { $indent = 0 }
+  if ($indent -gt 12) { $indent = 12 }
+  if ($indent -gt 0) { $txt = (' ' * $indent) + $txt }
+  [void]$sb.AppendLine($txt)
+}
+Write-Output $sb.ToString()
 '''
 
 
@@ -61,7 +77,7 @@ def _ocr_windows(path):
             ['powershell', '-NoProfile', '-NonInteractive', '-ExecutionPolicy',
              'Bypass', '-File', ps1, path],
             capture_output=True, timeout=180)
-        out = (r.stdout or b'').decode('utf-8', 'ignore', 'replace').strip()
+        out = (r.stdout or b'').decode('utf-8', 'replace').strip()
         if '__NO_OCR_LANG__' in out:
             return ''
         return out
