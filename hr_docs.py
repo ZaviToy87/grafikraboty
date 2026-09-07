@@ -71,19 +71,23 @@ def P(doc, text='', bold=False, center=False, right=False, size=None,
     p = doc.add_paragraph()
     pf = p.paragraph_format
     pf.space_after = Pt(space_after)
-    pf.line_spacing = 1.12
+    pf.line_spacing = 1.15
     if center:
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     elif right:
         p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     else:
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    r = p.add_run(text)
-    r.bold = bold
-    r.italic = italic
-    r.underline = underline
-    if size:
-        r.font.size = Pt(size)
+    parts = str(text).split('\n')
+    for i, part in enumerate(parts):
+        r = p.add_run(part)
+        r.bold = bold
+        r.italic = italic
+        r.underline = underline
+        if size:
+            r.font.size = Pt(size)
+        if i < len(parts) - 1:
+            r.add_break()
     return p
 
 
@@ -105,17 +109,93 @@ def fill(text, ctx):
 
 
 def org_header(doc, ctx, city='Самара'):
-    P(doc, ctx.get('full_name', ''), center=True, bold=True, size=13)
-    P(doc, ctx.get('actual_address', '') or ctx.get('legal_address', ''),
-      center=True, size=10)
-    if ctx.get('phone') or ctx.get('email'):
-        P(doc, ('%s  %s' % (ctx.get('phone', ''), ctx.get('email', ''))).strip(),
+    """Шапка документа: реквизиты берём из конфига ООО (не из данных сотрудника)."""
+    org = load_requisites().get('organization', {})
+    P(doc, org.get('full_name', ''), center=True, bold=True, size=13)
+    P(doc, 'Юр. адрес: %s' % org.get('legal_address', ''), center=True, size=10)
+    P(doc, 'Факт. адрес: %s' % org.get('actual_address', ''), center=True,
+      size=10)
+    phone = org.get('phone', '')
+    email = org.get('email', '')
+    if phone or email:
+        P(doc, ('Тел.: %s    E-mail: %s' % (phone, email)).strip(),
           center=True, size=10)
-    P(doc, 'ИНН %s, КПП %s, ОГРН %s' % (value_or_blank(ctx.get('inn'), 14),
-                                         value_or_blank(ctx.get('kpp'), 14),
-                                         value_or_blank(ctx.get('ogrn'), 15)),
+    P(doc, 'ИНН %s, КПП %s, ОГРН %s' % (org.get('inn', ''),
+                                         org.get('kpp', ''),
+                                         org.get('ogrn', '')),
       center=True, size=10)
-    P(doc, '', space_after=6)
+    P(doc, '', space_after=4)
+
+
+def place_and_date(doc, city='г. Тольятти', date_text=''):
+    P(doc, city, size=12, space_after=0)
+    P(doc, date_text or '«___» ____________ 2026 г.', right=True, size=12,
+      space_after=8)
+
+
+def add_heading(doc, text, size=13):
+    P(doc, text, center=True, bold=True, size=size, space_after=2)
+
+
+def _cell_lines(cell, lines, bold_first=False):
+    cell.text = ''
+    first = True
+    for ln in lines:
+        if ln == '':
+            if not first:
+                cell.paragraphs[-1].add_run('\n')
+            continue
+        p = cell.paragraphs[0] if first else cell.add_paragraph()
+        p.paragraph_format.space_after = Pt(2)
+        p.paragraph_format.line_spacing = 1.1
+        r = p.add_run(str(ln))
+        r.bold = bold_first and first
+        r.font.size = Pt(11)
+        first = False
+
+
+def render_parties(doc, ctx, worker_label='Работник'):
+    """Блок «Реквизиты и подписи сторон» в виде аккуратной таблицы."""
+    org = load_requisites().get('organization', {})
+    P(doc, '', space_after=2)
+    P(doc, 'РЕКВИЗИТЫ И ПОДПИСИ СТОРОН', center=True, bold=True, size=12,
+      space_after=6)
+    tbl = doc.add_table(rows=1, cols=2)
+    tbl.style = 'Table Grid'
+    left = [
+        'РАБОТОДАТЕЛЬ',
+        org.get('full_name', ''),
+        'ОГРН %s' % org.get('ogrn', ''),
+        'ИНН %s, КПП %s' % (org.get('inn', ''), org.get('kpp', '')),
+        'Юр. адрес: %s' % org.get('legal_address', ''),
+        'Факт. адрес: %s' % org.get('actual_address', ''),
+        'Банк: %s' % org.get('bank_name', ''),
+        'БИК %s, р/с %s' % (org.get('bank_bik', ''),
+                            org.get('bank_account', '')),
+        'к/с %s' % org.get('bank_corr_account', ''),
+        '',
+        fill('{director_position}:', ctx),
+        '______________________ /{director_fio}/'.format(**ctx),
+        'М.П.',
+    ]
+    right = [
+        worker_label.upper(),
+        ctx.get('fio') or '',
+        'Должность: %s' % (ctx.get('position') or '____________'),
+        '',
+        'Паспорт: %s' % (ctx.get('passport') or '________________________'),
+        'Кем выдан: %s' % (ctx.get('passport_by') or '____________________'),
+        'Дата выдачи: %s' % (ctx.get('passport_date') or '______________'),
+        'Код подразделения: %s' % (ctx.get('passport_code') or '________'),
+        '',
+        'Адрес регистрации:',
+        ctx.get('address_registration') or '____________________________',
+        '',
+        'Подпись: ______________________',
+    ]
+    _cell_lines(tbl.cell(0, 0), left, bold_first=True)
+    _cell_lines(tbl.cell(0, 1), right, bold_first=True)
+    return tbl
 
 
 def build_anketa(emp, path):
@@ -159,20 +239,19 @@ def build_material_contract(emp, path):
     org_header(doc, ctx)
     P(doc, 'ДОГОВОР', center=True, bold=True, size=13, space_after=0)
     P(doc, 'о полной индивидуальной материальной ответственности работника',
-      center=True, bold=True, size=13, space_after=6)
-    P(doc, fill('г. Самара\n{date_contract}', ctx), space_after=6)
-    intro = fill('{short_name} (далее — «Работодатель»), в лице '
-                 '{director_position} {director_fio}, действующего на основании '
-                 '{director_basis}, с одной стороны, и гражданин(ка) РФ {fio} '
-                 '(далее — «Работник»), с другой стороны, заключили настоящий '
-                 'договор о нижеследующем.', ctx)
+      center=True, bold=True, size=13, space_after=2)
+    place_and_date(doc, 'г. Тольятти', ctx.get('date_contract', ''))
+    intro = fill('{short_name} (далее — «Работодатель»), в лице {director_of} '
+                 '{director_fio_gen}, действующего на основании {director_basis}, '
+                 'с одной стороны, и гражданин(ка) РФ {fio} (далее — «Работник»), '
+                 'с другой стороны, заключили настоящий договор о нижеследующем:', ctx)
     P(doc, intro)
     P(doc, '1. ПРЕДМЕТ ДОГОВОРА', bold=True)
-    P(doc, '1.1. Работник, занимающий должность «{position}» '
-           '(принимает на себя полную индивидуальную материальную '
-           'ответственность за недостачу вверенного ему Работодателем '
-           'имущества, а также за ущерб, возникший у Работодателя в '
-           'результате возмещения им ущерба иным лицам.'.format(**ctx))
+    P(doc, '1.1. Работник, занимающий должность «{position}», принимает на '
+           'себя полную индивидуальную материальную ответственность за '
+           'недостачу вверенного ему Работодателем имущества, а также за '
+           'ущерб, возникший у Работодателя в результате возмещения им '
+           'ущерба иным лицам.'.format(**ctx))
     P(doc, '1.2. Настоящий договор заключён в соответствии со ст. 242–244 '
            'Трудового кодекса РФ и Перечнем должностей и работ, замещаемых '
            'или выполняемых работниками, с которыми работодатель может '
@@ -201,39 +280,25 @@ def build_material_contract(emp, path):
     P(doc, '4.1. Размер ущерба определяется по фактическим потерям на '
            'основании данных бухгалтерского учёта (ст. 246 ТК РФ). При '
            'недостаче имущества размер ущерба определяется из рыночной '
-           'стоины на день причинения ущерба, но не ниже балансовой '
-           'стоимости.')
+           'стоимости на день причинения ущерба, но не ниже балансовой '
+           'стоимости по данным бухгалтерского учёта.')
     P(doc, '5. ОТВЕТСТВЕННОСТЬ СТОРОН', bold=True)
     P(doc, '5.1. Работник несёт полную материальную ответственность за '
            'недостачу вверенного имущества в размере причинённого ущерба '
            '(ст. 242, 243 ТК РФ).')
-    P(doc, '5.2. Причинение ущерба не при каких-либо обстоятельствах не '
-           'освобождает Работника от обязанности возместить ущерб, если '
-           'доказана его вина.')
+    P(doc, '5.2. Работник не несёт материальной ответственности, если '
+           'ущерб возник вследствие непреодолимой силы, нормального '
+           'хозяйственного риска, крайней необходимости или необходимой '
+           'обороны либо неисполнения Работодателем обязанности по '
+           'обеспечению надлежащих условий для хранения вверенного '
+           'имущества (ст. 239 ТК РФ).')
     P(doc, '6. ПРОЧИЕ УСЛОВИЯ', bold=True)
     P(doc, '6.1. Договор вступает в силу с момента подписания и действует '
            'в течение всего периода работы Работника с вверенным ему '
            'имуществом.')
     P(doc, '6.2. Договор составлен в двух экземплярах, имеющих одинаковую '
            'юридическую силу: один — у Работодателя, второй — у Работника.')
-    P(doc, '', space_after=6)
-    P(doc, '7. АДРЕСА И ПОДПИСИ СТОРОН', bold=True)
-    P(doc, 'Работодатель:', bold=True)
-    P(doc, '%s\nОГРН %s, ИНН %s, КПП %s\n%s\n%s'
-      % (ctx.get('full_name', ''), ctx.get('ogrn', ''), ctx.get('inn', ''),
-         ctx.get('kpp', ''), ctx.get('legal_address', ''),
-         ctx.get('actual_address', '')), size=11)
-    P(doc, 'Банк: %s, БИК %s, р/с %s, к/с %s'
-      % (ctx.get('bank_name', ''), ctx.get('bank_bik', ''),
-         ctx.get('bank_account', ''), ctx.get('bank_corr_account', '')),
-      size=11)
-    P(doc, fill('{director_position}: ________________ /{director_fio}/', ctx),
-      size=11)
-    P(doc, '', space_after=4)
-    P(doc, 'Работник:', bold=True)
-    P(doc, '{fio}\nПаспорт: {passport}, выдан {passport_by} {passport_date}\n'
-           'Адрес: {address_registration}'.format(**ctx), size=11)
-    P(doc, 'Подпись: ________________', size=11)
+    render_parties(doc, ctx)
     doc.save(path)
     return path
 
@@ -246,13 +311,13 @@ def build_agent_contract(emp, path):
     P(doc, 'АГЕНТСКИЙ ДОГОВОР № ______', center=True, bold=True, size=13,
       space_after=0)
     P(doc, 'на совершение действий от имени Принципала', center=True,
-      bold=True, size=12, space_after=6)
-    P(doc, fill('г. Самара\n{date_contract}', ctx), space_after=6)
-    intro = fill('{short_name} (далее — «Принципал»), в лице '
-                 '{director_position} {director_fio}, действующего на '
-                 'основании {director_basis}, с одной стороны, и {fio} '
-                 '(далее — «Агент»), с другой стороны, заключили настоящий '
-                 'договор о нижеследующем:', ctx)
+      bold=True, size=12, space_after=2)
+    place_and_date(doc, 'г. Тольятти', ctx.get('date_contract', ''))
+    intro = fill('{short_name} (далее — «Принципал»), в лице {director_of} '
+                 '{director_fio_gen}, действующего на основании '
+                 '{director_basis}, с одной стороны, и {fio} (далее — «Агент»), '
+                 'с другой стороны, заключили настоящий договор о '
+                 'нижеследующем:', ctx)
     P(doc, intro)
     P(doc, '1. ПРЕДМЕТ ДОГОВОРА', bold=True)
     P(doc, '1.1. По настоящему договору Агент обязуется от имени и за счёт '
@@ -260,7 +325,7 @@ def build_agent_contract(emp, path):
            'товаров зоомагазина и ветаптеки (бренд «{brand}»), приёму '
            'денежных средств от покупателей, ведению кассовых операций и '
            'предоставлению покупателям информации о товарах.'.format(**ctx))
-    P(doc, '1.2. Агент действует на территории г. Самары и '
+    P(doc, '1.2. Агент действует на территории г. Тольятти и '
            'Самарской области.')
     P(doc, '1.3. Полномочия Агента подтверждаются доверенностью, '
            'выдаваемой Принципалом.')
@@ -301,14 +366,7 @@ def build_agent_contract(emp, path):
            'предусмотренным законодательством РФ.')
     P(doc, '6.3. Договор составлен в двух экземплярах, имеющих одинаковую '
            'юридическую силу.')
-    P(doc, '', space_after=4)
-    P(doc, '7. ПОДПИСИ СТОРОН', bold=True)
-    P(doc, 'Принципал: %s' % ctx.get('full_name', ''), size=11)
-    P(doc, fill('{director_position}: _______________ /{director_fio}/', ctx),
-      size=11)
-    P(doc, 'Агент: {fio}'.format(**ctx), size=11)
-    P(doc, 'Подпись: ________________  Паспорт: {passport}'.format(**ctx),
-      size=11)
+    render_parties(doc, ctx, 'Агент')
     doc.save(path)
     return path
 
@@ -321,13 +379,13 @@ def build_nda_contract(emp, path):
     P(doc, 'ДОГОВОР № ______', center=True, bold=True, size=13, space_after=0)
     P(doc, 'о неразглашении конфиденциальной информации '
            '(коммерческой тайны)', center=True, bold=True, size=12,
-      space_after=6)
-    P(doc, fill('г. Самара\n{date_contract}', ctx), space_after=6)
-    intro = fill('{short_name} (далее — «Компания»), в лице '
-                 '{director_position} {director_fio}, действующего на '
-                 'основании {director_basis}, с одной стороны, и {fio} '
-                 '(далее — «Сотрудник»), с другой стороны, заключили '
-                 'настоящий договор о нижеследующем:', ctx)
+      space_after=2)
+    place_and_date(doc, 'г. Тольятти', ctx.get('date_contract', ''))
+    intro = fill('{short_name} (далее — «Компания»), в лице {director_of} '
+                 '{director_fio_gen}, действующего на основании '
+                 '{director_basis}, с одной стороны, и {fio} (далее — '
+                 '«Сотрудник»), с другой стороны, заключили настоящий '
+                 'договор о нижеследующем:', ctx)
     P(doc, intro)
     P(doc, '1. ОПРЕДЕЛЕНИЯ И ПРЕДМЕТ', bold=True)
     P(doc, '1.1. Конфиденциальная информация (КИ) — сведения, составляющие '
@@ -369,13 +427,7 @@ def build_nda_contract(emp, path):
            'договора.')
     P(doc, '4.2. Договор составлен в двух экземплярах, имеющих одинаковую '
            'юридическую силу.')
-    P(doc, '', space_after=4)
-    P(doc, '5. ПОДПИСИ СТОРОН', bold=True)
-    P(doc, 'Компания: %s' % ctx.get('full_name', ''), size=11)
-    P(doc, fill('{director_position}: _______________ /{director_fio}/', ctx),
-      size=11)
-    P(doc, 'Сотрудник: {fio}'.format(**ctx), size=11)
-    P(doc, 'Подпись: ________________', size=11)
+    render_parties(doc, ctx, 'Сотрудник')
     doc.save(path)
     return path
 
