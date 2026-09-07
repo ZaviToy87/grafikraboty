@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Анализатор сканов</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
+.top{background:#0d9488;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center}
+.top a{color:#fff;text-decoration:none;font-weight:600}
+.wrap{max-width:900px;margin:14px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:14px}
+pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;max-height:500px;overflow:auto;font-size:13px}
+.kv td{padding:4px 8px;border:1px solid #e2e8f0;font-size:13px}
+.kv{width:auto;border-collapse:collapse}
+button{background:#0d9488;color:#fff;border:0;padding:9px 16px;border-radius:7px;cursor:pointer}
+.err{color:#b91c1c}
+</style>
+</head>
+<body>
+<div class="top"><div><a href="/dashboard">← В график</a> | <b>🔍 Анализатор сканов</b></div></div>
+<div class="wrap">
+<div class="card">
+<h2>Распознать текст со скана / фото</h2>
+<p class="small">Загрузите изображение (фото паспорта, выписки ЕГРЮЛ, договора и т.п.) —
+система распознает текст и выделит типовые реквизиты (ИНН, ОГРН, КПП, СНИЛС, паспорт).</p>
+<form method="post" enctype="multipart/form-data">
+  <input type="file" name="file" accept="image/*" required style="margin-bottom:8px;display:block">
+  <button>Распознать</button>
+</form>
+{% if result.error %}<p class="err">{{ result.error }}</p>{% endif %}
+</div>
+
+{% if result.text %}
+<div class="card">
+<h3>Распознанный текст{% if result.name %} — «{{ result.name }}»{% endif %}</h3>
+{% if result.fields %}
+<table class="kv">
+{% for k,v in result.fields.items() if k != 'text' %}
+<tr><td><b>{{ k|upper }}</b></td><td>{{ v }}</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+<pre>{{ result.text }}</pre>
+<button onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(()=>this.textContent='Скопировано ✓')">📋 Скопировать текст</button>
+</div>
+{% endif %}
+</div>
+</body></html>
