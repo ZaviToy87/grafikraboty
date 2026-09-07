@@ -447,7 +447,7 @@
                 case 'barcodes':
                     return ['Штрихкод', 'Товар', 'Код товара'];
                 case 'sales':
-                    return ['Дата', 'Номер', 'Организация', 'Склад', 'Сумма', 'Касса', 'Действия'];
+                    return ['Дата', 'Номер', 'Продавец', 'Организация', 'Склад', 'Сумма', 'Касса', 'Действия'];
                 case 'receipts':
                     return ['Дата', 'Номер', 'Тип операции', 'Организация', 'Склад', 'Сумма', 'Действия'];
                 case 'counterparties':
@@ -479,6 +479,7 @@
                     return [
                         { value: item.date ? item.date.slice(0, 10) : '-' },
                         { value: item.number },
+                        { value: item.seller_name || '-' },
                         { value: item.organization_name },
                         { value: item.warehouse_name },
                         { value: item.total_sum ? parseFloat(item.total_sum).toLocaleString('ru-RU') + ' ₽' : '-' },

@@ -113,3 +113,7 @@ unins000.dat
 # Temporary check scripts
 _check_*.py
 
+
+# 1C sync backups
+_1c_backups/
+

@@ -34,6 +34,7 @@ import re
 import json
 import sqlite3
 import logging
+import traceback
 from datetime import datetime
 from collections import defaultdict
 
@@ -246,6 +247,25 @@ def extract_nested(xml, tag):
     match = re.search(f'<{tag}[^>]*>(.*?)</{tag}>', xml, re.DOTALL)
     return match.group(0) if match else None
 
+
+def _pick_ref(xml, *tags):
+    """Ищет первый вложенный элемент из списка (например Кассир/Продавец/Покупатель)
+    и возвращает {'guid': ..., 'name': ...} либо пустые значения."""
+    for tag in tags:
+        nested = extract_nested(xml, tag)
+        if not nested:
+            continue
+        guid = extract_guid(nested, 'Ссылка')
+        name = extract_text(nested, 'Наименование')
+        if not name:
+            for nt in ('ФИО', 'Представление', 'Имя', 'НаименованиеПолное'):
+                name = extract_text(nested, nt)
+                if name:
+                    break
+        if guid or name:
+            return {'guid': guid, 'name': name}
+    return {'guid': None, 'name': None}
+
 def parse_nomenclature(xml):
     """Парсит Справочник.Номенклатура"""
     data = {
@@ -350,6 +370,15 @@ def parse_sale_document(xml):
                 item['nomenclature_code'] = extract_text(nom_xml, 'КодВПрограмме')
             
             data['items'].append(item)
+
+    # Кто продал (кассир/продавец) и кому (покупатель/контрагент), если есть в выгрузке
+    seller = _pick_ref(xml, 'Кассир', 'Продавец', 'Ответственный', 'Сотрудник',
+                       'Пользователь', 'ФизическоеЛицо', 'Работник')
+    buyer = _pick_ref(xml, 'Покупатель', 'Контрагент', 'Клиент')
+    data['seller_guid'] = seller['guid']
+    data['seller_name'] = seller['name']
+    data['buyer_guid'] = buyer['guid']
+    data['buyer_name'] = buyer['name']
     
     return data
 
@@ -402,6 +431,15 @@ def parse_receipt_document(xml):
                 item['nomenclature_code'] = extract_text(nom_xml, 'КодВПрограмме')
             
             data['items'].append(item)
+
+    # Кто принимал (ответственный/кладовщик) и поставщик, если есть в выгрузке
+    who = _pick_ref(xml, 'Ответственный', 'Принял', 'Кладовщик', 'Кассир',
+                    'Сотрудник', 'ФизическоеЛицо', 'Работник')
+    supplier = _pick_ref(xml, 'Поставщик', 'Контрагент', 'Клиент')
+    data['responsible_guid'] = who['guid']
+    data['responsible_name'] = who['name']
+    data['supplier_guid'] = supplier['guid']
+    data['supplier_name'] = supplier['name']
     
     return data
 
@@ -446,6 +484,8 @@ class DatabaseSync:
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
         self._init_tables()
+        self._ensure_columns()
+        self._dedupe_barcodes()
     
     def _init_tables(self):
         """Создает таблицы для данных из 1С, если их нет"""
@@ -498,6 +538,10 @@ class DatabaseSync:
                 currency TEXT,
                 taxation TEXT,
                 cash_register TEXT,
+                seller_guid TEXT,
+                seller_name TEXT,
+                buyer_guid TEXT,
+                buyer_name TEXT,
                 raw_data TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -534,6 +578,10 @@ class DatabaseSync:
                 warehouse_name TEXT,
                 total_sum REAL,
                 price_type TEXT,
+                responsible_guid TEXT,
+                responsible_name TEXT,
+                supplier_guid TEXT,
+                supplier_name TEXT,
                 raw_data TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -611,6 +659,34 @@ class DatabaseSync:
         
         self.conn.commit()
     
+    def _ensure_columns(self):
+        """Добавляет недостающие колонки в существующие таблицы (для старых БД)."""
+        def add_col(table, col, decl):
+            cols = [r[1] for r in self.cursor.execute(f'PRAGMA table_info({table})').fetchall()]
+            if col not in cols:
+                self.cursor.execute(f'ALTER TABLE {table} ADD COLUMN {col} {decl}')
+        # sync_sales: продавец/покупатель
+        add_col('sync_sales', 'seller_guid', 'TEXT')
+        add_col('sync_sales', 'seller_name', 'TEXT')
+        add_col('sync_sales', 'buyer_guid', 'TEXT')
+        add_col('sync_sales', 'buyer_name', 'TEXT')
+        # sync_receipts: ответственный/поставщик
+        add_col('sync_receipts', 'responsible_guid', 'TEXT')
+        add_col('sync_receipts', 'responsible_name', 'TEXT')
+        add_col('sync_receipts', 'supplier_guid', 'TEXT')
+        add_col('sync_receipts', 'supplier_name', 'TEXT')
+        self.conn.commit()
+
+    def _dedupe_barcodes(self):
+        """Убирает возможные дубли штрихкодов (если синхронизация ранее запускалась неоднократно)."""
+        self.cursor.execute('''
+            DELETE FROM sync_barcodes
+            WHERE id NOT IN (
+                SELECT MIN(id) FROM sync_barcodes GROUP BY barcode, nomenclature_guid
+            )
+        ''')
+        self.conn.commit()
+    
     def save_nomenclature(self, data):
         """Сохраняет номенклатуру"""
         self.cursor.execute('''
@@ -642,14 +718,17 @@ class DatabaseSync:
             INSERT OR REPLACE INTO sync_sales 
             (guid, date, number, organization_guid, organization_name,
              warehouse_guid, warehouse_name, total_sum, currency,
-             taxation, cash_register, raw_data, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+             taxation, cash_register, seller_guid, seller_name,
+             buyer_guid, buyer_name, raw_data, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ''', (
             data['guid'], data['date'], data['number'],
             data['organization_guid'], data['organization_name'],
             data['warehouse_guid'], data['warehouse_name'],
             data['total_sum'], data['currency'],
             data['taxation'], data['cash_register'],
+            data.get('seller_guid'), data.get('seller_name'),
+            data.get('buyer_guid'), data.get('buyer_name'),
             json.dumps(data, ensure_ascii=False, default=str)
         ))
         
@@ -673,13 +752,17 @@ class DatabaseSync:
         self.cursor.execute('''
             INSERT OR REPLACE INTO sync_receipts 
             (guid, date, number, operation_type, organization_guid, organization_name,
-             warehouse_guid, warehouse_name, total_sum, price_type, raw_data, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+             warehouse_guid, warehouse_name, total_sum, price_type,
+             responsible_guid, responsible_name, supplier_guid, supplier_name,
+             raw_data, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ''', (
             data['guid'], data['date'], data['number'],
             data['operation_type'], data['organization_guid'], data['organization_name'],
             data['warehouse_guid'], data['warehouse_name'],
             data['total_sum'], data['price_type'],
+            data.get('responsible_guid'), data.get('responsible_name'),
+            data.get('supplier_guid'), data.get('supplier_name'),
             json.dumps(data, ensure_ascii=False, default=str)
         ))
         
@@ -894,6 +977,293 @@ def sync_from_1c():
         logger.info("Соединение с БД закрыто")
 
 
+# ============================================================
+# 5. ИНКРЕМЕНТАЛЬНАЯ ЗАГРУЗКА ОДНОГО ФАЙЛА (дополнение новыми данными)
+# ============================================================
+
+def _load_existing_keys(db):
+    """Загружает множества уже существующих GUID/пар — для пропуска при повторной загрузке."""
+    def colset(table):
+        try:
+            return {r[0] for r in db.cursor.execute(f'SELECT guid FROM {table}').fetchall()}
+        except Exception:
+            return set()
+    def barcodeset():
+        try:
+            return {(r[0], r[1]) for r in db.cursor.execute(
+                'SELECT barcode, nomenclature_guid FROM sync_barcodes').fetchall()}
+        except Exception:
+            return set()
+    return {
+        'nomenclature': colset('sync_nomenclature'),
+        'sales': colset('sync_sales'),
+        'receipts': colset('sync_receipts'),
+        'counterparties': colset('sync_counterparties'),
+        'organizations': colset('sync_organizations'),
+        'warehouses': colset('sync_warehouses'),
+        'barcodes': barcodeset(),
+    }
+
+
+def sync_file(filepath, force=False, full=False):
+    """
+    Импортирует один файл выгрузки 1С (Message_*.xml).
+
+    По умолчанию (инкрементально) в базу ДОБАВЛЯЮТСЯ только те записи,
+    которых ещё нет (по GUID). Уже существующие — пропускаются, поэтому
+    повторная загрузка одного и того же файла безопасна.
+      force=True — перезаписывать существующие продажи/приёмки/контрагентов;
+      full=True  — обновлять и существующую номенклатуру/справочники (включает force).
+
+    Возвращает словарь с итогами.
+    """
+    filepath = os.path.abspath(filepath)
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f'Файл не найден: {filepath}')
+    file_size = os.path.getsize(filepath)
+    file_name = os.path.basename(filepath)
+
+    logger.info(f"=== Загрузка файла: {filepath} ({file_size/1024/1024:.1f} MB) ===")
+
+    parser = EnterpriseDataParser(filepath)
+    db = DatabaseSync(DB_PATH)
+
+    summary = {'file': file_name, 'file_size': file_size}
+    try:
+        # Анализ структуры
+        object_types = parser.extract_all_object_types()
+        total_objects = sum(object_types.values())
+        logger.info(f"Типов объектов: {len(object_types)}, всего: {total_objects}")
+
+        # Извлекаем все нужные типы за один проход
+        all_data = parser.extract_all_objects_in_one_pass([
+            'Справочник.Номенклатура',
+            'Справочник.ШтрихкодыНоменклатуры',
+            'Документ.ОтчетОРозничныхПродажах',
+            'Документ.ОприходованиеТоваров',
+            'Справочник.Контрагенты',
+            'Справочник.Организации',
+            'Справочник.Склады',
+        ])
+
+        keys = _load_existing_keys(db)
+        stats = {}
+
+        # --- 1. Номенклатура (товары) ---
+        inserted = skipped = 0
+        for i, xml in enumerate(all_data.get('Справочник.Номенклатура', [])):
+            data = parse_nomenclature(xml)
+            if data['guid'] in keys['nomenclature'] and not full:
+                skipped += 1
+                continue
+            db.save_nomenclature(data)
+            keys['nomenclature'].add(data['guid'])
+            inserted += 1
+            if (i + 1) % 2000 == 0:
+                db.commit()
+                logger.info(f"  Номенклатура: обработано {i+1}")
+        db.commit()
+        stats['nomenclature'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Номенклатура: новых={inserted}, уже было={skipped}")
+
+        # --- 2. Штрихкоды ---
+        inserted = skipped = 0
+        for i, xml in enumerate(all_data.get('Справочник.ШтрихкодыНоменклатуры', [])):
+            data = parse_barcode(xml)
+            pair = (data['barcode'], data['nomenclature_guid'])
+            if pair in keys['barcodes']:
+                skipped += 1
+                continue
+            db.save_barcode(data)
+            keys['barcodes'].add(pair)
+            inserted += 1
+            if (i + 1) % 2000 == 0:
+                db.commit()
+                logger.info(f"  Штрихкоды: обработано {i+1}")
+        db.commit()
+        stats['barcodes'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Штрихкоды: новых={inserted}, уже было={skipped}")
+
+        # --- 3. Продажи ---
+        inserted = skipped = 0
+        for i, xml in enumerate(all_data.get('Документ.ОтчетОРозничныхПродажах', [])):
+            data = parse_sale_document(xml)
+            if data['guid'] in keys['sales'] and not force:
+                skipped += 1
+                continue
+            db.save_sale(data)
+            keys['sales'].add(data['guid'])
+            inserted += 1
+            if (i + 1) % 50 == 0:
+                db.commit()
+                logger.info(f"  Продажи: обработано {i+1}")
+        db.commit()
+        stats['sales'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Продажи: новых={inserted}, уже было={skipped}")
+
+        # --- 4. Приёмки ---
+        inserted = skipped = 0
+        for i, xml in enumerate(all_data.get('Документ.ОприходованиеТоваров', [])):
+            data = parse_receipt_document(xml)
+            if data['guid'] in keys['receipts'] and not force:
+                skipped += 1
+                continue
+            db.save_receipt(data)
+            keys['receipts'].add(data['guid'])
+            inserted += 1
+            if (i + 1) % 50 == 0:
+                db.commit()
+                logger.info(f"  Приёмки: обработано {i+1}")
+        db.commit()
+        stats['receipts'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Приёмки: новых={inserted}, уже было={skipped}")
+
+        # --- 5. Контрагенты ---
+        inserted = skipped = 0
+        for xml in all_data.get('Справочник.Контрагенты', []):
+            data = parse_counterparty(xml)
+            if data['guid'] in keys['counterparties'] and not force:
+                skipped += 1
+                continue
+            db.save_counterparty(data)
+            keys['counterparties'].add(data['guid'])
+            inserted += 1
+        db.commit()
+        stats['counterparties'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Контрагенты: новых={inserted}, уже было={skipped}")
+
+        # --- 6. Организации ---
+        inserted = skipped = 0
+        for xml in all_data.get('Справочник.Организации', []):
+            data = parse_organization(xml)
+            if data['guid'] in keys['organizations'] and not force:
+                skipped += 1
+                continue
+            db.save_organization(data)
+            keys['organizations'].add(data['guid'])
+            inserted += 1
+        db.commit()
+        stats['organizations'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Организации: новых={inserted}, уже было={skipped}")
+
+        # --- 7. Склады ---
+        inserted = skipped = 0
+        for xml in all_data.get('Справочник.Склады', []):
+            guid = extract_guid(xml, 'Ссылка')
+            if guid in keys['warehouses'] and not force:
+                skipped += 1
+                continue
+            data = {
+                'guid': guid,
+                'name': extract_text(xml, 'Наименование'),
+                'type': extract_text(xml, 'ТипСклада'),
+            }
+            db.cursor.execute('''
+                INSERT OR REPLACE INTO sync_warehouses (guid, name, type, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (data['guid'], data['name'], data['type']))
+            keys['warehouses'].add(guid)
+            inserted += 1
+        db.commit()
+        stats['warehouses'] = {'new': inserted, 'skipped': skipped}
+        logger.info(f"Склады: новых={inserted}, уже было={skipped}")
+
+        summary['stats'] = stats
+        summary['total_objects'] = total_objects
+
+        db.log_sync(file_name, file_size, total_objects, 'success')
+        db.commit()
+        logger.info("=== ЗАГРУЗКА УСПЕШНО ЗАВЕРШЕНА ===")
+        return summary
+
+    except Exception as e:
+        logger.error(f"Ошибка загрузки: {e}")
+        logger.error(traceback.format_exc())
+        try:
+            db.log_sync(file_name, file_size, 0, 'error', str(e)[:2000])
+            db.commit()
+        except Exception:
+            pass
+        raise
+
+    finally:
+        db.close()
+        logger.info("Соединение с БД закрыто")
+
+def find_export_files(folder):
+    """Возвращает список файлов Message_*.xml в папке (по убыванию времени изменения)."""
+    if not os.path.isdir(folder):
+        return []
+    files = [os.path.join(folder, f) for f in os.listdir(folder)
+             if f.lower().endswith('.xml') and f.lower().startswith('message_')]
+    files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+    return files
+
+
+def _print_summary(summary):
+    print("\n" + "=" * 60)
+    print(f"ФАЙЛ: {summary.get('file')} ({summary.get('file_size', 0) / 1024 / 1024:.1f} MB)")
+    print("=" * 60)
+    labels = {
+        'nomenclature': 'Товары (номенклатура)',
+        'barcodes': 'Штрихкоды',
+        'sales': 'Продажи (документы)',
+        'receipts': 'Приёмки (документы)',
+        'counterparties': 'Контрагенты',
+        'organizations': 'Организации',
+        'warehouses': 'Склады',
+    }
+    stats = summary.get('stats', {})
+    if not stats:
+        print("  (нет данных)")
+        return
+    for key, label in labels.items():
+        s = stats.get(key)
+        if not s:
+            continue
+        print(f"  {label}: ДОБАВЛЕНО новых = {s['new']}, уже было в базе = {s['skipped']}")
+    print("=" * 60)
+
+
 if __name__ == '__main__':
-    import traceback
-    sync_from_1c()
+    import sys as _sys
+    args = [a for a in _sys.argv[1:]]
+    flags = set()
+    targets = []
+    for a in args:
+        if a in ('--force', '--full', '--no-backup'):
+            flags.add(a)
+        else:
+            targets.append(a)
+
+    force = '--force' in flags
+    full = '--full' in flags
+
+    candidates = []
+    if targets:
+        for t in targets:
+            if os.path.isdir(t):
+                candidates.extend(find_export_files(t))
+            elif os.path.isfile(t):
+                candidates.append(t)
+    if not candidates:
+        # По умолчанию: папка выгрузки, затем папка uploads проекта
+        for folder in (EXPORT_DIR, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')):
+            candidates.extend(find_export_files(folder))
+            if candidates:
+                break
+    if not candidates:
+        print("Файлы выгрузки (Message_*.xml) не найдены.")
+        print("Укажите путь к файлу или папке, например:")
+        print('  python sync_1c.py "C:\\путь\\Message_РТ_РТ.xml"')
+        _sys.exit(1)
+
+    for fpath in candidates:
+        print(f"\n>>> Загружаю: {fpath}")
+        try:
+            summary = sync_file(fpath, force=force, full=full)
+            _print_summary(summary)
+        except Exception as e:
+            print(f"!!! Ошибка при загрузке {fpath}: {e}")
+            _sys.exit(2)
+

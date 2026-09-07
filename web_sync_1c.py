@@ -129,7 +129,7 @@ def get_sales():
     
     c.execute(
         'SELECT guid, date, number, organization_name, warehouse_name, total_sum, currency, '
-        'cash_register, taxation, updated_at '
+        'cash_register, seller_name, buyer_name, taxation, updated_at '
         'FROM sync_sales ORDER BY date DESC LIMIT ? OFFSET ?',
         (per_page, offset)
     )
