@@ -50,7 +50,6 @@ REQUIRED_FIELDS = [
     ('passport_code', 'Код подразделения'),
     ('address_registration', 'Адрес регистрации'),
     ('address_residence', 'Адрес проживания'),
-    ('inn', 'ИНН'), ('snils', 'СНИЛС'),
 ]
 
 
