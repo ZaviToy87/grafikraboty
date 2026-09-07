@@ -38,6 +38,7 @@ from web_analytics import analytics_bp
 from web_export import export_bp
 from web_sync_1c import sync_1c_bp
 from web_rules import rules_bp
+from web_hr import hr_bp as hr_docs_bp
 
 
 
@@ -116,6 +117,7 @@ app.register_blueprint(analytics_bp)
 app.register_blueprint(export_bp)
 app.register_blueprint(sync_1c_bp)
 app.register_blueprint(rules_bp)
+app.register_blueprint(hr_docs_bp)
 
 
 # Создание таблицы уведомлений при старте

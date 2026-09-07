@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Приём сотрудника и пакет документов</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
+.top{background:#4f46e5;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center}
+.top a{color:#fff;text-decoration:none;font-weight:600}
+.wrap{max-width:1000px;margin:16px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;margin-bottom:14px}
+h1,h2,h3{margin:0 0 10px}
+label{display:block;font-size:13px;color:#374151;margin:8px 0 2px}
+input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #d1d5db;border-radius:7px;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.btn{background:#4f46e5;color:#fff;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-size:15px;margin-top:14px}
+.btn:hover{opacity:.92}
+#res{display:none;margin-top:12px;padding:12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px}
+#err{color:#b91c1c;font-weight:600;display:none;margin-top:10px}
+#res a{color:#047857;font-weight:700}
+.info{font-size:12px;color:#6b7280;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="top"><div><a href="/dashboard">← В график</a> &nbsp;|&nbsp; 📋 Приём сотрудника</div>
+<div><a href="/admin/hr">Кадровый модуль</a></div></div>
+<div class="wrap">
+<div class="card">
+<h2>1. Сотрудник</h2>
+<label>Выбрать существующего (если уже заведён) или заполнить нового:</label>
+<select id="sel-user">
+<option value="">— Новый сотрудник —</option>
+{% for u in users %}
+<option value="{{ u.id }}" data-user="{{ u.username }}" data-fio="{{ u.full_name or '' }}">{{ u.full_name or u.username }} ({{ u.username }})</option>
+{% endfor %}
+</select>
+<div class="grid">
+<div><label>Логин</label><input id="f-username" placeholder="например, ivanova_i">
+<span class="info">Логин = имя учётной записи для входа в программу</span></div>
+<div><label>ФИО полностью</label><input id="f-fio"></div>
+<div><label>Должность</label><input id="f-position" value="Продавец-кассир"></div>
+<div><label>Дата начала работы</label><input id="f-date_start" placeholder="__.__.2026"></div>
+</div>
+<label><input type="checkbox" id="f-newpass" checked> Сгенерировать новый пароль (если создаёте нового сотрудника)</label>
+</div>
+
+<div class="card">
+<h2>2. Данные для договоров (заполняется при первом приёме)</h2>
+<div class="grid">
+<div><label>Дата рождения</label><input id="f-birth_date"></div>
+<div><label>Телефон</label><input id="f-phone"></div>
+<div><label>Паспорт (серия и номер)</label><input id="f-passport"></div>
+<div><label>Кем выдан</label><input id="f-passport_by"></div>
+<div><label>Дата выдачи</label><input id="f-passport_date"></div>
+<div><label>Код подразделения</label><input id="f-passport_code"></div>
+<div><label>Адрес регистрации</label><input id="f-address_registration"></div>
+<div><label>Адрес проживания</label><input id="f-address_residence"></div>
+<div><label>ИНН</label><input id="f-inn"></div>
+<div><label>СНИЛС</label><input id="f-snils"></div>
+<div><label>График работы</label><input id="f-work_schedule" placeholder="например, 2/2 с 09:00 до 21:00"></div>
+<div><label>Оплата / порядок ЗП</label><input id="f-salary_scheme" value="Оплата за смену по порогам выручки"></div>
+</div>
+<button class="btn" onclick="gen()">⚡ Сформировать учётную запись и пакет документов</button>
+<div id="err"></div>
+<div id="res"></div>
+</div>
+
+<div class="card">
+<h3>Комплект (формируется автоматически)</h3>
+<div class="info">01 — Анкета · 02 — Договор о материальной ответственности · 03 — Агентский договор ·
+04 — Договор о неразглашении · 05 — Памятка с учётными данными (распечатать и выдать).</div>
+<div class="info">Готовые документы также всегда можно пересформировать кнопкой выше — данные сохраняются.</div>
+</div>
+</div>
+
+<script>
+const fields = {{ fields | tojson }};
+function $(id){return document.getElementById(id);}
+const sel=$('sel-user');
+sel.addEventListener('change',function(){
+  const o=sel.options[sel.selectedIndex];
+  if(o.value){$('f-username').value=o.dataset.user; $('f-fio').value=o.dataset.fio;}
+});
+async function gen(){
+  const err=$('err'); err.style.display='none';
+  const res=$('res'); res.style.display='none';
+  const body={username:$('f-username').value, full_name:$('f-fio').value,
+              position:$('f-position').value, date_start:$('f-date_start').value};
+  for(const f of fields){ body[f]=$( 'f-'+f )? $( 'f-'+f ).value : ''; }
+  try{
+    const r=await fetch('/api/hr/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok || d.status!=='ok'){err.textContent='Ошибка: '+(d.error||'неизвестно');err.style.display='block';return;}
+    res.innerHTML='✅ Сотрудник <b>'+d.username+'</b> (id '+d.user_id+')<br>'+
+      'Пароль для входа: <b style="font-size:18px">'+d.password+'</b><br>'+
+      'Пакет документов готов: <a href="'+d.download_url+'" download>скачать zip</a><br>'+
+      '<span class="info">Пароль показывается один раз — сохраните его и распечатайте памятку.</span>';
+    res.style.display='block';
+  }catch(e){err.textContent='Ошибка: '+e.message;err.style.display='block';}
+}
+</script>
+</body>
+</html>

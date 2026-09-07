@@ -125,3 +125,7 @@ sales_reports/
 # Generated employee documents
 documents_out/
 
+
+# HR document packages
+hr_packages/
+
