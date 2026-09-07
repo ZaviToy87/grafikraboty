@@ -28,6 +28,7 @@ from docx.oxml.ns import qn
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT = 'Times New Roman'
+DOCS_DIR = os.path.join(BASE_DIR, 'docs')
 
 
 def load_requisites():
@@ -493,8 +494,61 @@ def build_journals(out_dir):
 
 
 # ============================================================
+# Методичка и правила (входят в пакет каждого сотрудника)
+# ============================================================
+def build_methodichka(emp, path):
+    return _text_doc(path, 'МЕТОДИЧКА СОТРУДНИКА',
+                     os.path.join(DOCS_DIR, 'МЕТОДИЧКА_сотрудника.txt'))
+
+
+def build_pravila(emp, path):
+    return _text_doc(path, 'ПРАВИЛА МАГАЗИНА',
+                     os.path.join(DOCS_DIR, 'Правила_магазина.txt'))
+
+
+def _text_doc(path, title, src_path):
+    ctx = _base_ctx({})
+    doc = new_doc()
+    P(doc, ctx.get('short_name', '') + ' — бренд ' + ctx.get('brand', ''),
+      center=True, size=10)
+    P(doc, title, center=True, bold=True, size=14, space_after=6)
+    try:
+        with io.open(src_path, 'r', encoding='utf-8') as f:
+            lines = f.read().splitlines()
+    except Exception:
+        lines = []
+    import re as _re
+    for ln in lines:
+        s = ln.strip()
+        if not s:
+            continue
+        bold = bool(_re.match(r'^\s*(\d+\.|[-—•*]?\s*[А-ЯЁA-Z][А-ЯЁA-Z ]{6,})', s)
+                     or _re.match(r'^(КАК|НЕ|ДОЛЖЕН|ОБЯЗАН|ПРАВИЛ|МЕТОД)', s,
+                                  _re.I))
+        P(doc, s, bold=bold, size=11, space_after=3)
+    P(doc, '', space_after=2)
+    P(doc, 'С документом ознакомлен(а): ______________ / ____________ / 20__ г.',
+      size=10)
+    doc.save(path)
+    return path
+
+
+# ============================================================
 # Пакет документов сотрудника
 # ============================================================
+# (kind, метка_для_файла, функция-генератор)
+DOC_BUILDERS = [
+    ('anketa', '01_Анкета_сотрудника', build_anketa),
+    ('material', '02_Договор_материальная_ответственность',
+     build_material_contract),
+    ('agent', '03_Агентский_договор', build_agent_contract),
+    ('nda', '04_Договор_о_неразглашении', build_nda_contract),
+    ('memo', '05_Памятка_учётные_данные', build_access_memo),
+    ('methodichka', '06_Методичка_сотрудника', build_methodichka),
+    ('pravila', '07_Правила_магазина', build_pravila),
+]
+DOC_LABELS = {k: l for k, l, _ in DOC_BUILDERS}
+
 def sanitize(name):
     return re.sub(r'[\\/:*?"<>|]+', '_', str(name or '').strip()) or 'документы'
 
@@ -519,15 +573,8 @@ def build_employee_kit(emp, out_dir):
     ctx.update(emp or {})
     os.makedirs(out_dir, exist_ok=True)
     name = sanitize(ctx.get('fio') or 'новый_сотрудник')
-    builders = [
-        ('01_Анкета_сотрудника', build_anketa),
-        ('02_Договор_материальная_ответственность', build_material_contract),
-        ('03_Агентский_договор', build_agent_contract),
-        ('04_Договор_о_неразглашении', build_nda_contract),
-        ('05_Памятка_доступы', build_access_memo),
-    ]
     files = []
-    for label, fn in builders:
+    for kind, label, fn in DOC_BUILDERS:
         p = os.path.join(out_dir, '%s_%s.docx' % (label, name))
         fn(ctx, p)
         files.append(p)

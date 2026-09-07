@@ -3,102 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Приём сотрудника и пакет документов</title>
+<title>Кадры — сотрудники и документы</title>
 <style>
 body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
-.top{background:#4f46e5;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center}
+.top{background:#4f46e5;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .top a{color:#fff;text-decoration:none;font-weight:600}
-.wrap{max-width:1000px;margin:16px auto;padding:0 14px}
-.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;margin-bottom:14px}
-h1,h2,h3{margin:0 0 10px}
-label{display:block;font-size:13px;color:#374151;margin:8px 0 2px}
-input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #d1d5db;border-radius:7px;font-size:14px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
-.btn{background:#4f46e5;color:#fff;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-size:15px;margin-top:14px}
-.btn:hover{opacity:.92}
-#res{display:none;margin-top:12px;padding:12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px}
-#err{color:#b91c1c;font-weight:600;display:none;margin-top:10px}
-#res a{color:#047857;font-weight:700}
-.info{font-size:12px;color:#6b7280;margin-top:4px}
+.wrap{max-width:1200px;margin:14px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#eef0ff;padding:8px;text-align:left;white-space:nowrap}
+td{padding:7px 8px;border-top:1px solid #eef0f4;vertical-align:top}
+.btn{background:#4f46e5;color:#fff;border:0;padding:7px 12px;border-radius:7px;cursor:pointer;font-size:13px;margin:2px}
+.btn.g{background:#16a34a}.btn.o{background:#d97706}.btn.r{background:#dc2626}
+.btn:hover{opacity:.9}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px}
+label{display:block;font-size:12px;color:#374151;margin:7px 0 2px}
+input,select{width:100%;box-sizing:border-box;padding:7px;border:1px solid #d1d5db;border-radius:6px;font-size:13px}
+.panel{background:#f8faff;border:1px solid #dbe3ff;border-radius:8px;padding:10px;margin-top:8px}
+.panel a{display:inline-block;margin:3px 6px 3px 0;color:#4f46e5;text-decoration:underline}
+#msg{font-weight:600;margin:8px 0;color:#16a34a}
+#msg.err{color:#dc2626}
+.small{font-size:11px;color:#6b7280}
+.file{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}
+input[type=checkbox]{width:auto}
 </style>
 </head>
 <body>
-<div class="top"><div><a href="/dashboard">← В график</a> &nbsp;|&nbsp; 📋 Приём сотрудника</div>
-<div><a href="/admin/hr">Кадровый модуль</a></div></div>
+<div class="top"><div><a href="/dashboard">← В график</a> | <b>👥 Кадры — пул сотрудников</b></div>
+<div><a href="/rules">📖 Правила</a></div></div>
 <div class="wrap">
+
+<div class="card" id="edit-card">
+  <h2>Данные сотрудника <button class="btn" onclick="newEmp()">＋ Новый сотрудник</button></h2>
+  <div id="msg"></div>
+  <div class="grid">
+    <div><label>Логин (учётная запись)</label><input id="f-username"></div>
+    <div><label>ФИО полностью</label><input id="f-fio"></div>
+    <div><label>Должность</label><input id="f-position" value="Продавец-кассир"></div>
+    <div><label>Дата начала работы</label><input id="f-date_start" placeholder="__.__.2026"></div>
+    <div><label>Телефон</label><input id="f-phone"></div>
+    <div><label>Дата рождения</label><input id="f-birth_date"></div>
+    <div><label>Паспорт (серия/номер)</label><input id="f-passport"></div>
+    <div><label>Кем выдан</label><input id="f-passport_by"></div>
+    <div><label>Дата выдачи</label><input id="f-passport_date"></div>
+    <div><label>Код подразделения</label><input id="f-passport_code"></div>
+    <div><label>Адрес регистрации</label><input id="f-address_registration"></div>
+    <div><label>Адрес проживания</label><input id="f-address_residence"></div>
+    <div><label>ИНН</label><input id="f-inn"></div>
+    <div><label>СНИЛС</label><input id="f-snils"></div>
+    <div><label>График работы</label><input id="f-work_schedule"></div>
+    <div><label>Оплата / схема ЗП</label><input id="f-salary_scheme"></div>
+    <div><label>Адрес входа (сайт)</label><input id="f-site_url"></div>
+    <div><label>Заметки</label><input id="f-notes"></div>
+  </div>
+  <div style="margin-top:10px">
+    <label><input type="checkbox" id="f-active" checked> сотрудник активен</label>
+    <label><input type="checkbox" id="f-reset_password"> задать/сбросить пароль (пустое поле = сгенерировать)</label>
+    <label>Пароль</label><input id="f-password" placeholder="оставьте пустым — сгенерируется">
+  </div>
+  <button class="btn" onclick="saveEmp()">💾 Сохранить сотрудника</button>
+</div>
+<!--PART2-->
 <div class="card">
-<h2>1. Сотрудник</h2>
-<label>Выбрать существующего (если уже заведён) или заполнить нового:</label>
-<select id="sel-user">
-<option value="">— Новый сотрудник —</option>
-{% for u in users %}
-<option value="{{ u.id }}" data-user="{{ u.username }}" data-fio="{{ u.full_name or '' }}">{{ u.full_name or u.username }} ({{ u.username }})</option>
+<h2>Список сотрудников</h2>
+<table>
+<thead><tr><th>ФИО / логин</th><th>Должность</th><th>Телефон</th><th>Начало</th><th>Файлов</th><th>Действия</th></tr></thead>
+<tbody>
+{% for e in employees %}
+<tr id="row-{{ e.id }}">
+  <td><b>{{ e.fio or '—' }}</b><br><span class="small">{{ e.username or '' }} {% if not e.active %}(архив){% endif %}</span></td>
+  <td>{{ e.position or '—' }}</td>
+  <td>{{ e.phone or '—' }}</td>
+  <td>{{ e.date_start or '—' }}</td>
+  <td>{{ e.files_count }}</td>
+  <td nowrap>
+    <button class="btn" onclick="editEmp({{ e.id }})">✏️</button>
+    <button class="btn g" onclick="location='/api/hr/employee/{{ e.id }}/package'">📦 Пакет</button>
+    <button class="btn o" onclick="toggleDocs({{ e.id }})">📄 Документы</button>
+    <button class="btn" onclick="toggleFiles({{ e.id }})">🗂 Файлы</button>
+  </td>
+</tr>
+<tr id="docs-{{ e.id }}" style="display:none"><td colspan="6"><div class="panel">
+  <b>Отдельные документы (.docx):</b>
+  {% for d in doc_builders %}
+    <a href="/api/hr/employee/{{ e.id }}/doc/{{ d.kind }}">{{ d.label }}</a>
+  {% endfor %}
+</div></td></tr>
+<tr id="files-{{ e.id }}" style="display:none"><td colspan="6"><div class="panel">
+  <b>Файлы сотрудника</b> (подписанные договоры, сканы):<br>
+  <div id="fl-{{ e.id }}"></div>
+  <div style="margin-top:8px">
+    <input type="file" id="ff-{{ e.id }}">
+    <select id="fc-{{ e.id }}">{% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}</select>
+    <button class="btn" onclick="upFile({{ e.id }})">Загрузить</button>
+  </div>
+</div></td></tr>
 {% endfor %}
-</select>
-<div class="grid">
-<div><label>Логин</label><input id="f-username" placeholder="например, ivanova_i">
-<span class="info">Логин = имя учётной записи для входа в программу</span></div>
-<div><label>ФИО полностью</label><input id="f-fio"></div>
-<div><label>Должность</label><input id="f-position" value="Продавец-кассир"></div>
-<div><label>Дата начала работы</label><input id="f-date_start" placeholder="__.__.2026"></div>
-</div>
-<label><input type="checkbox" id="f-newpass" checked> Сгенерировать новый пароль (если создаёте нового сотрудника)</label>
+</tbody></table>
 </div>
 
-<div class="card">
-<h2>2. Данные для договоров (заполняется при первом приёме)</h2>
-<div class="grid">
-<div><label>Дата рождения</label><input id="f-birth_date"></div>
-<div><label>Телефон</label><input id="f-phone"></div>
-<div><label>Паспорт (серия и номер)</label><input id="f-passport"></div>
-<div><label>Кем выдан</label><input id="f-passport_by"></div>
-<div><label>Дата выдачи</label><input id="f-passport_date"></div>
-<div><label>Код подразделения</label><input id="f-passport_code"></div>
-<div><label>Адрес регистрации</label><input id="f-address_registration"></div>
-<div><label>Адрес проживания</label><input id="f-address_residence"></div>
-<div><label>ИНН</label><input id="f-inn"></div>
-<div><label>СНИЛС</label><input id="f-snils"></div>
-<div><label>График работы</label><input id="f-work_schedule" placeholder="например, 2/2 с 09:00 до 21:00"></div>
-<div><label>Оплата / порядок ЗП</label><input id="f-salary_scheme" value="Оплата за смену по порогам выручки"></div>
-</div>
-<button class="btn" onclick="gen()">⚡ Сформировать учётную запись и пакет документов</button>
-<div id="err"></div>
-<div id="res"></div>
-</div>
-
-<div class="card">
-<h3>Комплект (формируется автоматически)</h3>
-<div class="info">01 — Анкета · 02 — Договор о материальной ответственности · 03 — Агентский договор ·
-04 — Договор о неразглашении · 05 — Памятка с учётными данными (распечатать и выдать).</div>
-<div class="info">Готовые документы также всегда можно пересформировать кнопкой выше — данные сохраняются.</div>
-</div>
+<div class="card"><span class="small">Пакет сотрудника: анкета · договор о материальной ответственности ·
+агентский договор · договор о неразглашении · памятка с учётными данными · Методичка · Правила магазина.
+Документы формируются в Word с данными сотрудника автоматически.</span></div>
 </div>
 
 <script>
-const fields = {{ fields | tojson }};
+const ALL = {{ employees | tojson }};
+const COL_FIELDS = ['username','fio','position','date_start','phone','birth_date','passport',
+ 'passport_by','passport_date','passport_code','address_registration','address_residence',
+ 'inn','snils','work_schedule','salary_scheme','site_url','notes'];
+let currentId = null;
 function $(id){return document.getElementById(id);}
-const sel=$('sel-user');
-sel.addEventListener('change',function(){
-  const o=sel.options[sel.selectedIndex];
-  if(o.value){$('f-username').value=o.dataset.user; $('f-fio').value=o.dataset.fio;}
-});
-async function gen(){
-  const err=$('err'); err.style.display='none';
-  const res=$('res'); res.style.display='none';
-  const body={username:$('f-username').value, full_name:$('f-fio').value,
-              position:$('f-position').value, date_start:$('f-date_start').value};
-  for(const f of fields){ body[f]=$( 'f-'+f )? $( 'f-'+f ).value : ''; }
-  try{
-    const r=await fetch('/api/hr/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+function msg(t,err){const m=$('msg');m.textContent=t;m.className=err?'err':'';}
+function newEmp(){ currentId=null; COL_FIELDS.forEach(f=>$( 'f-'+f ).value=''); $('f-active').checked=true;
+  $('f-password').value=''; $('f-reset_password').checked=false; window.scrollTo({top:0,behavior:'smooth'}); }
+function editEmp(id){ const e=ALL.find(x=>x.id===id); if(!e)return; currentId=id;
+  COL_FIELDS.forEach(f=>{$( 'f-'+f ).value = (e[f]||''); });
+  $('f-active').checked = (e.active===1 || e.active===true);
+  $('f-password').value=''; $('f-reset_password').checked=false;
+  window.scrollTo({top:0,behavior:'smooth'}); }
+async function saveEmp(){
+  const body={id:currentId}; COL_FIELDS.forEach(f=>body[f]=$( 'f-'+f ).value);
+  body.active = $('f-active').checked?1:0; body.reset_password=$('f-reset_password').checked;
+  body.password=$('f-password').value;
+  try{ const r=await fetch('/api/hr/employee/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
-    if(!r.ok || d.status!=='ok'){err.textContent='Ошибка: '+(d.error||'неизвестно');err.style.display='block';return;}
-    res.innerHTML='✅ Сотрудник <b>'+d.username+'</b> (id '+d.user_id+')<br>'+
-      'Пароль для входа: <b style="font-size:18px">'+d.password+'</b><br>'+
-      'Пакет документов готов: <a href="'+d.download_url+'" download>скачать zip</a><br>'+
-      '<span class="info">Пароль показывается один раз — сохраните его и распечатайте памятку.</span>';
-    res.style.display='block';
-  }catch(e){err.textContent='Ошибка: '+e.message;err.style.display='block';}
-}
+    if(!r.ok || d.status!=='ok'){msg('Ошибка: '+(d.error||'нет ответа'),1);return;}
+    if(d.password){ msg('Сохранено. Пароль для входа: '+d.password); }
+    else { msg('Сохранено'); }
+    setTimeout(()=>location.reload(),1200);
+  }catch(e){msg('Ошибка: '+e.message,1);} }
+function toggleDocs(id){ const el=$('docs-'+id); el.style.display = el.style.display==='none'?'':'none'; }
+async function toggleFiles(id){ const tr=$('files-'+id);
+  if(tr.style.display==='none'){tr.style.display=''; await loadFiles(id);} else tr.style.display='none'; }
+async function loadFiles(id){ const box=$('fl-'+id); box.innerHTML='Загрузка…';
+  const r=await fetch('/api/hr/employee/'+id+'/files'); const d=await r.json();
+  box.innerHTML=(d.files||[]).map(f=>'<div class="file"><a href="/api/hr/employee/'+id+'/file/'+f.id+'">'+f.orig_name+'</a>'+
+    '<span class="small">('+f.category+')</span>'+
+    '<button class="btn r" onclick="delFile('+id+','+f.id+')">×</button></div>').join('')||'<span class="small">файлов нет</span>'; }
+async function delFile(id,fid){ await fetch('/api/hr/employee/'+id+'/file/'+fid,{method:'DELETE'}); loadFiles(id); }
+async function upFile(id){ const file=$('ff-'+id).files[0]; if(!file){return;}
+  const fd=new FormData(); fd.append('file',file); fd.append('category',$('fc-'+id).value);
+  const r=await fetch('/api/hr/employee/'+id+'/files',{method:'POST',body:fd});
+  const d=await r.json();
+  if(r.ok && d.status==='ok'){ $('ff-'+id).value=''; loadFiles(id);} else alert('Ошибка: '+(d.error||'?')); }
 </script>
 </body>
 </html>
+
