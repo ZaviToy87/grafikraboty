@@ -1,0 +1,30 @@
+{
+  "salary": {
+    "floor": 1600,
+    "comment": "Пороговая оплата смены по выручке за день. Если выручка ниже первого порога — платим floor (минималку). Порядок: чем выше выручка, тем выше оплата.",
+    "tiers": [
+      {"min_revenue": 15000, "pay": 1600},
+      {"min_revenue": 20000, "pay": 1750},
+      {"min_revenue": 25000, "pay": 1900},
+      {"min_revenue": 30000, "pay": 2500},
+      {"min_revenue": 35000, "pay": 3000},
+      {"min_revenue": 45000, "pay": 4000}
+    ]
+  },
+  "sellers_map": {
+    "зубарева валерия ивановна": "валерия",
+    "администратор": "администратор"
+  },
+  "anomaly": {
+    "qty_spike_min": 5,
+    "qty_spike_factor": 3.0,
+    "max_discount_ok": 0.30,
+    "price_drop_ok": 0.85,
+    "cash_delta_tolerance_rub": 500,
+    "cash_delta_tolerance_ratio": 1.05
+  },
+  "paths": {
+    "db": "schedule.db",
+    "report_dir": "sales_reports"
+  }
+}

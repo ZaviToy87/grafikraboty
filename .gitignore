@@ -117,3 +117,7 @@ _check_*.py
 # 1C sync backups
 _1c_backups/
 
+
+# Sales analysis reports
+sales_reports/
+
