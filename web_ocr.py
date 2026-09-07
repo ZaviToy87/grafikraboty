@@ -30,8 +30,11 @@ def ocr_page():
     if request.method == 'POST':
         files = request.files.getlist('files')
         files = [f for f in files if f and f.filename]
+        IMG = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff', '.webp')
+        files = [f for f in files
+                 if os.path.splitext(f.filename or '')[1].lower() in IMG]
         if not files:
-            result['error'] = 'Файлы не выбраны'
+            result['error'] = 'Не выбрано ни одного изображения (jpg/png/bmp/tif…)'
         else:
             os.makedirs(UPLOADS, exist_ok=True)
             combined = []
