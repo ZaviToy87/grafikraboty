@@ -221,20 +221,25 @@ def _today_tasks(db, d):
     for r in rows:
         uid = r['user_id']
         names = []
-        for tid in re.split(r'[,\s]+', (r['task_ids'] or '')):
-            if tid.isdigit() and int(tid) in tasks_map:
+        # task_ids хранится и как '[6]', и как '6', '6, 7' — берём все числа
+        for tid in re.findall(r'\d+', (r['task_ids'] or '')):
+            if int(tid) in tasks_map and tasks_map[int(tid)] not in names:
                 names.append(tasks_map[int(tid)])
         result.setdefault(uid, [])
         result[uid].extend(names)
-    # те, кто уже открыл смену сегодня (касса), тоже работают
-    try:
-        sess = db.execute('SELECT DISTINCT user_id FROM work_sessions '
-                          'WHERE year=? AND month=? AND day=?',
-                          (d.year, d.month, d.day)).fetchall()
-        for r in sess:
-            result.setdefault(r['user_id'], [])
-    except Exception:
-        pass
+    # Работающие сегодня определяются ПО ГРАФИКУ (work_schedule).
+    # Смены (work_sessions) используем только как запасной вариант,
+    # если на этот день в графике никого нет — например, смену открыли,
+    # а график не заполнили.
+    if not result:
+        try:
+            sess = db.execute('SELECT DISTINCT user_id FROM work_sessions '
+                              'WHERE year=? AND month=? AND day=?',
+                              (d.year, d.month, d.day)).fetchall()
+            for r in sess:
+                result.setdefault(r['user_id'], [])
+        except Exception:
+            pass
     # повторяющиеся задачи по числам/дням недели
     try:
         from recurring_schedule import RECURRING_TASKS
