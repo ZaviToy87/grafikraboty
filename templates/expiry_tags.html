@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>Акционные ценники</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;background:#fff}
+.tag{width:70mm;border:1px solid #e5e7eb;border-radius:6px;padding:4mm;margin:4mm auto;page-break-inside:avoid;text-align:center}
+.tag .promo{background:#dc2626;color:#fff;display:inline-block;padding:1mm 4mm;border-radius:4px;font-size:11px;font-weight:700}
+.tag h3{font-size:11px;margin:2mm 0;font-weight:600;min-height:9mm}
+.tag .old{color:#6b7280;font-size:11px;text-decoration:line-through}
+.tag .new{color:#dc2626;font-size:26px;font-weight:800;margin:1mm 0}
+.tag .date{color:#6b7280;font-size:9px;margin-top:1mm}
+.tag .barcode{font-size:8px;color:#9ca3af;word-break:break-all}
+@media print{.tag{page-break-inside:avoid;margin:2mm auto}.no-print{display:none}}
+button{padding:6px 12px;border:0;border-radius:6px;background:#166534;color:#fff;cursor:pointer;margin:8px}
+</style></head>
+<body>
+<button class="no-print" onclick="window.print()">🖨 Печать</button>
+{% for r in rows %}
+<div class="tag">
+  <span class="promo">-{{ r.discount_percent }}%</span>
+  <h3>{{ r.product_name }}</h3>
+  {% if r.retail_price %}<div class="old">{{ '%.0f' % r.retail_price }} ₽</div>{% endif %}
+  <div class="new">{{ '%.0f' % r.final_price }} ₽</div>
+  {% if r.quantity %}<div style="font-size:10px">кол-во: {{ r.quantity }}</div>{% endif %}
+  <div class="date">срок до {{ (r.expiry_date or '')[:10] }}</div>
+  {% if r.barcode %}<div class="barcode">{{ r.barcode }}</div>{% endif %}
+</div>
+{% endfor %}
+{% if not rows %}<p style="padding:20px;text-align:center">Нет позиций для печати</p>{% endif %}
+</body></html>

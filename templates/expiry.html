@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сроки: контроль, претензии, ответственность</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
+.top{background:#b91c1c;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.top a{color:#fff;text-decoration:none;font-weight:600}
+.wrap{max-width:1280px;margin:14px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 8px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:#fee2e2;padding:6px;text-align:left;white-space:nowrap}
+td{padding:5px 6px;border-top:1px solid #eee;vertical-align:middle}
+button{background:#b91c1c;color:#fff;border:0;border-radius:7px;padding:5px 8px;cursor:pointer;font-size:12px;margin:1px}
+button.ghost{background:#fff;color:#b91c1c;border:1px solid #b91c1c}
+button.gray{background:#6b7280}
+button.green{background:#15803d}
+input,select,textarea{padding:5px 8px;border:1px solid #ccc;border-radius:6px;font-size:12.5px}
+.r{color:#dc2626}.g{color:#16a34a}.o{color:#d97706}.m{color:#6b7280}
+.b{font-weight:700}
+.small{font-size:11px;color:#6b7280}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.kpi .item{background:#fff7ed;border-radius:10px;padding:8px 14px;font-size:13px}
+.kpi .item b{font-size:18px}
+.chip{display:inline-block;padding:1px 7px;border-radius:12px;font-size:11px}
+.chip.new{background:#fee2e2;color:#b91c1c}.chip.accepted{background:#dcfce7;color:#15803d}
+.chip.dismissed{background:#f3f4f6;color:#374151}
+</style></head>
+<body>
+<div class="top"><div><a href="/dashboard">← В график</a> | <b>⚠️ Сроки: контроль и ответственность</b></div>
+<div><a href="/rules">📖 Правила</a> · <a href="/ocr">🔍 Анализатор сканов</a></div></div>
+<div class="wrap">
+<div class="kpi" id="kpi"></div>
+
+<div class="card">
+<h2>🔔 Срочные (срок ≤ 30 дней) — варианты исполнения</h2>
+<div style="overflow-x:auto"><table id="t-urgent"><thead><tr>
+<th></th><th>Товар</th><th>Кто внёс</th><th>Осталось</th><th>Розница</th><th>Скидка</th><th>Цена акц.</th><th>Сумма риска</th><th>Действие</th></tr></thead><tbody></tbody></table></div>
+<div class="small" style="margin-top:6px">✔ Печать акционного ценника → открыть / распечатать. Списание — только зафиксировав фактическое списание на кассе/в ревизии.</div>
+</div>
+
+<div class="card">
+<h2>❌ Просрочено (не закрыто)</h2>
+<div style="overflow-x:auto"><table id="t-expired"><thead><tr>
+<th>Товар</th><th>Кто внёс</th><th>Просрочено</th><th>Сумма</th><th>Скидка</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>⚖️ Претензии за короткий срок при приёмке/внесении</h2>
+<div style="overflow-x:auto"><table id="t-claims"><thead><tr>
+<th>#</th><th>Товар</th><th>Сотрудник</th><th>Внесено</th><th>Остаток</th><th>Скидка</th><th>Сумма</th><th>Статус</th><th id="hdr-admin">Решение (админ)</th></tr></thead><tbody></tbody></table></div>
+<div class="small">Правило: остаток срока при внесении меньше 4 месяцев → автоматическая претензия. ≤1 мес. — высокий приоритет (severity 3).</div>
+</div>
+
+<div class="card" id="block-users">
+<h2>👥 Ответственность по сотрудникам</h2>
+<div style="overflow-x:auto"><table id="t-users"><thead><tr>
+<th>Сотрудник</th><th>Открыто претензий</th><th>Принято</th><th>Штрафы ₽</th><th>Сумма риска ₽</th></tr></thead><tbody></tbody></table></div>
+</div>
+<!-- EXPIRY_HTML_2 -->
+
+</div>
+<script>
+let D = null;
+const IS_ADMIN = document.body.dataset.role === 'admin';
+async function api(url, opts) {
+  const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+  return r.json().catch(()=>({}));
+}
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const num = v => v==null||v==='' ? '—' : Number(v).toLocaleString('ru-RU',{maximumFractionDigits:0});
+
+function load() {
+  api('/api/expiry/dashboard').then(d => {
+    if (d.status !== 'success') return;
+    D = d;
+    render();
+  });
+}
+function variantHtml(r){
+  const dis = r.discount_percent || 0;
+  return '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
+    '<button class="green" onclick="doVariant('+r.id+',\'promo_tag\')">🖨 Ценник</button>' +
+    '<input id="d'+r.id+'" type="number" style="width:64px" value="'+(dis||40)+'">% ' +
+    '<button class="ghost" onclick="doVariant('+r.id+',\'apply_discount\')">Применить скидку</button>' +
+    '<button class="ghost" onclick="doVariant('+r.id+',\'resolved\')">✅ На акц. полку</button>' +
+    '<button class="ghost" onclick="doVariant('+r.id+',\'ask_admin\')">👤 Админу</button>' +
+    '<button class="gray" onclick="doVariant('+r.id+',\'write_off\')">Списать</button></div>';
+}
+function render(){
+  const d = D;
+  document.getElementById('kpi').innerHTML =
+    '<div class="item"><b class="r">'+d.critical.length+'</b><br>критично ≤7 дн.</div>' +
+    '<div class="item"><b class="o">'+d.soon.length+'</b><br>8–30 дн.</div>' +
+    '<div class="item"><b>'+num(d.loss_critical + d.loss_soon)+' ₽</b><br>риск по срочным</div>' +
+    '<div class="item"><b class="r">'+d.expired.length+'</b><br>просрочено · '+num(d.loss_expired)+' ₽</div>' +
+    '<div class="item"><b>'+d.claims.length+'</b><br>претензий</div>';
+  const tu = document.querySelector('#t-urgent tbody');
+  tu.innerHTML = d.urgent.length ? d.urgent.map(r =>
+    '<tr><td>'+(r.promo_tag_printed?'🖨':'')+'</td><td class="b">'+esc(r.product_name)+'</td>' +
+    '<td>'+esc(r.full_name||'—')+'</td><td class="'+(r.days_remaining<=7?'r':'o')+' b">'+r.days_remaining+' дн.</td>' +
+    '<td>'+num(r.retail_price)+'</td><td>'+num(r.discount_percent)+'%</td><td class="g b">'+num(r.final_price)+'</td>' +
+    '<td class="m">'+num((r.retail_price||0)*Math.max(1, r.quantity||1))+'</td><td>'+variantHtml(r)+'</td></tr>').join('')
+    : '<tr><td colspan="9" style="text-align:center">Срочных позиций нет 👍</td></tr>';
+  const te = document.querySelector('#t-expired tbody');
+  te.innerHTML = d.expired.length ? d.expired.map(r =>
+    '<tr><td class="b">'+esc(r.product_name)+'</td><td>'+esc(r.full_name||'—')+'</td>' +
+    '<td class="r b">'+Math.abs(r.days_remaining)+' дн.</td><td>'+num((r.retail_price||0)*Math.max(1,r.quantity||1))+'</td>' +
+    '<td>'+num(r.discount_percent)+'%</td></tr>').join('')
+    : '<tr><td colspan="5" style="text-align:center">Нет</td></tr>';
+  const claims = IS_ADMIN ? d.claims : d.my_claims;
+  const tc = document.querySelector('#t-claims tbody');
+  let claimRows = claims.map(c => {
+    let action = '<td class="m small">' + (c.admin_note ? esc(c.admin_note) : '') + '</td>';
+    if (IS_ADMIN) action = '<td>' + adminResolve(c) + '</td>';
+    return '<tr><td>' + c.id + '</td><td class="b">' + esc(c.product_name) + '</td><td>' + esc(c.full_name || '—') + '</td>' +
+      '<td class="m">' + esc(String(c.created_at || '').slice(0, 10)) + '</td><td class="' + (c.days_remaining <= 30 ? 'r' : 'o') + '">' + c.days_remaining + ' дн.</td>' +
+      '<td>' + num(c.immediate_discount) + '%</td><td>' + num((c.retail_price || 0) * Math.max(1, c.quantity || 1)) + '</td>' +
+      '<td><span class="chip ' + c.status + '">' + (c.status === 'new' ? 'новая' : (c.status === 'accepted' ? 'принята' : 'отклонена')) + '</span></td>' +
+      action + '</tr>';
+  }).join('');
+  tc.innerHTML = claims.length ? claimRows : '<tr><td colspan="9" style="text-align:center">Претензий нет</td></tr>';
+  const hdr = document.getElementById('hdr-admin');
+  if (hdr) hdr.style.display = IS_ADMIN ? '' : 'none';
+  const bu = document.getElementById('block-users');
+  if (bu) bu.style.display = IS_ADMIN ? '' : 'none';
+  const tu2 = document.querySelector('#t-users tbody');
+  if (tu2) tu2.innerHTML = (d.by_user||[]).map(u =>
+    '<tr><td class="b">'+esc(u.name)+'</td><td>'+u.new+'</td><td>'+u.accepted+'</td>' +
+    '<td class="r b">'+num(u.fine)+'</td><td>'+num(u.loss)+'</td></tr>').join('');
+}
+function adminResolve(c){
+  return '<input id="fine'+c.id+'" type="number" style="width:70px" placeholder="штраф ₽">' +
+    '<button class="green" onclick="resolve('+c.id+',\'accept\')">✅</button>' +
+    '<button class="gray" onclick="resolve('+c.id+',\'dismiss\')">✖</button>' +
+    '<div class="small m">замечание без штрафа — штраф оставить 0</div>';
+}
+async function doVariant(rid, variant){
+  const disc = document.getElementById('d'+rid);
+  const body = {variant: variant};
+  if (variant === 'apply_discount') body.discount = parseFloat(disc ? disc.value : 0) || 0;
+  const r = await api('/api/expiry/variant/' + rid, {method:'POST', body: JSON.stringify(body)});
+  if (r.status === 'success' && r.print_url) {
+    if (confirm('Отметить и открыть акционный ценник для печати?')) window.open(r.print_url, '_blank');
+  } else if (r.status === 'success') { alert(r.message); }
+  else alert(r.message || 'Ошибка');
+  load();
+}
+async function resolve(cid, decision){
+  const fineEl = document.getElementById('fine'+cid);
+  const fine = fineEl ? parseFloat(fineEl.value) || 0 : 0;
+  const r = await api('/api/expiry/claims/' + cid + '/resolve',
+    {method:'POST', body: JSON.stringify({decision: decision, fine: fine})});
+  alert(r.message || 'Ошибка');
+  load();
+}
+load();
+</script>
+
+</body></html>

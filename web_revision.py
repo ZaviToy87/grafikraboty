@@ -276,7 +276,24 @@ def create_revision():
     if days_remaining < 0:
         send_expired_notification(revision_id, cursor)
         db.commit()
-    
+
+    # Принят/указан с остатком срока меньше 4 месяцев → претензия сотруднику
+    if session.get('role') != 'admin':
+        try:
+            from web_expiry import register_intake_claim
+            register_intake_claim(
+                revision_id=revision_id,
+                user_id=session['user_id'],
+                full_name=session.get('full_name') or session.get('username'),
+                product_name=product_name,
+                retail_price=retail_price,
+                quantity=quantity,
+                expiry_date=expiry_date,
+                days_remaining=days_remaining,
+                discount_percent=discount_percent)
+        except Exception as e:
+            logger.warning(f"Claim register error: {e}")
+
     db.close()
     
     return jsonify({

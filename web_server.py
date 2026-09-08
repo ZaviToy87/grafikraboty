@@ -42,6 +42,7 @@ from web_hr import hr_bp as hr_docs_bp
 from web_sales_view import sales_view_bp
 from web_ocr import ocr_bp
 from web_orders import orders_bp
+from web_expiry import expiry_bp
 
 
 
@@ -73,6 +74,14 @@ try:
     logger.info("Rules reminder scheduler started")
 except Exception as e:
     logger.warning(f"Rules reminder scheduler not started: {e}")
+
+# Запуск контроля сроков: срочные позиции + претензии за короткий срок
+try:
+    from web_expiry import start_expiry_scheduler
+    start_expiry_scheduler()
+    logger.info("Expiry scheduler started")
+except Exception as e:
+    logger.warning(f"Expiry scheduler not started: {e}")
 
 # Запуск COM-сканеров штрих-кодов
 # ТЕПЕРЬ НЕ ЗАПУСКАЮТСЯ АВТОМАТИЧЕСКИ — пользователь включает кнопкой в интерфейсе
@@ -124,6 +133,7 @@ app.register_blueprint(hr_docs_bp)
 app.register_blueprint(sales_view_bp)
 app.register_blueprint(ocr_bp)
 app.register_blueprint(orders_bp)
+app.register_blueprint(expiry_bp)
 
 
 # Создание таблицы уведомлений при старте
