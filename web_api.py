@@ -837,190 +837,269 @@ def api_get_colleagues():
     return jsonify({'status': 'success', 'colleagues': colleagues})
 
 
+
+def _notify_colleague_user(uid, title, message, link='/'):
+    """Внутреннее уведомление + личное сообщение в VK пользователю uid."""
+    try:
+        db = get_db_connection()
+        try:
+            db.execute('CREATE TABLE IF NOT EXISTS notifications ('
+                       'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                       'user_id INTEGER, type TEXT, title TEXT, message TEXT,'
+                       'link TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)')
+            db.execute('INSERT INTO notifications (user_id, type, title, message, link) '
+                       'VALUES (?, ?, ?, ?, ?)',
+                       (uid, 'colleague_task', title, message, link))
+        except Exception:
+            pass
+        db.commit()
+        db.close()
+    except Exception:
+        pass
+    try:
+        import company_rules as _cr
+        for vk_id in _cr._vk_ids_by_user().get(int(uid), []):
+            try:
+                _cr._send_vk_user(vk_id, message)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 @api_bp.route('/api/colleague-tasks', methods=['GET', 'POST'])
 def api_colleague_tasks():
-    """Get colleague tasks for schedule or create new task"""
+    """Задачи коллег: создать/получить.
+
+    Задача коллеге — отдельная сущность (таблица colleague_tasks): кому
+    адресована, кто поставил, описание, файл, срок. При создании
+    исполнителю уходит личное сообщение в VK + внутреннее уведомление.
+    """
     if 'user_id' not in session:
         return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
 
-    # POST - создать новую задачу для коллеги
+    db = get_db_connection()
+    cursor = db.cursor()
+
     if request.method == 'POST':
         data = request.json or {}
-        user_id = data.get('user_id')
-        year = data.get('year')
-        month = data.get('month')
+
+        # Новый формат: задача коллеге (title + assignee_id)
+        assignee_id = data.get('assignee_id')
+        year = data.get('year') or datetime.now().year
+        month = data.get('month') or datetime.now().month
         day = data.get('day')
+        title = (data.get('title') or '').strip()
+        if assignee_id is not None:
+            if not assignee_id:
+                return jsonify({'status': 'error', 'message': 'Выберите, кому адресована задача'}), 400
+            if not title:
+                return jsonify({'status': 'error', 'message': 'Название задачи обязательно'}), 400
+            if not day:
+                return jsonify({'status': 'error', 'message': 'Укажите день задачи'}), 400
+
+            cursor.execute('SELECT * FROM users WHERE id = ?', (int(assignee_id),))
+            if not cursor.fetchone():
+                return jsonify({'status': 'error', 'message': 'Исполнитель не найден'}), 404
+
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute('''
+                INSERT INTO colleague_tasks
+                    (created_by, assignee_id, year, month, day, title, description,
+                     color, file_id, created_at, due_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                session['user_id'], int(assignee_id), int(year), int(month), int(day),
+                title[:500], (data.get('description') or '')[:2000],
+                (data.get('color') or '#3498db'), data.get('file_id'), now,
+                data.get('due_date') or None,
+            ))
+            db.commit()
+            new_id = cursor.lastrowid
+
+            rows = db.execute(
+                'SELECT id, full_name, username FROM users WHERE id IN (?, ?)',
+                (session['user_id'], int(assignee_id))).fetchall()
+            names = {r['id']: (r['full_name'] or r['username'] or '—') for r in rows}
+            creator_name = names.get(session['user_id'], session.get('username', 'Коллега'))
+            assignee_name = names.get(int(assignee_id), 'Коллега')
+
+            logger.info(f"Colleague task created: id={new_id}, "
+                        f"from={session['username']} to={assignee_name}, "
+                        f"date={day}.{month}.{year}, title={title}")
+
+            if int(assignee_id) != session['user_id']:
+                msg = ("📌 " + creator_name + " поставил(а) тебе задачу на "
+                       + f"{day}.{month}.{year}:\n«{title}»")
+                desc = (data.get('description') or '').strip()
+                if desc:
+                    msg += "\n\n📝 " + desc
+                if data.get('due_date'):
+                    msg += "\n⏰ Срок: до " + str(data['due_date'])
+                msg += ("\n\n✅ Найти и отметить выполненной: "
+                        "Календарь → день → «Задачи мне от коллег».")
+                _notify_colleague_user(int(assignee_id), 'Задача от коллеги', msg)
+
+            return jsonify({'status': 'success', 'message': 'Задача поставлена коллеге',
+                            'id': new_id})
+
+        # Старый формат (график): user_id + task_ids — работаем как раньше
+        user_id = data.get('user_id')
         task_ids = data.get('task_ids', [])
         notes = data.get('notes', '')
-
         if not all([user_id, year, month, day]):
-            return jsonify({'status': 'error', 'message': 'user_id, year, month, day обязательны'}), 400
-
-        db = get_db_connection()
-        cursor = db.cursor()
-
-        # Проверяем существование пользователя
-        cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
-        user = cursor.fetchone()
-
-        if not user:
+            return jsonify({'status': 'error',
+                            'message': 'user_id, year, month, day обязательны'}), 400
+        cursor.execute('SELECT * FROM users WHERE id = ?', (int(user_id),))
+        if not cursor.fetchone():
             return jsonify({'status': 'error', 'message': 'Пользователь не найден'}), 404
-
         try:
             if isinstance(task_ids, str):
                 task_ids = json.loads(task_ids) if task_ids.strip() else []
             if not isinstance(task_ids, list):
                 task_ids = []
-            task_ids = [int(x) for x in task_ids if x is not None and str(x).strip() != '']
-        except Exception as e:
-            logger.warning(f"Task IDs parse error: {e}")
+            task_ids = [int(x) for x in task_ids if str(x).strip() != '']
+        except Exception:
             task_ids = []
-
         cursor.execute('''
-            INSERT OR REPLACE INTO work_schedule (user_id, year, month, day, task_ids, notes)
+            INSERT OR REPLACE INTO work_schedule
+                (user_id, year, month, day, task_ids, notes)
             VALUES (?, ?, ?, ?, ?, ?)
-        ''', (int(user_id), int(year), int(month), int(day), json.dumps(task_ids), notes))
-
+        ''', (int(user_id), int(year), int(month), int(day),
+              json.dumps(task_ids), notes))
         db.commit()
+        logger.info(f"Colleague task (graph) created: user_id={user_id}, "
+                    f"date={year}-{month}-{day}, created_by={session['username']}")
+        return jsonify({'status': 'success', 'message': 'Задача создана'})
 
-        logger.info(f"Colleague task created: user_id={user_id}, date={year}-{month}-{day}, created_by={session['username']}")
-
-        return jsonify({
-            'status': 'success',
-            'message': 'Задача создана'
-        })
-
-    # GET - получить задачи
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
+    # GET - получить задачи коллег за месяц
+    year = request.args.get('year', type=int) or datetime.now().year
+    month = request.args.get('month', type=int) or datetime.now().month
     role = session.get('role', 'employee')
 
-    db = get_db_connection()
-    cursor = db.cursor()
-
     if role == 'admin':
-        # Админ видит все задачи всех сотрудников
         cursor.execute('''
-            SELECT s.*, u.full_name, u.username
-            FROM work_schedule s
-            JOIN users u ON s.user_id = u.id
-            WHERE s.year = ? AND s.month = ?
-            ORDER BY s.day, u.full_name
+            SELECT ct.*, c.full_name AS created_by_name, c.username AS creator_username,
+                   a.full_name AS assignee_name, a.username AS assignee_username
+            FROM colleague_tasks ct
+            LEFT JOIN users c ON c.id = ct.created_by
+            LEFT JOIN users a ON a.id = ct.assignee_id
+            WHERE ct.year = ? AND ct.month = ?
+            ORDER BY ct.day, ct.created_at
         ''', (year, month))
     else:
-        # Сотрудник видит только свои задачи
         cursor.execute('''
-            SELECT s.*, u.full_name, u.username
-            FROM work_schedule s
-            JOIN users u ON s.user_id = u.id
-            WHERE s.year = ? AND s.month = ? AND s.user_id = ?
-            ORDER BY s.day
-        ''', (year, month, session['user_id']))
+            SELECT ct.*, c.full_name AS created_by_name, c.username AS creator_username,
+                   a.full_name AS assignee_name, a.username AS assignee_username
+            FROM colleague_tasks ct
+            LEFT JOIN users c ON c.id = ct.created_by
+            LEFT JOIN users a ON a.id = ct.assignee_id
+            WHERE ct.year = ? AND ct.month = ?
+              AND (ct.assignee_id = ? OR ct.created_by = ?)
+            ORDER BY ct.day, ct.created_at
+        ''', (year, month, session['user_id'], session['user_id']))
 
-    tasks = [dict(row) for row in cursor.fetchall()]
+    out = []
+    for row in cursor.fetchall():
+        d = dict(row)
+        d['created_by_name'] = d.get('created_by_name') or d.get('creator_username') or '—'
+        d['creator_name'] = d['created_by_name']
+        d['assignee_name'] = d.get('assignee_name') or d.get('assignee_username') or '—'
+        out.append(d)
 
-    # Получаем названия задач
-    cursor.execute('SELECT id, name, color FROM tasks WHERE is_active = 1')
-    all_tasks = {row['id']: {'name': row['name'], 'color': row['color']} for row in cursor.fetchall()}
-
-    # Добавляем расшифровку task_ids
-    for task in tasks:
-        try:
-            task_ids = json.loads(task.get('task_ids', '[]')) if task.get('task_ids') else []
-            task['task_names'] = [all_tasks.get(int(tid), {}).get('name', 'Неизвестно') for tid in task_ids if tid]
-        except:
-            task['task_names'] = []
-
-    logger.debug(f"Colleague tasks: found {len(tasks)} entries for {year}-{month}")
-
-    return jsonify({'status': 'success', 'tasks': tasks})
+    logger.debug(f"Colleague tasks: found {len(out)} entries for {year}-{month}")
+    return jsonify({'status': 'success', 'colleague_tasks': out})
 
 
 @api_bp.route('/api/colleague-tasks/<int:task_id>/complete', methods=['PATCH'])
 def api_colleague_task_complete(task_id):
-    """Mark colleague task as complete"""
+    """Отметить задачу коллеги выполненной (может исполнитель, автор или админ)."""
     if 'user_id' not in session:
         return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
 
     data = request.json or {}
-    completed = data.get('completed', False)
+    completed = bool(data.get('completed', False))
 
     db = get_db_connection()
     cursor = db.cursor()
-
-    # Проверяем существование записи
-    cursor.execute('SELECT * FROM work_schedule WHERE id = ?', (task_id,))
+    cursor.execute('SELECT ct.*, c.full_name AS cb, c.username AS cu, '
+                   'a.full_name AS ab, a.username AS au '
+                   'FROM colleague_tasks ct '
+                   'LEFT JOIN users c ON c.id=ct.created_by '
+                   'LEFT JOIN users a ON a.id=ct.assignee_id '
+                   'WHERE ct.id=?', (task_id,))
     task = cursor.fetchone()
-
     if not task:
         return jsonify({'status': 'error', 'message': 'Запись не найдена'}), 404
+    t = dict(task)
 
-    # Для простоты просто логируем завершение
-    logger.info(f"Colleague task {task_id} marked as {'completed' if completed else 'incomplete'}")
+    me = session['user_id']
+    if t.get('assignee_id') != me and t.get('created_by') != me \
+            and session.get('role') != 'admin':
+        return jsonify({'status': 'error', 'message': 'Нет доступа к этой задаче'}), 403
 
-    return jsonify({
-        'status': 'success',
-        'message': f'Задача {"завершена" if completed else "возвращена в работу"}'
-    })
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute('UPDATE colleague_tasks SET completed=?, completed_at=? '
+                   'WHERE id=?',
+                   (1 if completed else 0, now if completed else None, task_id))
+    db.commit()
+
+    if completed and t.get('created_by') != me:
+        assignee_name = t.get('ab') or t.get('au') or 'Сотрудник'
+        msg = (f"✅ «{t.get('title')}» выполнена {assignee_name} "
+               f"({t.get('day')}.{t.get('month')}.{t.get('year')}).")
+        _notify_colleague_user(t['created_by'], 'Задача выполнена', msg)
+
+    logger.info(f"Colleague task {task_id} marked as "
+                f"{'completed' if completed else 'incomplete'}")
+    return jsonify({'status': 'success',
+                    'message': f'Задача {"завершена" if completed else "возвращена в работу"}'})
 
 
 @api_bp.route('/api/colleague-tasks/<int:task_id>/send-telegram', methods=['POST'])
 def api_colleague_task_send_telegram(task_id):
-    """Send colleague task to Telegram"""
+    """Отправить задачу коллеги в Telegram-группу."""
     if 'user_id' not in session:
         return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
 
     db = get_db_connection()
     cursor = db.cursor()
-
-    # Получаем запись
-    cursor.execute('''
-        SELECT s.*, u.full_name, u.username
-        FROM work_schedule s
-        JOIN users u ON s.user_id = u.id
-        WHERE s.id = ?
-    ''', (task_id,))
+    cursor.execute('SELECT ct.*, c.full_name AS cb, c.username AS cu, '
+                   'a.full_name AS ab, a.username AS au '
+                   'FROM colleague_tasks ct '
+                   'LEFT JOIN users c ON c.id=ct.created_by '
+                   'LEFT JOIN users a ON a.id=ct.assignee_id '
+                   'WHERE ct.id=?', (task_id,))
     task = cursor.fetchone()
-
     if not task:
         return jsonify({'status': 'error', 'message': 'Запись не найдена'}), 404
+    t = dict(task)
 
-    task = dict(task)
+    from_name = t.get('cb') or t.get('cu') or 'Сотрудник'
+    to_name = t.get('ab') or t.get('au') or 'Сотрудник'
+    message = f"📋 <b>Задача коллеге на {t['day']}.{t['month']}.{t['year']}</b>\n"
+    message += f"👤 <b>Кому:</b> {to_name}\n"
+    message += f"✍️ <b>От:</b> {from_name}\n"
+    message += f"✅ <b>Задача:</b> {t.get('title') or '—'}"
+    if t.get('description'):
+        message += f"\n📝 {t['description']}"
+    if t.get('due_date'):
+        message += f"\n⏰ Срок: до {t['due_date']}"
+    if t.get('completed'):
+        message += "\n🏁 Выполнена"
 
-    # Получаем названия задач
-    try:
-        task_ids = json.loads(task.get('task_ids', '[]')) if task.get('task_ids') else []
-        cursor.execute('SELECT id, name FROM tasks WHERE id IN ({})'.format(','.join('?' * len(task_ids))), task_ids)
-        task_names = [row['name'] for row in cursor.fetchall()]
-    except:
-        task_names = []
-
-    # Формируем сообщение
-    message = f"📋 <b>Задача на {task['day']}.{task['month']}.{task['year']}</b>\n"
-    message += f"👤 <b>Сотрудник:</b> {task.get('full_name', task.get('username', 'Неизвестно'))}\n"
-    message += f"✅ <b>Задачи:</b> {', '.join(task_names) if task_names else 'Нет задач'}"
-
-    if task.get('notes'):
-        message += f"\n📝 <b>Заметки:</b> {task['notes']}"
-
-    # Отправляем в Telegram
     try:
         config_path = os.path.join(DATA_DIR, 'telegram_config.json')
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
         token = config.get('token')
         chat_ids = config.get('chat_ids', [])
-
         if token and chat_ids:
             sent, total = send_telegram_message(chat_ids, message, token)
             logger.info(f"Telegram sent: {sent}/{total}")
-
-            return jsonify({
-                'status': 'success',
-                'message': f'Отправлено в Telegram: {sent}/{total}'
-            })
-        else:
-            return jsonify({'status': 'error', 'message': 'Telegram не настроен'}), 400
+            return jsonify({'status': 'success',
+                            'message': f'Отправлено в Telegram: {sent}/{total}'})
+        return jsonify({'status': 'error', 'message': 'Telegram не настроен'}), 400
     except Exception as e:
         logger.exception(f"Telegram send error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -1028,49 +1107,48 @@ def api_colleague_task_send_telegram(task_id):
 
 @api_bp.route('/api/colleague-tasks/<int:task_id>/thanks', methods=['POST'])
 def api_colleague_task_thanks(task_id):
-    """Send thanks for colleague task"""
+    """Благодарность исполнителю за выполненную задачу (+VK/уведомление исполнителю)."""
     if 'user_id' not in session:
         return jsonify({'status': 'error', 'message': 'Not authorized'}), 401
 
     data = request.json or {}
-    thanks_message = data.get('message', 'Спасибо за работу!')
+    thanks_message = (data.get('message') or 'Спасибо за работу!')[:300]
 
     db = get_db_connection()
     cursor = db.cursor()
-
-    # Получаем запись
-    cursor.execute('''
-        SELECT s.*, u.full_name, u.username
-        FROM work_schedule s
-        JOIN users u ON s.user_id = u.id
-        WHERE s.id = ?
-    ''', (task_id,))
+    cursor.execute('SELECT ct.*, c.full_name AS cb, c.username AS cu, '
+                   'a.full_name AS ab, a.username AS au '
+                   'FROM colleague_tasks ct '
+                   'LEFT JOIN users c ON c.id=ct.created_by '
+                   'LEFT JOIN users a ON a.id=ct.assignee_id '
+                   'WHERE ct.id=?', (task_id,))
     task = cursor.fetchone()
-
     if not task:
         return jsonify({'status': 'error', 'message': 'Запись не найдена'}), 404
+    t = dict(task)
 
-    task = dict(task)
-
-    # Логируем благодарность
+    cursor.execute('UPDATE colleague_tasks SET thanks_count = '
+                   'COALESCE(thanks_count, 0) + 1 WHERE id=?', (task_id,))
     cursor.execute('''
         INSERT INTO audit_log (user_id, action, details, created_at)
         VALUES (?, ?, ?, ?)
-    ''', (task['user_id'], 'thanks', json.dumps({
+    ''', (session['user_id'], 'thanks', json.dumps({
         'from_user_id': session['user_id'],
         'from_username': session['username'],
         'message': thanks_message,
-        'schedule_id': task_id
+        'colleague_task_id': task_id
     }), datetime.now()))
-
     db.commit()
 
-    logger.info(f"Thanks sent: from={session['username']}, to={task.get('username')}, message={thanks_message}")
+    from_name = t.get('cb') or t.get('cu') or 'Сотрудник'
+    msg = (f"🙏 {from_name} благодарит тебя за задачу "
+           f"«{t.get('title')}» ({t.get('day')}.{t.get('month')}.{t.get('year')}):\n"
+           f"«{thanks_message}»")
+    _notify_colleague_user(t.get('assignee_id'), 'Благодарность', msg)
 
-    return jsonify({
-        'status': 'success',
-        'message': 'Благодарность отправлена'
-    })
+    logger.info(f"Thanks sent: from={session['username']}, "
+                f"to={t.get('ab') or t.get('au')}, message={thanks_message}")
+    return jsonify({'status': 'success', 'message': 'Благодарность отправлена'})
 
 
 @api_bp.route('/chat/topics')
