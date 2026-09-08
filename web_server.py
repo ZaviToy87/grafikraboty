@@ -41,6 +41,7 @@ from web_rules import rules_bp
 from web_hr import hr_bp as hr_docs_bp
 from web_sales_view import sales_view_bp
 from web_ocr import ocr_bp
+from web_orders import orders_bp
 
 
 
@@ -122,6 +123,7 @@ app.register_blueprint(rules_bp)
 app.register_blueprint(hr_docs_bp)
 app.register_blueprint(sales_view_bp)
 app.register_blueprint(ocr_bp)
+app.register_blueprint(orders_bp)
 
 
 # Создание таблицы уведомлений при старте

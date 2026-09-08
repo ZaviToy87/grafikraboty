@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заявки на заказ</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f5fb;color:#222}
+.top{background:#166534;color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.top a{color:#fff;text-decoration:none;font-weight:600}
+.wrap{max-width:1280px;margin:14px auto;padding:0 14px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#e7f5ec;padding:7px;text-align:left;white-space:nowrap}
+td{padding:5px 6px;border-top:1px solid #eee;vertical-align:middle}
+.r{color:#dc2626}.g{color:#16a34a}.o{color:#d97706}.m{color:#6b7280}
+input,select,textarea,button{padding:7px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px}
+button{background:#166534;color:#fff;border:0;cursor:pointer;margin:2px}
+button.sec{background:#6b7280}
+button.ghost{background:#fff;color:#166534;border:1px solid #166534}
+.qty{width:84px}
+.small{font-size:11px;color:#6b7280}
+.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px}
+.chip.new{background:#fee2e2;color:#b91c1c}.chip.approved{background:#dcfce7;color:#15803d}
+.chip.ordered{background:#dbeafe;color:#1d4ed8}.chip.rejected{background:#f3f4f6;color:#374151}
+.summary{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin-bottom:6px}
+input[type=checkbox]{transform:scale(1.2)}
+</style>
+</head>
+<body data-role="{{ session.get('role') }}">
+<div class="top"><div><a href="/dashboard">← В график</a> | <b>🛒 Заявки на заказ</b></div>
+<div><a href="/rules">📖 Правила</a></div></div>
+<div class="wrap">
+<div class="card">
+  <h2>📊 Рекомендации по заказу</h2>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <label>Продажи за <select id="days"><option value="7" selected>7 дней</option><option value="14">14 дней</option><option value="30">30 дней</option></select></label>
+    <label>«Залежалось» — нет продаж <select id="stale"><option value="30">30 дней</option><option value="60" selected>60 дней</option><option value="90">90 дней</option></select></label>
+    <button onclick="load()">Обновить</button>
+    <span id="meta" class="small"></span>
+  </div>
+  <div class="summary" id="summary" style="margin-top:8px"></div>
+  <div class="small">✅ по товарам с известным остатком «к заказу» = продано за период − остаток; если остатка в выгрузке не было — предлагаем заказать продажное количество (проверьте вручную).</div>
+</div>
+
+<div class="card">
+  <h2>➕ К заказу <button class="ghost" onclick="selectAll('to')">выбрать всё</button></h2>
+  <div style="overflow-x:auto"><table id="tbl-to"><thead><tr>
+  <th></th><th>Товар</th><th>Группа</th><th>Розница</th><th>Закуп</th>
+  <th>Остаток</th><th>Продано</th><th>Выручка</th><th>Заказать</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>⏳ Залежалось (остаток есть, продаж нет)</h2>
+  <div style="overflow-x:auto"><table id="tbl-stale"><thead><tr>
+  <th></th><th>Товар</th><th>Группа</th><th>Розница</th><th>Остаток</th><th>Нет продаж</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>✍️ Сформировать заявку</h2>
+  <textarea id="note" rows="2" style="width:100%;box-sizing:border-box" placeholder="Комментарий к заявке (необязательно)"></textarea>
+  <div style="margin-top:6px"><button onclick="createOrder()">Отправить заявку руководителю</button>
+  <span id="create-status" class="small"></span></div>
+</div>
+
+<div class="card">
+  <h2>🗂 Заявки</h2>
+  <button class="ghost" onclick="loadOrders()">Обновить список</button>
+  <div id="orders-list"></div>
+</div>
+<!-- BODY_PART_2 -->
+
+</div>
+<script>
+const IS_ADMIN = document.body.dataset.role === 'admin';
+async function api(url, opts) {
+  const r = await fetch(url, Object.assign({headers: {'Content-Type':'application/json'}}, opts||{}));
+  return r.json().catch(() => ({}));
+}
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const money = v => (v === null || v === undefined) ? '—' : Number(v).toLocaleString('ru-RU', {maximumFractionDigits: 0});
+const fmt = v => (v === null || v === undefined || v === '') ? 'нет данных' : Number(v).toLocaleString('ru-RU', {maximumFractionDigits: 1});
+
+function rowHtml(it, kind) {
+  const emptyStock = (it.quantity === null || it.quantity === undefined);
+  const stockCls = emptyStock ? 'm' : (it.quantity <= 0 ? 'r' : '');
+  return `<tr><td><input type="checkbox" data-kind="${kind}" data-i="${it.product_id}"
+    data-name="${esc(it.name)}" data-sug="${it.suggested != null ? it.suggested : 1}"
+    data-price="${it.purchase != null ? it.purchase : (it.retail || '')}"></td>
+    <td>${esc(it.name)}</td><td class="m">${esc(it.group || '')}</td>
+    <td>${money(it.retail)}</td>
+    <td>${kind === 'to' ? money(it.purchase) : ''}</td>
+    <td class="${stockCls}">${emptyStock ? '—' : fmt(it.quantity)}</td>
+    <td class="b">${kind === 'to' ? fmt(it.sold7) : ''}</td>
+    <td>${kind === 'to' ? money(it.sales7_sum) : ''}</td>
+    <td>${kind === 'to'
+      ? `<input class="qty" type="number" min="0" step="0.1" value="${it.suggested != null ? it.suggested : 1}">`
+      : `<span class="small">${it.days_no_sale} дн.</span>`}</td></tr>`;
+}
+
+async function load() {
+  const d = document.getElementById('days').value;
+  const s = document.getElementById('stale').value;
+  const data = await api('/api/orders/recommendations?days=' + d + '&stale_days=' + s);
+  if (data.status !== 'success') { alert(data.message || 'Ошибка'); return; }
+  document.getElementById('meta').textContent = 'остатки от ' + data.ref_date + ', известны для ' + data.stock_known + ' товаров';
+  document.getElementById('summary').innerHTML =
+    '<span class="b g">К заказу: ' + data.to_order.length + '</span>' +
+    '<span class="b o">Залежалось: ' + data.stale.length + '</span>';
+  const tb = document.querySelector('#tbl-to tbody');
+  tb.innerHTML = data.to_order.length ? data.to_order.map(x => rowHtml(x, 'to')).join('')
+    : '<tr><td colspan="9" style="text-align:center">За этот период продаж по каталогу не было</td></tr>';
+  const ts = document.querySelector('#tbl-stale tbody');
+  ts.innerHTML = data.stale.length ? data.stale.map(x => rowHtml(x, 'stale')).join('')
+    : '<tr><td colspan="6" style="text-align:center">Застоявшихся товаров не найдено</td></tr>';
+}
+
+function selectAll(kind) {
+  document.querySelectorAll('input[data-kind="' + kind + '"]').forEach(cb => cb.checked = true);
+}
+
+async function createOrder() {
+  const items = [];
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => {
+    const tr = cb.closest('tr');
+    const qEl = tr ? tr.querySelector('input.qty') : null;
+    const q = parseFloat(qEl ? qEl.value : (cb.dataset.sug || 1));
+    if (q > 0) items.push({product_id: Number(cb.dataset.i), name: cb.dataset.name, qty: q, price: cb.dataset.price || null});
+  });
+  if (!items.length) { alert('Отметьте позиции чекбоксами'); return; }
+  const res = await api('/api/orders/create', {method: 'POST',
+    body: JSON.stringify({note: document.getElementById('note').value, items: items})});
+  document.getElementById('create-status').textContent = res.message || '';
+  if (res.status === 'success') {
+    document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => cb.checked = false);
+    document.getElementById('note').value = '';
+    loadOrders();
+  }
+}
+
+const ST = {new: 'Новая', approved: 'Одобрена', ordered: 'Заказана', rejected: 'Отклонена'};
+async function loadOrders() {
+  const data = await api('/api/orders/list');
+  if (data.status !== 'success') return;
+  const el = document.getElementById('orders-list');
+  if (!data.orders.length) { el.innerHTML = '<div class="small">Заявок пока нет</div>'; return; }
+  el.innerHTML = data.orders.map(o =>
+    '<div style="border:1px solid #eee;border-radius:8px;padding:8px 10px;margin:6px 0">' +
+    '<div><b>#' + o.id + '</b> от ' + esc(o.author || '—') + ' ' + esc((o.created_at || '').slice(0, 16)) +
+    ' <span class="chip ' + o.status + '">' + (ST[o.status] || o.status) + '</span>' +
+    (IS_ADMIN ? ' <button class="ghost" onclick="setStatus(' + o.id + ',\'approved\')">✅ одобрить</button>' +
+    ' <button class="ghost" onclick="setStatus(' + o.id + ',\'ordered\')">🛒 заказано</button>' +
+    ' <button class="sec" onclick="setStatus(' + o.id + ',\'rejected\')">❌ отклонить</button>' : '') + '</div>' +
+    (o.note ? '<div class="small">📝 ' + esc(o.note) + '</div>' : '') +
+    '<div class="small">' + o.items.map(x => esc(x.name) + ' — ' + x.qty).join('; ') + '</div></div>').join('');
+}
+
+async function setStatus(id, st) {
+  const res = await api('/api/orders/' + id + '/status', {method: 'POST', body: JSON.stringify({status: st})});
+  alert(res.message || 'Ошибка');
+  loadOrders();
+}
+
+load();
+loadOrders();
+</script>
+
+</body></html>

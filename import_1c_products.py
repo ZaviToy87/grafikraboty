@@ -53,6 +53,16 @@ def load_products_from_excel(update_existing=True):
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # Гарантируем колонку «остаток»
+    try:
+        cols = [r[1] for r in cursor.execute('PRAGMA table_info(products_1c)')]
+        if 'quantity' not in cols:
+            cursor.execute('ALTER TABLE products_1c ADD COLUMN quantity REAL')
+            conn.commit()
+            print("➕ Добавлена колонка quantity в products_1c")
+    except Exception as e:
+        print("⚠️ Не удалось проверить колонку quantity:", e)
     
     # Шаг 1: Читаем цены → словарь {нормализованное_название: цена}
     # Структура файла: Наименование | Остаток | Картинка | Ед.изм | Картинка | Розничная ₽ | ...
@@ -72,10 +82,19 @@ def load_products_from_excel(update_existing=True):
             
             if name and price:
                 norm_name = normalize_name(name)
+                qty_raw = row[1].value if len(row) > 1 and row[1] else None
+                try:
+                    if qty_raw is None or str(qty_raw).strip() in ('', '-', '0'):
+                        qty = None  # в выгрузке нет остатка — не затираем прежний
+                    else:
+                        qty = float(str(qty_raw).replace(' ', '').replace(',', '.').replace('\u00a0', ''))
+                except Exception:
+                    qty = None
                 price_by_name[norm_name] = {
                     'price': price,
                     'group': None,  # Группы нет в этом файле
                     'vendor_code': vendor_code,
+                    'quantity': qty,
                     'original_name': name
                 }
         except Exception as e:
@@ -109,6 +128,7 @@ def load_products_from_excel(update_existing=True):
                     'retail_price': price_info['price'] if price_info else 0,
                     'group_name': price_info['group'] if price_info else None,
                     'vendor_code': price_info['vendor_code'] if price_info else None,
+                    'quantity': price_info['quantity'] if price_info else None,
                     'full_name': name
                 }
                 
@@ -148,13 +168,20 @@ def load_products_from_excel(update_existing=True):
                     datetime.now(),
                     product.get('barcode_main')
                 ))
+                if product.get('quantity') is not None:
+                    cursor.execute('''
+                        UPDATE products_1c SET quantity = ?, updated_at = ?
+                        WHERE barcode_main = ?
+                    ''', (float(product['quantity']), datetime.now(),
+                          product.get('barcode_main')))
                 updated += 1
             elif not existing:
                 # Добавляем новый
                 cursor.execute('''
                     INSERT INTO products_1c
-                    (name, full_name, retail_price, barcode_main, group_name, vendor_code, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (name, full_name, retail_price, barcode_main, group_name, vendor_code,
+                     quantity, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     product.get('name'),
                     product.get('full_name'),
@@ -162,6 +189,7 @@ def load_products_from_excel(update_existing=True):
                     product.get('barcode_main'),
                     product.get('group_name'),
                     product.get('vendor_code'),
+                    product.get('quantity'),
                     datetime.now(),
                     datetime.now()
                 ))
