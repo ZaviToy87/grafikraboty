@@ -1,5 +1,5 @@
-/* Service Worker v3.0 — GrafikRaboty PWA (2026) */
-const CACHE_NAME = 'grafik-work-v4';
+/* Service Worker v5 — GrafikRaboty PWA (2026): принудительное обновление кэша после добавления /orders, /expiry */
+const CACHE_NAME = 'grafik-work-v5';
 const OFFLINE_PAGE = '/offline.html';
 
 const STATIC_ASSETS = [
