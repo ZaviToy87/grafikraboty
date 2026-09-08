@@ -99,27 +99,121 @@ def api_update_schedule():
         task_ids = []
 
     try:
+        import re as _re
         db = get_db_connection()
         cursor = db.cursor()
-        logger.debug(f"  Executing INSERT OR REPLACE INTO work_schedule...")
+
+        # Какие задачи считаются «сменой» — по ним определяем, кто работает в день
+        shift_ids = set()
+        try:
+            cursor.execute("SELECT id FROM tasks WHERE name LIKE '%Смена%'")
+            shift_ids = {r['id'] for r in cursor.fetchall()}
+        except Exception:
+            pass
+        is_shift_save = bool(shift_ids & set(task_ids))
+
+        # Кто уже стоит в графике на эту дату со сменой («работник дня»)
+        try:
+            rows = cursor.execute(
+                'SELECT user_id, task_ids FROM work_schedule '
+                'WHERE year=? AND month=? AND day=?',
+                (int(year), int(month), int(day))).fetchall()
+        except Exception:
+            rows = []
+        owners = set()
+        for r in rows:
+            ids = set(int(x) for x in _re.findall(r'\d+', r['task_ids'] or ''))
+            if ids & shift_ids:
+                owners.add(r['user_id'])
+
+        requested = int(user_id)
+        me = int(session.get('user_id') or 0)
+        role = session.get('role', 'employee')
+        target = requested
+
+        # Правило: задачи «на день» закрепляются за тем, кто работает в этот день,
+        # а не за тем, под чьим логином зашли.
+        if is_shift_save:
+            # Назначение/перенос смены: у дня может быть только один работник.
+            if requested == me and role == 'admin' and requested not in owners:
+                return jsonify({'status': 'error',
+                                'message': 'Смена не назначается администратору. '
+                                           'Выберите сотрудника в меню дня.'
+                                }), 400
+            target = requested
+            # убираем чужие смены этого дня (по всем задачам-«сменам»)
+            for sid in shift_ids:
+                try:
+                    cursor.execute(
+                        "DELETE FROM work_schedule WHERE year=? AND month=? AND day=? "
+                        "AND user_id<>? AND task_ids LIKE '%'||?||'%'",
+                        (int(year), int(month), int(day), int(target), str(sid)))
+                except Exception:
+                    pass
+        else:
+            # Обычные задачи без смены
+            if requested in owners:
+                target = requested  # работник редактирует свой день
+            elif role == 'admin':
+                if not owners:
+                    return jsonify({'status': 'error',
+                                    'message': 'На этот день в графике никто не назначен '
+                                               '(нет «Смены физической»). '
+                                               'Сначала поставьте сотрудника.'
+                                    }), 409
+                if len(owners) > 1:
+                    return jsonify({'status': 'error',
+                                    'message': 'На этот день в графике несколько сотрудников. '
+                                               'Укажите, кому именно нужна задача.'
+                                    }), 409
+                target = owners.pop()
+                # дописываем задачу к уже существующим задачам работника дня
+                try:
+                    row = cursor.execute(
+                        'SELECT task_ids, notes FROM work_schedule '
+                        'WHERE user_id=? AND year=? AND month=? AND day=?',
+                        (target, int(year), int(month), int(day))).fetchone()
+                except Exception:
+                    row = None
+                if row is not None:
+                    try:
+                        existing = set(int(x) for x in _re.findall(r'\d+', row['task_ids'] or ''))
+                    except Exception:
+                        existing = set()
+                    task_ids = sorted(existing | set(task_ids))
+                    old_notes = row['notes'] or ''
+                    if notes and notes not in old_notes:
+                        notes = (old_notes + '\n' + notes).strip()
+                logger.debug(f"  Admin task routed to day worker user_id={target}")
+            else:
+                # Сотрудник пытается поставить задачу в день, когда работает не он
+                if not owners:
+                    return jsonify({'status': 'error',
+                                    'message': 'На этот день вы не в графике.'
+                                    }), 403
+                return jsonify({'status': 'error',
+                                'message': 'Задачи на день ставятся тому, кто работает в этот день. '
+                                           'Ваша смена в этот день не стоит.'
+                                }), 403
+
         cursor.execute('''
             INSERT OR REPLACE INTO work_schedule (user_id, year, month, day, task_ids, notes)
             VALUES (?, ?, ?, ?, ?, ?)
-        ''', (int(user_id), int(year), int(month), int(day), json.dumps(task_ids), notes))
+        ''', (target, int(year), int(month), int(day), json.dumps(task_ids), notes))
         db.commit()
         logger.debug(f"  Schedule updated successfully")
 
         # Emit socket event
         from web_server import socketio
         socketio.emit('schedule_updated', {
-            'user_id': int(user_id),
+            'user_id': target,
             'year': int(year),
             'month': int(month),
             'day': int(day)
         })
         logger.debug(f"  Socket event emitted: schedule_updated")
 
-        logger.info(f"Schedule updated: user_id={user_id}, date={year}-{month}-{day}")
+        logger.info(f"Schedule updated: user_id={target}, date={year}-{month}-{day}")
         return jsonify({'status': 'success'})
     except Exception as e:
         logger.exception(f"Schedule update error: {e}")

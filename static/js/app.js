@@ -2163,6 +2163,34 @@ async function openDayModal(day) {
        }
    }
     
+    // Подсказка: задачи «на день» пишутся работнику дня, а не залогиненному
+    const hintEl = document.getElementById('modal-day-hint');
+    if (hintEl) {
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        if (!isAdmin) {
+            hintEl.style.display = 'none';
+        } else {
+            const otherRows = (Array.isArray(schedule) ? schedule : [])
+                .filter(s => Number(s.day) === day &&
+                             Number(s.user_id) !== Number(currentUser.id) &&
+                             Number(s.month) === currentMonth &&
+                             Number(s.year) === currentYear);
+            if (otherRows.length === 0) {
+                hintEl.textContent = '⚠️ На этот день в графике никто не назначен. Сначала поставьте «Смену физическую» сотруднику (кнопка «Назначить сотрудника»).';
+                hintEl.style.display = 'block';
+            } else if (otherRows.length === 1) {
+                const o = otherRows[0];
+                const nm = (o.full_name || o.username || ('ID ' + o.user_id)).trim();
+                hintEl.textContent = 'ℹ️ В этот день работает: ' + nm + '. Задачи сохранятся ей/ему, а не под вашим логином.';
+                hintEl.style.display = 'block';
+            } else {
+                hintEl.textContent = '⚠️ На этот день в графике несколько сотрудников. Уточните, кому именно нужна задача.';
+                hintEl.style.display = 'block';
+            }
+        }
+    }
+
+
     modal.classList.add('active');
 }
 
